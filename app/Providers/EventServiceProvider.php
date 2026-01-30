@@ -25,7 +25,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \App\Models\Car::observe(\App\Observers\CarObserver::class);
     }
 
     /**

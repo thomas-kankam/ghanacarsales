@@ -12,7 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Mark expired cars daily
+        $schedule->job(new \App\Jobs\ExpireCars)->daily();
+
+        // Delete expired cars (5 days after expiry) daily
+        $schedule->job(new \App\Jobs\DeleteExpiredCars)->daily();
+
+        // Send expiry reminders (3 days before expiry) daily
+        $schedule->job(new \App\Jobs\SendExpiryReminder)->daily();
     }
 
     /**
