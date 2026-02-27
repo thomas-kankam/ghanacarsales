@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('alert_notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('buyer_alert_id')->constrained('buyer_alerts')->onDelete('cascade');
-            $table->foreignId('car_id')->constrained('cars')->onDelete('cascade');
+            $table->string('buyer_alert_id');
+            $table->string('car_id');
             $table->boolean('is_sent')->default(false);
             $table->timestamp('sent_at')->nullable();
             $table->timestamps();

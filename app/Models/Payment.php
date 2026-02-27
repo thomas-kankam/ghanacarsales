@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
@@ -13,11 +12,13 @@ class Payment extends Model
 
     protected $fillable = [
         'payment_slug',
-        'seller_id',
+        'dealer_id',
         'payment_type',
         'amount',
+        'phone_number',
         'payment_method',
         'status',
+        'network',
         'transaction_id',
         'duration_days',
         'expires_at',
@@ -25,14 +26,14 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'     => 'decimal:2',
         'expires_at' => 'datetime',
-        'metadata' => 'array',
+        'metadata'   => 'array',
     ];
 
-    public function seller(): BelongsTo
+    public function dealer(): BelongsTo
     {
-        return $this->belongsTo(Seller::class);
+        return $this->belongsTo(Dealer::class);
     }
 
     public function paymentCars(): HasMany

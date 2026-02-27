@@ -13,8 +13,8 @@ return [
     |
     */
 
-    'defaults' => [
-        'guard' => 'web',
+    'defaults'         => [
+        'guard'     => 'web',
         'passwords' => 'users',
     ],
 
@@ -35,26 +35,26 @@ return [
     |
     */
 
-    'guards' => [
-        'web' => [
-            'driver' => 'session',
+    'guards'           => [
+        'web'    => [
+            'driver'   => 'session',
             'provider' => 'users',
         ],
-        'api' => [
-            'driver' => 'sanctum',
+        'api'    => [
+            'driver'   => 'passport',
             'provider' => 'users',
         ],
-        'admin' => [
-            'driver' => 'passport',
+        'admin'  => [
+            'driver'   => 'passport',
             'provider' => 'admins',
         ],
-        'buyer' => [
-            'driver' => 'passport',
+        'buyer'  => [
+            'driver'   => 'passport',
             'provider' => 'buyers',
         ],
-        'seller' => [
-            'driver' => 'passport',
-            'provider' => 'sellers',
+        'dealer' => [
+            'driver'   => 'passport',
+            'provider' => 'dealers',
         ],
     ],
 
@@ -75,22 +75,22 @@ return [
     |
     */
 
-    'providers' => [
-        'users' => [
+    'providers'        => [
+        'users'   => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model'  => App\Models\User::class,
         ],
-        'admins' => [
+        'admins'  => [
             'driver' => 'eloquent',
-            'model' => App\Models\Admin::class,
+            'model'  => App\Models\Admin::class,
         ],
-        'buyers' => [
+        'buyers'  => [
             'driver' => 'eloquent',
-            'model' => App\Models\Buyer::class,
+            'model'  => App\Models\Buyer::class,
         ],
-        'sellers' => [
+        'dealers' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Seller::class,
+            'model'  => App\Models\Dealer::class,
         ],
     ],
 
@@ -113,29 +113,29 @@ return [
     |
     */
 
-    'passwords' => [
-        'users' => [
+    'passwords'        => [
+        'users'   => [
             'provider' => 'users',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
+            'table'    => 'password_reset_tokens',
+            'expire'   => 60,
             'throttle' => 60,
         ],
-        'admins' => [
+        'admins'  => [
             'provider' => 'admins',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
+            'table'    => 'password_reset_tokens',
+            'expire'   => 60,
             'throttle' => 60,
         ],
-        'buyers' => [
+        'buyers'  => [
             'provider' => 'buyers',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
+            'table'    => 'password_reset_tokens',
+            'expire'   => 60,
             'throttle' => 60,
         ],
-        'sellers' => [
-            'provider' => 'sellers',
-            'table' => 'password_reset_tokens',
-            'expire' => 60,
+        'dealers' => [
+            'provider' => 'dealers',
+            'table'    => 'password_reset_tokens',
+            'expire'   => 60,
             'throttle' => 60,
         ],
     ],
