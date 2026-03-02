@@ -13,7 +13,7 @@ class DealerRegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone_number' => ['nullable', 'string', 'unique:dealers,phone_number'],
+            'phone_number' => ['nullable', 'string', 'unique:dealers,phone_number', 'min:12', 'max:12', 'starts_with:233'],
             'email'        => ['nullable', 'string', 'email', 'unique:dealers,email'],
             'full_name'    => ['required', 'string'],
         ];

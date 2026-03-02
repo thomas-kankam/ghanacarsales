@@ -26,6 +26,8 @@ class DealerResendotpRequest extends FormRequest
                 'nullable',
                 'string',
                 'exists:dealers,phone_number',
+                'min:12',
+                'max:12', 'starts_with:233'
             ],
             'email'        => [
                 'required_without:phone_number',
