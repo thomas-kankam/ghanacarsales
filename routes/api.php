@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('dealer')->group(function () {
     // Public routes
     // Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp'])->middleware('throttle:otp');
+    Route::post('/testSms', [DealerAuthController::class, 'testSms']);
     Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp']);
     Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp']);
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);

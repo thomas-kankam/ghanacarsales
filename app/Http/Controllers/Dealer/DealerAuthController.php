@@ -12,6 +12,19 @@ use Illuminate\Support\Str;
 
 class DealerAuthController extends Controller
 {
+    public function testSms(): JsonResponse
+    {
+        self::sendSms('233556906969', 'This is a test message from Ghana Car Sales', 'GHCARSALES');
+
+        return self::apiResponse(
+            in_error: false,
+            message: "Action Successful",
+            status_code: self::API_SUCCESS,
+            data: [],
+            reason: "Test SMS sent successfully."
+        );
+    }
+
     public function sendingOtp(DealerRegisterRequest $http_request): JsonResponse
     {
         // Get data from request
