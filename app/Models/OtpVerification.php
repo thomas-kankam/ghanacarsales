@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,17 +9,19 @@ class OtpVerification extends Model
     use HasFactory;
 
     protected $fillable = [
-        'mobile_number',
-        'otp_code',
-        'user_type',
-        'is_verified',
+        'token',
+        'actor_id',
+        'guard',
+        'type',
+        'channel',
         'expires_at',
+        'is_verified',
         'verified_at',
     ];
 
     protected $casts = [
         'is_verified' => 'boolean',
-        'expires_at' => 'datetime',
+        'expires_at'  => 'datetime',
         'verified_at' => 'datetime',
     ];
 }

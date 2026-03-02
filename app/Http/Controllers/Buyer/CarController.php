@@ -1,18 +1,17 @@
 <?php
+namespace App\Http\Controllers\Buyer;
 
-namespace App\Http\Controllers\Api\V1\Buyer;
-
-use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\Buyer\BuyerSearchRequest;
 use App\Http\Resources\CarResource;
 use App\Services\CarSearchService;
 use Illuminate\Http\JsonResponse;
 
-class CarController extends BaseApiController
+class CarController extends Controller
 {
-    public function __construct(
-        private CarSearchService $searchService
-    ) {}
+    public function __construct(private CarSearchService $searchService)
+    {
+
+    }
 
     public function search(BuyerSearchRequest $request): JsonResponse
     {

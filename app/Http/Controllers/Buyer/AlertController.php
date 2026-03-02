@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Buyer;
+namespace App\Http\Controllers\Buyer;
 
-use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\Buyer\BuyerAlertRequest;
 use App\Models\BuyerAlert;
 use App\Services\AlertService;
@@ -10,7 +9,7 @@ use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class AlertController extends BaseApiController
+class AlertController extends Controller
 {
     public function __construct(
         private AlertService $alertService,

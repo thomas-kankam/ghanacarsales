@@ -14,7 +14,7 @@ class SetApiGuard
     public function handle(Request $request, Closure $next, string $guard): Response
     {
         $host = $request->getHost();
-        
+
         // Determine guard based on subdomain
         if (str_starts_with($host, 'admin.')) {
             config(['auth.defaults.guard' => 'admin']);

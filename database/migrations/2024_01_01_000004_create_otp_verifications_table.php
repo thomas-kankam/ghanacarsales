@@ -10,15 +10,17 @@ return new class extends Migration
     {
         Schema::create('otp_verifications', function (Blueprint $table) {
             $table->id();
-            $table->string('mobile_number', 20);
-            $table->string('otp_code', 6);
-            $table->enum('user_type', ['buyer', 'seller'])->default('seller');
-            $table->boolean('is_verified')->default(false);
+            $table->string('token', 5);
+            $table->string('actor_id');
+            $table->string('guard');
+            $table->string('type');
+            $table->string('channel');
             $table->timestamp('expires_at');
+            $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();
 
-            $table->index(['mobile_number', 'otp_code']);
+            $table->index(['actor_id', 'token']);
             $table->index('expires_at');
             $table->index('is_verified');
         });
