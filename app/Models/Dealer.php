@@ -46,4 +46,9 @@ class Dealer extends Actor
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }

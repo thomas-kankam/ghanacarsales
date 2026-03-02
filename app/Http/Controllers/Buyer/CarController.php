@@ -1,9 +1,11 @@
 <?php
 namespace App\Http\Controllers\Buyer;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Buyer\BuyerSearchRequest;
 use App\Http\Resources\CarResource;
 use App\Services\CarSearchService;
+use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 
 class CarController extends Controller
@@ -20,37 +22,70 @@ class CarController extends Controller
 
         $results = $this->searchService->search($filters, $perPage);
 
+        $items = $results->getCollection()
+            ->load(['brand', 'model', 'images', 'dealer'])
+            ->map(fn ($car) => CarTransformer::summary($car))
+            ->all();
+
+        $payload = [
+            'items' => $items,
+            'meta'  => [
+                'current_page' => $results->currentPage(),
+                'last_page'    => $results->lastPage(),
+                'per_page'     => $results->perPage(),
+                'total'        => $results->total(),
+            ],
+        ];
+
         return $this->apiResponse(
             in_error: false,
             message: "Search results retrieved successfully",
-            data: CarResource::collection($results)->response()->getData(true)
+            status_code: self::API_SUCCESS,
+            data: $payload
         );
     }
 
     public function show($id): JsonResponse
     {
-        $car = \App\Models\Car::with(['brand', 'model', 'images', 'seller'])
+        $car = \App\Models\Car::with(['brand', 'model', 'images', 'dealer'])
             ->where('status', 'active')
             ->findOrFail($id);
 
         return $this->apiResponse(
             in_error: false,
             message: "Car retrieved successfully",
-            data: new CarResource($car)
+            status_code: self::API_SUCCESS,
+            data: CarTransformer::summary($car)
         );
     }
 
-    public function getDealerCars($sellerId): JsonResponse
+    public function getDealerCars($dealerId): JsonResponse
     {
         $cars = \App\Models\Car::with(['brand', 'model', 'images'])
-            ->where('seller_id', $sellerId)
+            ->where('dealer_id', $dealerId)
             ->where('status', 'active')
             ->paginate(15);
+
+        $items = $cars->getCollection()
+            ->load(['brand', 'model', 'images', 'dealer'])
+            ->map(fn ($car) => CarTransformer::summary($car))
+            ->all();
+
+        $payload = [
+            'items' => $items,
+            'meta'  => [
+                'current_page' => $cars->currentPage(),
+                'last_page'    => $cars->lastPage(),
+                'per_page'     => $cars->perPage(),
+                'total'        => $cars->total(),
+            ],
+        ];
 
         return $this->apiResponse(
             in_error: false,
             message: "Dealer cars retrieved successfully",
-            data: CarResource::collection($cars)->response()->getData(true)
+            status_code: self::API_SUCCESS,
+            data: $payload
         );
     }
 }

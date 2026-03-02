@@ -15,27 +15,75 @@ class CarService
     public function createCar(Dealer $dealer, array $data): Car
     {
         return DB::transaction(function () use ($dealer, $data) {
-            $data['dealer_id'] = $dealer->id;
-            $data['car_slug']  = Str::uuid();
-            $data['status']    = 'pending';
 
-            // Gallery images
+            $data['dealer_id']   = $dealer->id;
+            $data['car_slug']    = Str::uuid();
+            $data['is_published']= $data['is_published'] ?? false;
+
+            // ------------------------------------------------
+            // Status handling
+            // ------------------------------------------------
+            if (! empty($data['dealer_code'])) {
+                // Requires sponsor dealer + admin approval before publish
+                $data['status']          = 'pending_sponsor_approval';
+                $data['dealer_approval'] = false;
+                $data['admin_approval']  = false;
+            } elseif (($data['status'] ?? null) === 'draft') {
+                $data['status']          = 'draft';
+                $data['dealer_approval'] = false;
+                $data['admin_approval']  = false;
+            } else {
+                // Default to draft – explicit publish happens via dedicated endpoint
+                $data['status']          = 'draft';
+                $data['dealer_approval'] = false;
+                $data['admin_approval']  = false;
+            }
+
+            // ------------------------------------------------
+            // Process Images
+            // ------------------------------------------------
             if (isset($data['images']) && is_array($data['images'])) {
                 $data['images'] = array_values(array_filter(array_map(function ($img) {
-                    if (! is_string($img)) {return null;}
-                    return str_starts_with($img, 'data:') ? static::base64ImageDecode($img) : $img;
+                    if (! is_string($img)) {
+                        return null;
+                    }
+                    return str_starts_with($img, 'data:')
+                        ? static::base64ImageDecode($img)
+                        : $img;
                 }, $data['images'])));
             }
 
+            // ------------------------------------------------
+            // Create Car
+            // ------------------------------------------------
             $car = Car::create($data);
-
-            // Upload and save images
-            // $this->uploadImages($car, $images);
 
             return $car->load(['brand', 'model', 'images']);
         });
     }
 
+    public function updateCar(Car $car, array $data): Car
+    {
+        return DB::transaction(function () use ($car, $data) {
+            // dealer_id & slug are immutable here
+            unset($data['dealer_id'], $data['car_slug']);
+
+            if (isset($data['images']) && is_array($data['images'])) {
+                $data['images'] = array_values(array_filter(array_map(function ($img) {
+                    if (! is_string($img)) {
+                        return null;
+                    }
+                    return str_starts_with($img, 'data:')
+                        ? static::base64ImageDecode($img)
+                        : $img;
+                }, $data['images'])));
+            }
+
+            $car->update($data);
+
+            return $car->fresh()->load(['brand', 'model', 'images']);
+        });
+    }
     // public function uploadImages(Car $car, array $images): void
     // {
     //     $sortOrder = 0;

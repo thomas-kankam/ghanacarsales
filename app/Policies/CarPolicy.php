@@ -3,32 +3,32 @@
 namespace App\Policies;
 
 use App\Models\Car;
-use App\Models\Seller;
+use App\Models\Dealer;
 
 class CarPolicy
 {
-    public function viewAny(Seller $seller): bool
+    public function viewAny(Dealer $dealer): bool
     {
         return true;
     }
 
-    public function view(Seller $seller, Car $car): bool
+    public function view(Dealer $dealer, Car $car): bool
     {
-        return $seller->id === $car->seller_id;
+        return $dealer->id === $car->dealer_id;
     }
 
-    public function create(Seller $seller): bool
+    public function create(Dealer $dealer): bool
     {
-        return $seller->mobile_verified_at !== null && $seller->terms_accepted;
+        return $dealer->phone_verified_at !== null && $dealer->terms_accepted;
     }
 
-    public function update(Seller $seller, Car $car): bool
+    public function update(Dealer $dealer, Car $car): bool
     {
-        return $seller->id === $car->seller_id && $car->status !== 'sold';
+        return $dealer->id === $car->dealer_id && $car->status !== 'sold';
     }
 
-    public function delete(Seller $seller, Car $car): bool
+    public function delete(Dealer $dealer, Car $car): bool
     {
-        return $seller->id === $car->seller_id && $car->status !== 'sold';
+        return $dealer->id === $car->dealer_id && $car->status !== 'sold';
     }
 }

@@ -14,5 +14,31 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    $routes = collect(app('router')->getRoutes())
+        ->filter(function ($route) {
+            return str_starts_with($route->uri(), 'api/');
+        })
+        ->map(function ($route) {
+            return [
+                'method' => implode('|', $route->methods()),
+                'path'   => '/' . ltrim($route->uri(), '/'),
+                'name'   => $route->getName(),
+            ];
+        })
+        ->groupBy(function ($route) {
+            if (str_starts_with($route['path'], '/api/admin')) {
+                return 'Admin';
+            }
+            if (str_starts_with($route['path'], '/api/dealer')) {
+                return 'Dealer';
+            }
+            return 'Public';
+        })
+        ->toArray();
+
+    return response()->json([
+        'name'        => config('app.name', 'GhanaCarSales API'),
+        'description' => 'HTTP API endpoints for dealers, buyers, and admins.',
+        'groups'      => $routes,
+    ]);
 });

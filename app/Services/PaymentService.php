@@ -3,19 +3,20 @@
 namespace App\Services;
 
 use App\Models\Car;
+use App\Models\Dealer;
 use App\Models\Payment;
 use App\Models\PaymentCar;
-use App\Models\Seller;
+use App\Models\Subscription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Seller $seller, array $carIds, int $durationDays = 30): Payment
+    public function createPayment(Dealer $dealer, array $carIds, int $durationDays = 30): Payment
     {
-        return DB::transaction(function () use ($seller, $carIds, $durationDays) {
+        return DB::transaction(function () use ($dealer, $carIds, $durationDays) {
             $cars = Car::whereIn('id', $carIds)
-                ->where('seller_id', $seller->id)
+                ->where('dealer_id', $dealer->id)
                 ->where('status', 'pending')
                 ->get();
 
@@ -26,13 +27,13 @@ class PaymentService
             $totalAmount = $this->calculateAmount($cars->count(), $durationDays);
 
             $payment = Payment::create([
-                'payment_slug' => Str::uuid(),
-                'seller_id' => $seller->id,
-                'payment_type' => $cars->count() > 1 ? 'cart' : 'single',
-                'amount' => $totalAmount,
+                'payment_slug'   => Str::uuid(),
+                'dealer_id'      => $dealer->id,
+                'payment_type'   => $cars->count() > 1 ? 'cart' : 'single',
+                'amount'         => $totalAmount,
                 'payment_method' => 'momo',
-                'status' => 'pending',
-                'duration_days' => $durationDays,
+                'status'         => 'pending',
+                'duration_days'  => $durationDays,
             ]);
 
             foreach ($cars as $car) {
@@ -50,13 +51,25 @@ class PaymentService
     {
         return DB::transaction(function () use ($payment, $transactionId) {
             $payment->update([
-                'status' => 'completed',
-                'transaction_id' => $transactionId,
+                'status'        => 'completed',
+                'transaction_id'=> $transactionId,
             ]);
 
-            $carService = new CarService();
-            foreach ($payment->paymentCars as $paymentCar) {
-                $carService->activateCar($paymentCar->car, $payment->duration_days);
+            if ($payment->payment_type === 'subscription') {
+                $subscription = Subscription::find($payment->subscription_id);
+                if ($subscription) {
+                    $subscription->update([
+                        'status'          => 'active',
+                        'starts_at'       => now(),
+                        'ends_at'         => now()->addDays($payment->duration_days),
+                        'last_payment_id' => $payment->id,
+                    ]);
+                }
+            } else {
+                $carService = new CarService();
+                foreach ($payment->paymentCars as $paymentCar) {
+                    $carService->activateCar($paymentCar->car, $payment->duration_days);
+                }
             }
 
             return true;
@@ -72,9 +85,9 @@ class PaymentService
         return $carCount * $basePrice * ($durationDays * $dailyRate);
     }
 
-    public function getPaymentSummary(Seller $seller): array
+    public function getPaymentSummary(Dealer $dealer): array
     {
-        $pendingCars = Car::where('seller_id', $seller->id)
+        $pendingCars = Car::where('dealer_id', $dealer->id)
             ->where('status', 'pending')
             ->with(['brand', 'model'])
             ->get();

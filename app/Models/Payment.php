@@ -13,22 +13,29 @@ class Payment extends Model
     protected $fillable = [
         'payment_slug',
         'dealer_id',
+        'subscription_id',
+        'plan_id',
         'payment_type',
         'amount',
         'phone_number',
         'payment_method',
+        'provider',
+        'channel',
         'status',
         'network',
         'transaction_id',
+        'reference',
         'duration_days',
         'expires_at',
         'metadata',
+        'raw_callback',
     ];
 
     protected $casts = [
-        'amount'     => 'decimal:2',
-        'expires_at' => 'datetime',
-        'metadata'   => 'array',
+        'amount'      => 'decimal:2',
+        'expires_at'  => 'datetime',
+        'metadata'    => 'array',
+        'raw_callback'=> 'array',
     ];
 
     public function dealer(): BelongsTo
@@ -39,5 +46,15 @@ class Payment extends Model
     public function paymentCars(): HasMany
     {
         return $this->hasMany(PaymentCar::class);
+    }
+
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
     }
 }

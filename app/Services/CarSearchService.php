@@ -10,7 +10,7 @@ class CarSearchService
 {
     public function search(array $filters, int $perPage = 15): LengthAwarePaginator
     {
-        $query = Car::with(['brand', 'model', 'images'])
+        $query = Car::query()
             ->where('status', 'active');
 
         $this->applyFilters($query, $filters);
@@ -21,12 +21,12 @@ class CarSearchService
 
     protected function applyFilters(Builder $query, array $filters): void
     {
-        if (isset($filters['brand_id'])) {
-            $query->where('brand_id', $filters['brand_id']);
+        if (isset($filters['brand'])) {
+            $query->where('brand', $filters['brand']);
         }
 
-        if (isset($filters['model_id'])) {
-            $query->where('model_id', $filters['model_id']);
+        if (isset($filters['model'])) {
+            $query->where('model', $filters['model']);
         }
 
         if (isset($filters['min_year'])) {

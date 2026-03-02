@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('model');
             $table->year('year_of_manufacture');
             $table->integer('mileage');
-            $table->enum('mileage_unit', ['kilometers', 'miles'])->default('kilometers');
+            // $table->enum('mileage_unit', ['kilometers', 'miles'])->default('kilometers');
             $table->decimal('price', 15, 2);
             $table->boolean('swap_deals')->default(false);
             $table->boolean('aircon')->default(false);

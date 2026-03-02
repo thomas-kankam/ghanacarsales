@@ -1,8 +1,16 @@
 <?php
 
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\BillingController as AdminBillingController;
+use App\Http\Controllers\Admin\CarController as AdminCarController;
+use App\Http\Controllers\Admin\DealerController as AdminDealerController;
+use App\Http\Controllers\Admin\MetricsController as AdminMetricsController;
+use App\Http\Controllers\Admin\PlanController as AdminPlanController;
+use App\Http\Controllers\Buyer\CarController as BuyerCarController;
 use App\Http\Controllers\Dealer\DealerAuthController;
 use App\Http\Controllers\Dealer\DealerCarController;
 use App\Http\Controllers\Dealer\PaymentController;
+use App\Http\Controllers\Dealer\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,10 +30,46 @@ use Illuminate\Support\Facades\Route;
 // });
 
 // Admin routes (admin.car.com)
-// Route::prefix('v1/admin')->group(function () {
-//     Route::post('/register', [\App\Http\Controllers\Api\V1\Admin\AuthController::class, 'register']);
-//     Route::post('/login', [\App\Http\Controllers\Api\V1\Admin\AuthController::class, 'login']);
-// });
+Route::prefix('admin')->group(function () {
+    Route::post('/register', [AdminAuthController::class, 'register']);
+    Route::post('/login', [AdminAuthController::class, 'login']);
+
+    Route::middleware(['auth:admin'])->group(function () {
+        // Dealers
+        Route::get('/dealers', [AdminDealerController::class, 'index']);
+        Route::get('/dealers/{id}', [AdminDealerController::class, 'show']);
+        Route::put('/dealers/{id}', [AdminDealerController::class, 'update']);
+        Route::delete('/dealers/{id}', [AdminDealerController::class, 'destroy']);
+        Route::get('/dealers/trashed/list', [AdminDealerController::class, 'trashed']);
+        Route::post('/dealers/{id}/restore', [AdminDealerController::class, 'restore']);
+        Route::delete('/dealers/{id}/force', [AdminDealerController::class, 'forceDelete']);
+
+        // Cars
+        Route::get('/cars', [AdminCarController::class, 'index']);
+        Route::get('/cars/{id}', [AdminCarController::class, 'show']);
+        Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
+        Route::post('/cars/{id}/reject', [AdminCarController::class, 'reject']);
+        Route::post('/cars/{id}/force-expire', [AdminCarController::class, 'forceExpire']);
+        Route::delete('/cars/{id}', [AdminCarController::class, 'destroy']);
+        Route::get('/cars/trashed/list', [AdminCarController::class, 'trashed']);
+        Route::post('/cars/{id}/restore', [AdminCarController::class, 'restore']);
+        Route::delete('/cars/{id}/force', [AdminCarController::class, 'forceDelete']);
+
+        // Plans
+        Route::get('/plans', [AdminPlanController::class, 'index']);
+        Route::post('/plans', [AdminPlanController::class, 'store']);
+        Route::put('/plans/{id}', [AdminPlanController::class, 'update']);
+        Route::delete('/plans/{id}', [AdminPlanController::class, 'destroy']);
+
+        // Billing
+        Route::get('/payments', [AdminBillingController::class, 'payments']);
+        Route::get('/subscriptions', [AdminBillingController::class, 'subscriptions']);
+
+        // Metrics & health
+        Route::get('/metrics', [AdminMetricsController::class, 'metrics']);
+        Route::get('/health', [AdminMetricsController::class, 'health']);
+    });
+});
 
 // Dealer routes (dealer.car.com)
 Route::prefix('dealer')->group(function () {
@@ -39,13 +83,37 @@ Route::prefix('dealer')->group(function () {
     // Protected routes
     Route::middleware(['auth:dealer'])->group(function () {
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
+
+        // Legacy car routes
         Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{id}', [DealerCarController::class, 'singleCar']);
         Route::delete('/delete_car/{id}', [DealerCarController::class, 'deleteCar']);
 
+        // New listings CRUD
+        Route::get('/listings', [DealerCarController::class, 'listCars']);
+        Route::post('/listings', [DealerCarController::class, 'uploadCar']);
+        Route::put('/listings/{id}', [DealerCarController::class, 'updateCar']);
+
+        // Draft workflow
+        Route::get('/drafts', [DealerCarController::class, 'listDrafts']);
+        Route::get('/drafts/{id}', [DealerCarController::class, 'getDraft']);
+        Route::post('/drafts', [DealerCarController::class, 'saveDraft']);
+        Route::post('/drafts/{id}/publish', [DealerCarController::class, 'publishDraft']);
+
+        // Sponsor approvals
+        Route::get('/approvals', [DealerCarController::class, 'approvals']);
+        Route::post('/approvals/{id}/approve', [DealerCarController::class, 'approveCar']);
+        Route::post('/approvals/{id}/reject', [DealerCarController::class, 'rejectCar']);
+
         Route::get('/payment/summary', [PaymentController::class, 'getSummary']);
         Route::post('/payment/create', [PaymentController::class, 'createPayment']);
+
+        // Subscription & plans
+        Route::get('/plans', [SubscriptionController::class, 'plans']);
+        Route::get('/subscription', [SubscriptionController::class, 'current']);
+        Route::get('/payments', [SubscriptionController::class, 'payments']);
+        Route::post('/subscribe', [SubscriptionController::class, 'subscribe']);
     });
 
     // Payment callback (public)
@@ -64,3 +132,8 @@ Route::prefix('dealer')->group(function () {
 //     Route::post('/alerts', [\App\Http\Controllers\Api\V1\Buyer\AlertController::class, 'create']);
 //     Route::post('/alerts/deactivate', [\App\Http\Controllers\Api\V1\Buyer\AlertController::class, 'deactivate']);
 // });
+
+// Public buyer catalog
+Route::get('/cars', [BuyerCarController::class, 'search'])->middleware('throttle:search');
+Route::get('/cars/{id}', [BuyerCarController::class, 'show']);
+Route::get('/dealers/{dealerId}/cars', [BuyerCarController::class, 'getDealerCars']);

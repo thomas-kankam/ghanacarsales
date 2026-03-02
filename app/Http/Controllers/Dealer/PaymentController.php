@@ -14,12 +14,13 @@ class PaymentController extends Controller
 
     public function getSummary(Request $request): JsonResponse
     {
-        $seller  = $request->user();
-        $summary = $this->paymentService->getPaymentSummary($seller);
+        $dealer  = $request->user();
+        $summary = $this->paymentService->getPaymentSummary($dealer);
 
         return $this->apiResponse(
             in_error: false,
             message: "Payment summary retrieved successfully",
+            status_code: self::API_SUCCESS,
             data: $summary
         );
     }
@@ -32,9 +33,9 @@ class PaymentController extends Controller
             'duration_days' => 'required|in:30,90',
         ]);
 
-        $seller  = $request->user();
+        $dealer  = $request->user();
         $payment = $this->paymentService->createPayment(
-            $seller,
+            $dealer,
             $request->car_ids,
             $request->duration_days
         );
@@ -72,6 +73,7 @@ class PaymentController extends Controller
         return $this->apiResponse(
             in_error: false,
             message: "Payment processed",
+            status_code: self::API_SUCCESS,
             data: ['payment' => $payment]
         );
     }
