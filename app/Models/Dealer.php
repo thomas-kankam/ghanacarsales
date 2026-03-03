@@ -37,18 +37,33 @@ class Dealer extends Actor
         'is_onboarded'       => 'boolean',
     ];
 
+    public function getRouteKeyName()
+    {
+        return "dealer_slug";
+    }
+
+    public function hasVerifiedEmail()
+    {
+        return $this->email_verified_at != null;
+    }
+
+    public function hasVerifiedPhone()
+    {
+        return $this->phone_verified_at != null;
+    }
+
     public function cars(): HasMany
     {
-        return $this->hasMany(Car::class);
+        return $this->hasMany(Car::class, 'dealer_slug', 'dealer_slug');
     }
 
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Payment::class, 'dealer_id', 'id');
     }
 
-    public function subscriptions(): HasMany
+    protected function subscription()
     {
-        return $this->hasMany(Subscription::class);
+        return $this->hasOne(Subscription::class, 'dealer_slug', 'dealer_slug');
     }
 }

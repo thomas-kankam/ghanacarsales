@@ -108,7 +108,6 @@ class DealerAuthController extends Controller
         $dealer->update([
             'email_verified_at' => now(),
             'phone_verified_at' => now(),
-            // 'is_active'         => true,
         ]);
 
         $userWithToken = self::apiToken($dealer);

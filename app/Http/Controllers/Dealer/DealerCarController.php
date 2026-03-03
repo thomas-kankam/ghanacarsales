@@ -27,6 +27,7 @@ class DealerCarController extends Controller
         // $images = $request->file('images');
 
         $car = $this->carService->createCar($dealer, $data);
+        $car->load('dealer');
 
         // Check if this car matches any buyer alerts (only if car is active)
         // Note: New cars start as 'pending', alerts will be checked when status changes to 'active' via Observer
@@ -42,8 +43,8 @@ class DealerCarController extends Controller
 
     public function saveDraft(CarUploadRequest $request): JsonResponse
     {
-        $dealer = $request->user();
-        $data   = $request->validated();
+        $dealer         = $request->user();
+        $data           = $request->validated();
         $data['status'] = 'draft';
 
         $car = $this->carService->createCar($dealer, $data);
@@ -67,7 +68,7 @@ class DealerCarController extends Controller
 
         $items = $cars->getCollection()
             ->load(['brand', 'model', 'images', 'dealer'])
-            ->map(fn ($car) => CarTransformer::summary($car))
+            ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [
@@ -100,7 +101,7 @@ class DealerCarController extends Controller
 
         $items = $cars->getCollection()
             ->load(['brand', 'model', 'images', 'dealer'])
-            ->map(fn ($car) => CarTransformer::summary($car))
+            ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [

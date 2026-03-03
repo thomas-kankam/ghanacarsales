@@ -41,7 +41,7 @@ trait Helpers
             $image_data      = substr($base64_image, strpos($base64_image, ',') + 1);
 
             $fileName  = Str::random(15) . '.' . $image_extension;
-            $file_path = "uploads/images/" . $fileName;
+            $file_path = "uploads/cars/" . $fileName;
 
             Storage::disk("public")->put($file_path, base64_decode($image_data));
             return config("custom.urls.backend_url") . "/" . "storage/" . $file_path;

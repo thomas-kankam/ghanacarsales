@@ -17,6 +17,7 @@ class CarUploadRequest extends FormRequest
             'model'               => ['nullable'],
             'year_of_manufacture' => ['nullable', 'integer', 'max:' . (date('Y') + 1)],
             'mileage'             => ['nullable', 'integer', 'min:0'],
+            'mileage_unit'        => ['nullable', 'string'],
             // 'mileage_unit'        => ['nullable', 'in:kilometers,miles'],
             'colour'              => ['nullable', 'string', 'max:50'],
             'price'               => ['nullable', 'numeric', 'min:0'],
@@ -33,9 +34,9 @@ class CarUploadRequest extends FormRequest
             "images"              => ["nullable", "array"],
             // 'images.*'            => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
             "images.*"            => ["string", "starts_with:data:,http://,https://"],
-            "is_published"        => ["nullable", "boolean"],
-            "dealer_code"         => ["nullable", "string", "exists:dealers,dealer_code"],
-            "package_name"        => ["nullable", "string"],
+            // "is_published"        => ["nullable", "boolean"],
+            // "dealer_code"         => ["nullable", "string", "exists:dealers,dealer_code"],
+            // "package_name"        => ["nullable", "string"],
             "status"              => ["nullable", "string"],
         ];
     }

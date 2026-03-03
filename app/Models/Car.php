@@ -4,7 +4,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Car extends Model
@@ -31,30 +30,35 @@ class Car extends Model
         'images',
         'status',
         'description',
-        'expires_at',
-        'payment_made_at',
-        'admin_approval',
-        'dealer_approval',
-        'dealer_code',
-        'is_published',
+        // 'expires_at',
+        // 'payment_made_at',
+        // 'admin_approval',
+        // 'dealer_approval',
+        // 'dealer_code',
+        // 'is_published',
     ];
 
     protected $casts = [
         'swap_deals'      => 'boolean',
         'aircon'          => 'boolean',
         'registered'      => 'boolean',
-        'admin_approval'  => 'boolean',
-        'dealer_approval' => 'boolean',
-        'is_published'    => 'boolean',
+        // 'admin_approval'  => 'boolean',
+        // 'dealer_approval' => 'boolean',
+        // 'is_published'    => 'boolean',
         'price'           => 'decimal:2',
-        'expires_at'      => 'datetime',
-        'payment_made_at' => 'datetime',
+        // 'expires_at'      => 'datetime',
+        // 'payment_made_at' => 'datetime',
         'images'          => 'array',
     ];
 
+    public function getRouteKeyName()
+    {
+        return "car_slug";
+    }
+
     public function dealer(): BelongsTo
     {
-        return $this->belongsTo(Dealer::class);
+        return $this->belongsTo(Dealer::class, 'dealer_id', 'id');
     }
 
 }
