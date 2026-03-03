@@ -61,13 +61,10 @@ class DealerCarController extends Controller
     public function listCars(Request $request): JsonResponse
     {
         $dealer = $request->user();
-        $cars   = $dealer->cars()
-            ->with(['brand', 'model', 'images'])
-            ->whereNull('deleted_at')
-            ->paginate(15);
+        $cars   = $dealer->cars()->whereNull('deleted_at')->paginate(15);
 
         $items = $cars->getCollection()
-            ->load(['brand', 'model', 'images', 'dealer'])
+            ->load(['dealer'])
             ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 
