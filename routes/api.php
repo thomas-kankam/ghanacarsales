@@ -79,9 +79,15 @@ Route::prefix('dealer')->group(function () {
     Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp']);
     Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp']);
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);
+    Route::post('/login', [DealerAuthController::class, 'login']);
 
     // Protected routes
     Route::middleware(['auth:dealer'])->group(function () {
+        // bio data
+        Route::put('/profile', [DealerAuthController::class, 'updateProfile']);
+        Route::post('/logout', [DealerAuthController::class, 'logout']);
+
+
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
         // Legacy car routes

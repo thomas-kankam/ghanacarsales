@@ -54,7 +54,7 @@ class Dealer extends Actor
 
     public function cars(): HasMany
     {
-        return $this->hasMany(Car::class, 'dealer_id', 'dealer_slug');
+        return $this->hasMany(Car::class, 'dealer_id', 'id');
     }
 
     public function payments(): HasMany

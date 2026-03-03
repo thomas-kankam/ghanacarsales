@@ -2,12 +2,15 @@
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dealer\DealerProfileUpdateRequest;
 use App\Http\Requests\Dealer\DealerRegisterRequest;
 use App\Http\Requests\Dealer\DealerResendotpRequest;
+use App\Http\Requests\Dealer\LoginRequest;
 use App\Http\Requests\Dealer\OtpVerifyRequest;
 use App\Http\Requests\Dealer\RegisterDealerRequest;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DealerAuthController extends Controller
@@ -193,6 +196,85 @@ class DealerAuthController extends Controller
             status_code: self::API_SUCCESS,
             data: $user_data,
             reason: "Dealer registered successfully."
+        );
+    }
+
+    public function login(LoginRequest $http_request): JsonResponse
+    {
+        $data         = $http_request->validated();
+        $email        = $data['email'];
+        $phone_number = $data['phone_number'];
+
+        $dealer = Dealer::where('email', $data['email'])
+            ->orWhere('phone_number', $data['phone_number'])
+            ->first();
+
+        $identifier = $email ?? $phone_number;
+        $channel    = isset($data['email']) ? 'email' : 'sms';
+
+        if (! $dealer) {
+            Log::info("User not found for email or phone: $identifier");
+
+            return self::apiResponse(
+                in_error: true,
+                message: "Action Unsuccessful",
+                reason: "Dealer cannot be found",
+                status_code: self::API_NOT_FOUND,
+                data: []
+            );
+        }
+
+        $otp = self::generateOtp(
+            type: "login",
+            actor_id: $dealer->dealer_slug,
+            channel: $channel,
+            guard: "dealer"
+        );
+
+        if ($email) {
+            self::sendEmail(
+                $dealer->email,
+                email_class: "App\Mail\LoginVerification",
+                parameters: [
+                    $dealer->email,
+                    $otp,
+                ]
+            );
+        } else {
+            self::sendSms($identifier, 'OTP Login code: ' . $otp, 'GHCARSALES');
+        }
+
+        $message = "OTP sent to your {$channel} for login (expires in 10 minutes)";
+
+        return self::apiResponse(
+            in_error: true,
+            message: "Action Successful",
+            status_code: self::API_SUCCESS,
+            data: $dealer->toArray(),
+            reason: $message
+        );
+    }
+
+    public function logout()
+    {
+        // Revoke user's API token
+        request()->user()->token()->revoke();
+        // Return success response
+        return self::apiResponse(in_error: false, message: "Action Successful", reason: "Logout successful", status_code: self::API_SUCCESS, data: []);
+    }
+
+    public function updateProfile(DealerProfileUpdateRequest $request)
+    {
+        $dealer = $request->user();
+
+        $dealer->update($request->validated());
+
+        return self::apiResponse(
+            in_error: false,
+            message: "Action Successful",
+            reason: "Dealer profile updated successfully",
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()
         );
     }
 }
