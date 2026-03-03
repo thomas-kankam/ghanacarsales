@@ -267,7 +267,7 @@ class DealerAuthController extends Controller
             in_error: false, // <-- FIXED (was true before)
             message: "Action Successful",
             status_code: self::API_SUCCESS,
-            data: $dealer->toArray,
+            data: $dealer?->toArray(),
             reason: "OTP sent to your {$channel} for login (expires in 10 minutes)"
         );
     }
