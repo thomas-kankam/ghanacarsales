@@ -80,7 +80,7 @@ Route::prefix('dealer')->group(function () {
     Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp']);
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);
     Route::post('/login_otp', [DealerAuthController::class, 'OtpLogin']);
-    Route::post('/login', [DealerAuthController::class, 'login']);
+    Route::post('/login', [DealerAuthController::class, 'verifyLoginOtp']);
 
     // Protected routes
     Route::middleware(['auth:dealer'])->group(function () {
