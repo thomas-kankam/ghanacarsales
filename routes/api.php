@@ -85,7 +85,7 @@ Route::prefix('dealer')->group(function () {
     // Protected routes
     Route::middleware(['auth:dealer'])->group(function () {
         // bio data
-        Route::put('/profile', [DealerAuthController::class, 'updateProfile']);
+        Route::post('/profile_update', [DealerAuthController::class, 'updateProfile']);
         Route::post('/logout', [DealerAuthController::class, 'logout']);
 
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
