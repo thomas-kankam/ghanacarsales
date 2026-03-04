@@ -18,7 +18,7 @@ class CarTransformer
             'model' => $car->model,
             'status' => $car->status,
             'price' => $car->price !== null ? (float) $car->price : null,
-            'year' => $car->year_of_manufacture,
+            'year_of_manufacture' => $car->year_of_manufacture,
             'mileage' => $car->mileage,
             'mileage_unit' => $car->mileage_unit,
             'fuel_type' => $car->fuel_type,
@@ -30,6 +30,7 @@ class CarTransformer
             'registered' => (bool) $car->registered,
             'registration_year' => $car->registration_year,
             'is_published' => (bool) $car->is_published,
+            'description' => $car->description,
             'dealer' => [
                 'id'            => $car->dealer->id ?? null,
                 'business_name' => $car->dealer->business_name ?? null,
@@ -37,10 +38,10 @@ class CarTransformer
                 'region'        => $car->dealer->region ?? null,
                 'city'          => $car->dealer->city ?? null,
                 'dealer_code'   => $car->dealer->dealer_code ?? null,
+                'dealer_slug'   => $car->dealer->dealer_slug ?? null,
             ],
             'images' => $car->images ?? [],
             'created_at' => optional($car->created_at)->toIso8601String(),
-            'expires_at' => optional($car->expires_at)->toIso8601String(),
         ];
     }
 }

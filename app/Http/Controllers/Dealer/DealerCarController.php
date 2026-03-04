@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Http\Resources\CarResource;
 use App\Models\Car;
+use App\Models\Dealer;
 use App\Services\AlertService;
 use App\Services\CarService;
 use App\Services\SubscriptionService;
@@ -37,7 +38,7 @@ class DealerCarController extends Controller
             in_error: false,
             message: "Car uploaded successfully",
             status_code: self::API_CREATED,
-            data: new CarResource($car),
+            data: CarTransformer::summary($car),
             reason: "Car uploaded successfully and is pending review. It will be activated within 24 hours if it meets our guidelines."
         );
     }
@@ -53,7 +54,7 @@ class DealerCarController extends Controller
             in_error: false,
             message: "Draft saved successfully",
             status_code: self::API_CREATED,
-            data: new CarResource($car),
+            data: CarTransformer::summary($car),
             reason: "Car draft created successfully."
         );
     }
@@ -124,7 +125,7 @@ class DealerCarController extends Controller
             in_error: false,
             message: "Car retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: new CarResource($car)
+            data: CarTransformer::summary($car)
         );
     }
 
@@ -136,7 +137,7 @@ class DealerCarController extends Controller
             in_error: false,
             message: "Draft retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: new CarResource($car)
+            data: CarTransformer::summary($car)
         );
     }
 
@@ -150,7 +151,7 @@ class DealerCarController extends Controller
             in_error: false,
             message: "Car updated successfully",
             status_code: self::API_SUCCESS,
-            data: new CarResource($car)
+            data: CarTransformer::summary($car)
         );
     }
 
@@ -178,50 +179,96 @@ class DealerCarController extends Controller
         );
     }
 
-    public function publishDraft(Request $request, Car $car): JsonResponse
+    // public function publishDraft(Request $request, Car $car): JsonResponse
+    // {
+    //     $dealer = $request->user();
+
+    //     if ($car->dealer_slug !== $dealer->dealer_slug) {
+    //         return $this->apiResponse(
+    //             in_error: true,
+    //             message: "Unauthorized action.",
+    //             status_code: self::API_FORBIDDEN,
+    //             reason: "Unauthorized action."
+    //         );
+    //     }
+
+    //     $subscription = $this->subscriptionService->getCurrentSubscription($dealer);
+    //     if (! $subscription || ! $subscription->plan) {
+    //         return $this->apiResponse(
+    //             in_error: true,
+    //             message: "No active subscription plan. Please subscribe to a plan before publishing.",
+    //             status_code: self::API_FORBIDDEN
+    //         );
+    //     }
+
+    //     $activeCount = $dealer->cars()
+    //         ->whereIn('status', ['active', 'pending_admin_approval'])
+    //         ->count();
+
+    //     if ($activeCount >= $subscription->plan->publish_quota) {
+    //         return $this->apiResponse(
+    //             in_error: true,
+    //             message: "Publish quota exceeded for current subscription plan.",
+    //             status_code: self::API_FORBIDDEN
+    //         );
+    //     }
+
+    //     $car->update([
+    //         'status' => 'active',
+    //     ]);
+
+    //     return $this->apiResponse(
+    //         in_error: false,
+    //         message: "Car published successfully",
+    //         status_code: self::API_SUCCESS,
+    //         data: new CarResource($car->fresh('brand', 'model', 'images')),
+    //         reason: "Car published successfully."
+    //     );
+    // }
+
+    public function publishAllDrafts(): JsonResponse
     {
-        $dealer = $request->user();
+        $dealer_slug = auth()->user()->dealer_slug;
 
-        if ($car->dealer_slug !== $dealer->dealer_slug) {
+        // Find the dealer first
+        $dealer = Dealer::where('dealer_slug', $dealer_slug)->first();
+
+        if (! $dealer) {
             return $this->apiResponse(
                 in_error: true,
-                message: "Unauthorized action.",
-                status_code: self::API_FORBIDDEN,
-                reason: "Unauthorized action."
+                message: "Dealer not found",
+                status_code: self::API_NOT_FOUND,
+                data: []
             );
         }
 
-        $subscription = $this->subscriptionService->getCurrentSubscription($dealer);
-        if (! $subscription || ! $subscription->plan) {
+        // Get all draft cars for this dealer
+        $draftCars = Car::where('dealer_slug', $dealer_slug)
+            ->where('status', 'draft')
+            ->get();
+
+        if ($draftCars->isEmpty()) {
             return $this->apiResponse(
                 in_error: true,
-                message: "No active subscription plan. Please subscribe to a plan before publishing.",
-                status_code: self::API_FORBIDDEN
+                message: "No draft cars found for this dealer",
+                status_code: self::API_NOT_FOUND,
+                data: []
             );
         }
 
-        $activeCount = $dealer->cars()
-            ->whereIn('status', ['active', 'pending_admin_approval'])
-            ->count();
-
-        if ($activeCount >= $subscription->plan->publish_quota) {
-            return $this->apiResponse(
-                in_error: true,
-                message: "Publish quota exceeded for current subscription plan.",
-                status_code: self::API_FORBIDDEN
-            );
+        // Update all draft cars to pending_approval
+        foreach ($draftCars as $car) {
+            $car->update(['status' => 'pending_approval']);
         }
 
-        $car->update([
-            'status' => 'active',
-        ]);
+        // Transform the updated cars for response
+        $updatedCars = $draftCars->map(fn($car) => CarTransformer::summary($car))->toArray();
 
         return $this->apiResponse(
             in_error: false,
-            message: "Car published successfully",
+            message: "All draft cars published successfully",
             status_code: self::API_SUCCESS,
-            data: new CarResource($car->fresh('brand', 'model', 'images')),
-            reason: "Car published successfully."
+            data: $updatedCars,
         );
     }
 
