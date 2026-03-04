@@ -36,19 +36,16 @@ trait Helpers
 
     protected static function base64ImageDecode(string $base64_image)
     {
-        if (! preg_match('/^data:image\/(\w+);base64,/', $base64_image, $matches)) {
-            return null;
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64_image, $matches)) {
+            $image_extension = $matches[1];
+            $image_data      = substr($base64_image, strpos($base64_image, ',') + 1);
+
+            $fileName  = Str::random(15) . '.' . $image_extension;
+            $file_path = "uploads/cars/" . $fileName;
+
+            Storage::disk("public")->put($file_path, base64_decode($image_data));
+            return config("custom.urls.backend_url") . "/public" . "/storage/" . $file_path;
         }
-
-        $image_extension = $matches[1];
-        $image_data      = substr($base64_image, strpos($base64_image, ',') + 1);
-
-        $fileName  = Str::random(15) . '.' . $image_extension;
-        $file_path = "uploads/cars/" . $fileName;
-
-        Storage::disk("public")->put($file_path, base64_decode($image_data));
-
-        return Storage::disk('public')->url($file_path);
     }
 
     protected static function deleteImage(?string $image_path): bool
