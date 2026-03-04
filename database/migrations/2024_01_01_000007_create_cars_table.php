@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('cars', function (Blueprint $table) {
             $table->id();
             $table->uuid('car_slug')->unique();
-            $table->string('dealer_id');
+            $table->string('dealer_slug')->nullable();
             $table->string('brand');
             $table->string('model');
             $table->year('year_of_manufacture');

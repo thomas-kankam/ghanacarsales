@@ -93,17 +93,17 @@ Route::prefix('dealer')->group(function () {
         // Legacy car routes
         Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
-        Route::get('/single_car/{id}', [DealerCarController::class, 'singleCar']);
-        Route::delete('/delete_car/{id}', [DealerCarController::class, 'deleteCar']);
+        Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
+        Route::delete('/delete_car/{car}', [DealerCarController::class, 'deleteCar']);
 
         // New listings CRUD
         Route::get('/listings', [DealerCarController::class, 'listCars']);
         Route::post('/listings', [DealerCarController::class, 'uploadCar']);
-        Route::put('/listings/{id}', [DealerCarController::class, 'updateCar']);
+        Route::put('/listings/{car}', [DealerCarController::class, 'updateCar']);
 
         // Draft workflow
         Route::get('/drafts', [DealerCarController::class, 'listDrafts']);
-        Route::get('/drafts/{id}', [DealerCarController::class, 'getDraft']);
+        Route::get('/drafts/{car}', [DealerCarController::class, 'getDraft']);
         Route::post('/drafts', [DealerCarController::class, 'saveDraft']);
         Route::post('/drafts/{id}/publish', [DealerCarController::class, 'publishDraft']);
 

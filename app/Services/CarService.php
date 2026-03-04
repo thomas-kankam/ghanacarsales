@@ -16,8 +16,8 @@ class CarService
     {
         return DB::transaction(function () use ($dealer, $data) {
 
-            $data['dealer_id'] = $dealer->id;
-            $data['car_slug']  = Str::uuid();
+            $data['dealer_slug'] = $dealer->dealer_slug;
+            $data['car_slug']    = Str::uuid();
 
             if (isset($data['images']) && is_array($data['images'])) {
                 $data['images'] = array_values(array_filter(array_map(function ($img) {
@@ -40,7 +40,7 @@ class CarService
     {
         return DB::transaction(function () use ($car, $data) {
             // dealer_id & slug are immutable here
-            unset($data['dealer_id'], $data['car_slug']);
+            unset($data['dealer_slug'], $data['car_slug']);
 
             if (isset($data['images']) && is_array($data['images'])) {
                 $data['images'] = array_values(array_filter(array_map(function ($img) {
@@ -55,7 +55,7 @@ class CarService
 
             $car->update($data);
 
-            return $car->fresh()->load(['brand', 'model', 'images']);
+            return $car;
         });
     }
 

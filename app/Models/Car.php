@@ -12,7 +12,7 @@ class Car extends Model
 
     protected $fillable = [
         'car_slug',
-        'dealer_id',
+        'dealer_slug',
         'brand',
         'model',
         'year_of_manufacture',
@@ -39,16 +39,16 @@ class Car extends Model
     ];
 
     protected $casts = [
-        'swap_deals'      => 'boolean',
-        'aircon'          => 'boolean',
-        'registered'      => 'boolean',
+        'swap_deals' => 'boolean',
+        'aircon'     => 'boolean',
+        'registered' => 'boolean',
         // 'admin_approval'  => 'boolean',
         // 'dealer_approval' => 'boolean',
         // 'is_published'    => 'boolean',
-        'price'           => 'decimal:2',
+        'price'      => 'decimal:2',
         // 'expires_at'      => 'datetime',
         // 'payment_made_at' => 'datetime',
-        'images'          => 'array',
+        'images'     => 'array',
     ];
 
     public function getRouteKeyName()
@@ -56,9 +56,8 @@ class Car extends Model
         return "car_slug";
     }
 
-    public function dealer(): BelongsTo
+    public function dealer()
     {
-        return $this->belongsTo(Dealer::class, 'dealer_id', 'id');
+        return $this->belongsTo(Dealer::class,'dealer_slug','dealer_slug');
     }
-
 }

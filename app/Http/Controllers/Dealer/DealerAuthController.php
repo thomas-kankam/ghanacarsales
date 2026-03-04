@@ -9,6 +9,9 @@ use App\Http\Requests\Dealer\LoginRequest;
 use App\Http\Requests\Dealer\OtpVerifyRequest;
 use App\Http\Requests\Dealer\RegisterDealerRequest;
 use App\Http\Requests\Dealer\VerifyLoginOtpRequest;
+use App\Jobs\SendEmailJob;
+use App\Mail\EmailVerification;
+use App\Mail\LoginVerification;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -62,14 +65,19 @@ class DealerAuthController extends Controller
         );
 
         if ($channel === 'email') {
-            self::sendEmail(
+            SendEmailJob::dispatch(
                 $dealer->email,
-                email_class: "App\Mail\EmailVerification",
-                parameters: [
-                    $dealer->email,
-                    $otp,
-                ]
+                [$dealer->full_name, $otp],
+                EmailVerification::class
             );
+            // self::sendEmail(
+            //     $dealer->email,
+            //     email_class: "App\Mail\EmailVerification",
+            //     parameters: [
+            //         $dealer->email,
+            //         $otp,
+            //     ]
+            // );
         } else {
             self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
         }
@@ -150,14 +158,19 @@ class DealerAuthController extends Controller
         );
 
         if ($channel === 'email') {
-            self::sendEmail(
-                $identifier,
-                email_class: "App\Mail\EmailVerification",
-                parameters: [
-                    $identifier,
-                    $otp,
-                ]
+            SendEmailJob::dispatch(
+                $dealer->email,
+                [$dealer->full_name, $otp],
+                EmailVerification::class
             );
+            // self::sendEmail(
+            //     $identifier,
+            //     email_class: "App\Mail\EmailVerification",
+            //     parameters: [
+            //         $identifier,
+            //         $otp,
+            //     ]
+            // );
         } else {
             self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
         }
@@ -244,15 +257,19 @@ class DealerAuthController extends Controller
         // Send OTP
         // -----------------------------------------
         if ($channel === 'email') {
-
-            self::sendEmail(
+            SendEmailJob::dispatch(
                 $dealer->email,
-                email_class: "App\Mail\LoginVerification",
-                parameters: [
-                    $dealer->email,
-                    $otp,
-                ]
+                [$dealer->full_name, $otp],
+                LoginVerification::class
             );
+            // self::sendEmail(
+            //     $dealer->email,
+            //     email_class: "App\Mail\LoginVerification",
+            //     parameters: [
+            //         $dealer->email,
+            //         $otp,
+            //     ]
+            // );
 
         } else {
 

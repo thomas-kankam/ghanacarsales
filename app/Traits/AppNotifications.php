@@ -1,6 +1,7 @@
 <?php
 namespace App\Traits;
 
+use App\Jobs\SendEmailJob;
 use App\Models\Actor;
 use App\Models\OtpVerification;
 use Carbon\Carbon;
@@ -142,10 +143,12 @@ trait AppNotifications
         return (int) $token;
     }
 
-    protected static function sendEmail(string $email, string $email_class, array $parameters = []): void
+    protected static function sendEmail(string $email, array $parameters, string $email_class): void
     {
         try {
             Mail::to($email)->send(new $email_class(...$parameters));
+            SendEmailJob::dispatch($email, $parameters, $email_class);
+
         } catch (\Exception $e) {
             Log::error("Failed to send email to {$email}: " . $e->getMessage());
         }
@@ -197,11 +200,6 @@ trait AppNotifications
             'message' => 'OTP verified successfully',
         ];
     }
-
-    // protected static function sendEmail(string $email, array $parameters, string $email_class): void
-    // {
-    //     Mail::to($email)->send(new $email_class(...$parameters));
-    // }
 
     // public static function sendActorResetPasswordNotification(?Actor $actor = null, string $guard)
     // {
