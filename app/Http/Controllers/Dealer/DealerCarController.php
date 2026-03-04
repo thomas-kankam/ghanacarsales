@@ -258,7 +258,7 @@ class DealerCarController extends Controller
 
         // Update all draft cars to pending_approval
         foreach ($draftCars as $car) {
-            $car->update(['status' => 'pending_approval']);
+            $car->update(['status' => 'pending']);
         }
 
         // Transform the updated cars for response
