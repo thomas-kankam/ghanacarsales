@@ -44,8 +44,8 @@ class DealerCarController extends Controller
 
     public function saveDraft(CarUploadRequest $request, Car $car): JsonResponse
     {
-        $dealer         = $request->user();
-        $data           = $request->validated();
+        $dealer = $request->user();
+        $data   = $request->validated();
 
         $car = $this->carService->createCar($dealer, $data);
 
@@ -172,7 +172,7 @@ class DealerCarController extends Controller
         return self::apiResponse(
             in_error: false,
             message: "Car deleted successfully",
-            status_code: self::API_NO_CONTENT,
+            status_code: self::API_SUCCESS,
             reason: "Car deleted successfully.",
             data: []
         );

@@ -26,6 +26,7 @@ class CarResource extends JsonResource
             'colour'              => $this->colour,
             'location'            => $this->location,
             'status'              => $this->status,
+            'description'         => $this->description,
             'images'              => $this->images,
             'dealer'              => $this->when($this->relationLoaded('dealer'), function () {
                 return [

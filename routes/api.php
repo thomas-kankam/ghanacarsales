@@ -92,6 +92,7 @@ Route::prefix('dealer')->group(function () {
 
         // Legacy car routes
         Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
+        Route::put('/update_car/{car}', [DealerCarController::class, 'updateCar']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
         Route::delete('/delete_car/{car}', [DealerCarController::class, 'deleteCar']);

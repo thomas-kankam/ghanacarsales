@@ -55,20 +55,31 @@ trait Helpers
         }
 
         try {
-            // Extract just the file path from the full URL if it's a URL
             $path = parse_url($image_path, PHP_URL_PATH);
-            if ($path) {
-                $path = str_replace('/storage/', '', $path);
-            } else {
-                $path = $image_path;
+
+            if (! $path) {
+                return false;
             }
+
+            // Remove /public if present
+            $path = str_replace('/public', '', $path);
+
+            // Remove /storage/
+            $path = str_replace('/storage/', '', $path);
+
+            // Remove leading slash
+            $path = ltrim($path, '/');
 
             if (Storage::disk('public')->exists($path)) {
                 return Storage::disk('public')->delete($path);
             }
+
             return false;
         } catch (\Exception $e) {
-            logger()->error('Failed to delete image', ['error' => $e->getMessage(), 'path' => $image_path]);
+            logger()->error('Failed to delete image', [
+                'error' => $e->getMessage(),
+                'path'  => $image_path,
+            ]);
             return false;
         }
     }
