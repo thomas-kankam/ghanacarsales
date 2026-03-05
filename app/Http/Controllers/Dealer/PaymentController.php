@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,37 +26,42 @@ class PaymentController extends Controller
         );
     }
 
-    public function createPayment(Dealer $dealer, array$data): JsonResponse
+    public function createPayment(Request $request): JsonResponse
     {
-        $request->validate([
-            'car_ids'       => 'required|array',
-            'car_ids.*'     => 'exists:cars,id',
-            'duration_days' => 'required|in:30,90',
+        $data = $request->validate([
+            'car_slugs'     => 'required|array',
+            'car_slugs.*'   => 'string|exists:cars,car_slug',
+            'plan_slug'     => 'required|string|in:free_trial,1_month,3_months',
+            'phone_number'  => 'nullable|string',
         ]);
 
-        $dealer  = $request->user();
+        $dealer = $request->user();
+        $plan = Plan::where('plan_slug', $data['plan_slug'])->first();
+        $durationDays = $plan ? (int) $plan->duration_days : ($data['plan_slug'] === 'free_trial' ? 15 : ($data['plan_slug'] === '3_months' ? 90 : 30));
+        $amount = $plan ? (float) $plan->price : 0;
+
         $payment = $this->paymentService->createPayment(
             $dealer,
-            $request->car_ids,
-            $request->duration_days
+            $data['car_slugs'],
+            $data['plan_slug'],
+            $durationDays,
+            $amount,
+            $data['phone_number'] ?? null
         );
 
-        // TODO: Integrate with MoMo payment gateway
-        // For now, return payment details
         return $this->apiResponse(
             in_error: false,
             message: "Payment created successfully",
             status_code: self::API_CREATED,
             data: [
                 'payment'     => $payment,
-                'payment_url' => route('payment.momo', ['payment' => $payment->payment_slug]),
+                'payment_url' => url("/api/dealer/payment/callback?payment_slug={$payment->payment_slug}"),
             ]
         );
     }
 
     public function callback(Request $request): JsonResponse
     {
-        // TODO: Handle MoMo payment callback
         $request->validate([
             'transaction_id' => 'required|string',
             'payment_slug'   => 'required|exists:payments,payment_slug',
@@ -74,7 +80,7 @@ class PaymentController extends Controller
             in_error: false,
             message: "Payment processed",
             status_code: self::API_SUCCESS,
-            data: ['payment' => $payment]
+            data: ['payment' => $payment->fresh()]
         );
     }
 }

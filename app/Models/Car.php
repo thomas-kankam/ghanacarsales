@@ -56,4 +56,9 @@ class Car extends Model
     {
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
+
+    public function views()
+    {
+        return $this->hasMany(View::class, 'car_slug', 'car_slug');
+    }
 }

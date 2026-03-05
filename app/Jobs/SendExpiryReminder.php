@@ -17,31 +17,35 @@ class SendExpiryReminder implements ShouldQueue
 
     public function handle(): void
     {
-        // Cars expiring in 3 days
-        $cars = Car::where('status', 'active')
-            ->whereBetween('expires_at', [now()->addDays(3), now()->addDays(3)->addHour()])
-            ->with('seller')
+        $threeDaysFromNow = now()->addDays(3);
+        $cars = Car::where('status', 'published')
+            ->whereBetween('expiry_date', [$threeDaysFromNow->copy()->startOfDay(), $threeDaysFromNow->copy()->endOfDay()])
+            ->with('dealer')
             ->get();
 
         foreach ($cars as $car) {
             try {
                 $this->sendReminder($car);
             } catch (\Exception $e) {
-                Log::error("Failed to send expiry reminder for car {$car->id}: " . $e->getMessage());
+                Log::error("Failed to send expiry reminder for car {$car->car_slug}: " . $e->getMessage());
             }
         }
     }
 
     protected function sendReminder(Car $car): void
     {
-        // Send SMS
         $message = "Your car listing expires in 3 days. Renew now to keep it active.";
-        Log::info("SMS to {$car->seller->mobile_number}: {$message}");
-
-        // Send email if available
-        if ($car->seller->email) {
-            Mail::raw($message, function ($message) use ($car) {
-                $message->to($car->seller->email)
+        $dealer = $car->dealer;
+        if (!$dealer) {
+            return;
+        }
+        if ($dealer->phone_number) {
+            Log::info("SMS to {$dealer->phone_number}: {$message}");
+            // TODO: Integrate SMS gateway (e.g. Twilio)
+        }
+        if ($dealer->email) {
+            Mail::raw($message, function ($m) use ($dealer) {
+                $m->to($dealer->email)
                     ->subject('Car Listing Expiring Soon - Ghana Car Sales');
             });
         }

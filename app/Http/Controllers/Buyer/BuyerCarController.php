@@ -47,6 +47,15 @@ class BuyerCarController extends Controller
 
     public function show(Car $car): JsonResponse
     {
+        if ($car->status !== 'published') {
+            abort(404);
+        }
+        $buyerSlug = auth('buyer')->id(); // or request header / session
+        \App\Models\View::create([
+            'car_slug'   => $car->car_slug,
+            'buyer_slug' => $buyerSlug,
+        ]);
+        $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
             message: "Car retrieved successfully",
@@ -62,7 +71,7 @@ class BuyerCarController extends Controller
             ->paginate(15);
 
         $items = $cars->getCollection()
-        // ->load(['brand', 'model', 'images', 'dealer'])
+            ->load('dealer')
             ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 

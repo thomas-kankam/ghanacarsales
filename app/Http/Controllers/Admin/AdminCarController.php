@@ -3,10 +3,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Car;
+use App\Models\Approval;
+use App\Models\Payment;
+use App\Models\Subscription;
+use App\Models\SubscriptionArchive;
 use App\Services\CarService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AdminCarController extends Controller
 {
@@ -16,7 +21,7 @@ class AdminCarController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Car::with(['dealer', 'brand', 'model', 'images']);
+        $query = Car::with(['dealer']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
@@ -48,7 +53,7 @@ class AdminCarController extends Controller
 
     public function show($id): JsonResponse
     {
-        $car = Car::with(['dealer', 'brand', 'model', 'images'])->findOrFail($id);
+        $car = Car::with(['dealer'])->findOrFail($id);
 
         return $this->apiResponse(
             in_error: false,
@@ -58,22 +63,57 @@ class AdminCarController extends Controller
         );
     }
 
-    public function approve($id): JsonResponse
+    public function approve(Request $request, $id): JsonResponse
     {
         $car = Car::findOrFail($id);
+        $durationDays = (int) ($car->duration_days ?: 15);
+        $this->carService->activateCar($car, $durationDays);
 
-        $this->carService->activateCar($car);
-
-        $car->update([
-            'admin_approval' => true,
-            'is_published'   => true,
-        ]);
+        $approval = Approval::where('car_slug', $car->car_slug)->first();
+        if ($approval) {
+            $approval->update([
+                'admin_approval'    => true,
+                'admin_approval_at'  => now(),
+                'admin_slug'        => $request->user()?->admin_slug ?? 'system',
+            ]);
+            $payment = Payment::create([
+                'payment_slug'   => Str::uuid()->toString(),
+                'dealer_slug'    => $car->dealer_slug,
+                'plan_name'      => $car->plan_name ?? 'Free Trial',
+                'plan_slug'      => $car->plan_slug ?? 'free_trial',
+                'amount'         => 0,
+                'payment_method' => 'free_trial',
+                'status'         => 'completed',
+                'duration_days'  => $durationDays,
+                'car_slugs'      => [$car->car_slug],
+            ]);
+            $subscription = Subscription::create([
+                'dealer_slug'        => $car->dealer_slug,
+                'subscription_slug'  => Str::uuid()->toString(),
+                'plan_slug'         => $car->plan_slug ?? 'free_trial',
+                'plan_name'         => $car->plan_name ?? 'Free Trial',
+                'duration_days'     => (string) $durationDays,
+                'starts_at'         => $car->start_date ?? now(),
+                'expiry_date'       => $car->expiry_date,
+                'status'            => 'active',
+                'price'             => 0,
+            ]);
+            SubscriptionArchive::create([
+                'dealer_slug'        => $car->dealer_slug,
+                'subscription_slug'  => $subscription->subscription_slug,
+                'plan_slug'          => $car->plan_slug ?? 'free_trial',
+                'plan_name'          => $car->plan_name ?? 'Free Trial',
+                'duration_days'      => (string) $durationDays,
+                'price'              => 0,
+                'status'             => 'completed',
+            ]);
+        }
 
         return $this->apiResponse(
             in_error: false,
             message: "Car approved successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->fresh('dealer', 'brand', 'model', 'images'))
+            data: CarTransformer::summary($car->fresh('dealer'))
         );
     }
 
@@ -81,10 +121,7 @@ class AdminCarController extends Controller
     {
         $car = Car::findOrFail($id);
 
-        $car->update([
-            'admin_approval' => false,
-            'status'         => 'rejected',
-        ]);
+        $car->update(['status' => 'rejected']);
 
         return $this->apiResponse(
             in_error: false,
@@ -98,8 +135,8 @@ class AdminCarController extends Controller
         $car = Car::findOrFail($id);
 
         $car->update([
-            'status'     => 'expired',
-            'expires_at' => now(),
+            'status'      => 'expired',
+            'expiry_date' => now(),
         ]);
 
         return $this->apiResponse(

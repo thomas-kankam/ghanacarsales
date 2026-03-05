@@ -18,6 +18,7 @@ class Dealer extends Actor
         'landmark',
         'business_name',
         'dealer_code',
+        'status',
         'terms_accepted',
         'terms_accepted_at',
         'is_onboarded',
@@ -49,9 +50,9 @@ class Dealer extends Actor
         return $this->hasMany(Payment::class, 'dealer_slug', 'dealer_slug');
     }
 
-    protected function subscription()
+    public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasOne(Subscription::class, 'dealer_slug', 'dealer_slug');
+        return $this->hasMany(Subscription::class, 'dealer_slug', 'dealer_slug');
     }
 
     public function approvals(): HasMany

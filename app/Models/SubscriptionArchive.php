@@ -3,32 +3,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionArchive extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'slug',
-        'price',
+        'subscription_slug',
+        'dealer_slug',
+        'plan_name',
         'duration_days',
-        'publish_quota',
-        'features',
-        'is_active',
+        'price',
+        'plan_slug',
+        'status',
     ];
 
     protected $casts = [
-        'price'         => 'decimal:2',
-        'duration_days' => 'integer',
-        'publish_quota' => 'integer',
-        'features'      => 'array',
-        'is_active'     => 'boolean',
+        'price' => 'decimal:2',
     ];
-
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(Subscription::class, 'plan_id');
-    }
 }

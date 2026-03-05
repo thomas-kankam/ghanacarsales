@@ -16,16 +16,16 @@ return new class extends Migration
             $table->string('plan_name');
             $table->string('duration_days');
             $table->timestamp('starts_at')->nullable();
-            $table->timestamp('exipry_date')->nullable();
+            $table->timestamp('expiry_date')->nullable();
             $table->string('status');
-            $table->decimal('price', 15, 2);
+            $table->decimal('price', 15, 2)->default(0);
             $table->timestamps();
 
             $table->index('dealer_slug');
             $table->index('plan_slug');
             $table->index('status');
             $table->index('starts_at');
-            $table->index('ends_at');
+            $table->index('expiry_date');
         });
     }
 

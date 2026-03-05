@@ -12,8 +12,8 @@ class AdminDealerController extends Controller
     {
         $query = Dealer::query();
 
-        if ($request->filled('is_active')) {
-            $query->where('is_active', filter_var($request->get('is_active'), FILTER_VALIDATE_BOOL));
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
         }
 
         if ($request->filled('is_onboarded')) {
@@ -32,7 +32,7 @@ class AdminDealerController extends Controller
 
     public function show($id): JsonResponse
     {
-        $dealer = Dealer::with('cars', 'payments', 'subscriptions.plan')->findOrFail($id);
+        $dealer = Dealer::with('cars', 'payments', 'subscriptions')->findOrFail($id);
 
         return $this->apiResponse(
             in_error: false,
@@ -47,7 +47,7 @@ class AdminDealerController extends Controller
         $dealer = Dealer::findOrFail($id);
 
         $data = $request->validate([
-            'is_active'    => ['nullable', 'boolean'],
+            'status'       => ['nullable', 'string', 'in:active,deactivated,suspended'],
             'is_onboarded' => ['nullable', 'boolean'],
         ]);
 

@@ -12,15 +12,15 @@ return new class extends Migration
             $table->id();
             $table->uuid('payment_slug')->unique();
             $table->string('dealer_slug');
-            $table->string('plan_name');
-            $table->string('duration_days');
+            $table->string('plan_name')->nullable();
+            $table->string('plan_slug')->nullable();
+            $table->unsignedSmallInteger('duration_days')->default(30);
             $table->string('status');
             $table->string("phone_number")->nullable();
             $table->string('network')->nullable();
             $table->string('reference_id')->nullable()->unique();
             $table->decimal('amount', 15, 2);
-            $table->string('payment_method');
-            $table->integer('duration_days')->default(30);
+            $table->string('payment_method')->nullable();
             $table->json('car_slugs')->nullable();
             $table->timestamps();
 

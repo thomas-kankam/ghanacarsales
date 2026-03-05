@@ -10,36 +10,25 @@ class Subscription extends Model
     use HasFactory;
 
     protected $fillable = [
-        'dealer_id',
-        'plan_id',
+        'dealer_slug',
+        'subscription_slug',
+        'plan_slug',
+        'plan_name',
+        'duration_days',
         'starts_at',
-        'ends_at',
+        'expiry_date',
         'status',
-        'published_count',
-        'metadata',
-        'last_payment_id',
+        'price'
     ];
 
     protected $casts = [
-        'starts_at'      => 'datetime',
-        'ends_at'        => 'datetime',
-        'published_count'=> 'integer',
-        'metadata'       => 'array',
+        'starts_at'   => 'datetime',
+        'expiry_date' => 'datetime',
     ];
 
     public function dealer(): BelongsTo
     {
-        return $this->belongsTo(Dealer::class);
-    }
-
-    public function plan(): BelongsTo
-    {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
-    }
-
-    public function lastPayment(): BelongsTo
-    {
-        return $this->belongsTo(Payment::class, 'last_payment_id');
+        return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 }
 

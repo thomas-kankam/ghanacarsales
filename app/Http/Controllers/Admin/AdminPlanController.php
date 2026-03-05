@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SubscriptionPlan;
+use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -11,10 +11,7 @@ class AdminPlanController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $plans = SubscriptionPlan::query()
-            ->when($request->filled('is_active'), function ($q) use ($request) {
-                $q->where('is_active', filter_var($request->get('is_active'), FILTER_VALIDATE_BOOL));
-            })
+        $plans = Plan::query()
             ->orderBy('price')
             ->get();
 
@@ -29,22 +26,20 @@ class AdminPlanController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'slug'          => ['nullable', 'string', 'max:255', 'unique:subscription_plans,slug'],
+            'plan_name'     => ['required', 'string', 'max:255'],
+            'plan_slug'     => ['nullable', 'string', 'max:255', 'unique:plans,plan_slug'],
             'price'         => ['required', 'numeric', 'min:0'],
             'duration_days' => ['required', 'integer', 'min:1'],
-            'publish_quota' => ['required', 'integer', 'min:1'],
             'features'      => ['nullable', 'array'],
-            'is_active'     => ['nullable', 'boolean'],
         ]);
 
-        $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $data['plan_slug'] = $data['plan_slug'] ?? Str::slug($data['plan_name']);
 
-        $plan = SubscriptionPlan::create($data);
+        $plan = Plan::create($data);
 
         return $this->apiResponse(
             in_error: false,
-            message: "Subscription plan created successfully",
+            message: "Plan created successfully",
             status_code: self::API_CREATED,
             data: $plan
         );
@@ -52,27 +47,25 @@ class AdminPlanController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        $plan = SubscriptionPlan::findOrFail($id);
+        $plan = Plan::findOrFail($id);
 
         $data = $request->validate([
-            'name'          => ['nullable', 'string', 'max:255'],
-            'slug'          => ['nullable', 'string', 'max:255', 'unique:subscription_plans,slug,' . $plan->id],
+            'plan_name'     => ['nullable', 'string', 'max:255'],
+            'plan_slug'     => ['nullable', 'string', 'max:255', 'unique:plans,plan_slug,' . $plan->id],
             'price'         => ['nullable', 'numeric', 'min:0'],
             'duration_days' => ['nullable', 'integer', 'min:1'],
-            'publish_quota' => ['nullable', 'integer', 'min:1'],
             'features'      => ['nullable', 'array'],
-            'is_active'     => ['nullable', 'boolean'],
         ]);
 
-        if (isset($data['name']) && empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
+        if (isset($data['plan_name']) && empty($data['plan_slug'])) {
+            $data['plan_slug'] = Str::slug($data['plan_name']);
         }
 
         $plan->update($data);
 
         return $this->apiResponse(
             in_error: false,
-            message: "Subscription plan updated successfully",
+            message: "Plan updated successfully",
             status_code: self::API_SUCCESS,
             data: $plan->fresh()
         );
@@ -80,14 +73,13 @@ class AdminPlanController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $plan = SubscriptionPlan::findOrFail($id);
-        $plan->update(['is_active' => false]);
+        $plan = Plan::findOrFail($id);
+        $plan->delete();
 
         return $this->apiResponse(
             in_error: false,
-            message: "Subscription plan deactivated successfully",
+            message: "Plan deleted successfully",
             status_code: self::API_SUCCESS
         );
     }
 }
-

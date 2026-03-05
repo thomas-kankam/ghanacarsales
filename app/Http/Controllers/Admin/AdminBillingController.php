@@ -11,7 +11,7 @@ class AdminBillingController extends Controller
 {
     public function payments(Request $request): JsonResponse
     {
-        $payments = Payment::with(['dealer', 'plan', 'subscription'])
+        $payments = Payment::with(['dealer'])
             ->when($request->filled('status'), function ($q) use ($request) {
                 $q->where('status', $request->get('status'));
             })
@@ -28,7 +28,7 @@ class AdminBillingController extends Controller
 
     public function subscriptions(Request $request): JsonResponse
     {
-        $subscriptions = Subscription::with(['dealer', 'plan'])
+        $subscriptions = Subscription::with(['dealer'])
             ->when($request->filled('status'), function ($q) use ($request) {
                 $q->where('status', $request->get('status'));
             })

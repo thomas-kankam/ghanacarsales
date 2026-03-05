@@ -23,37 +23,87 @@ class DealerCarController extends Controller
 
     public function uploadCar(CarUploadRequest $request): JsonResponse
     {
-        $dealer  = $request->user();
-        $data    = $request->validated();
-        $car     = $this->carService->createCar($dealer, $data);
-        // $payment = $this->paymentService->createPayment($dealer, $car);
+        $dealer = $request->user();
+        $data   = $request->validated();
+
+        $isDraft = ($data['status'] ?? '') === 'draft';
+        $planSlug = $data['plan_slug'] ?? null;
+
+        if ($isDraft) {
+            $data['status'] = 'draft';
+            $car = $this->carService->createCar($dealer, $data);
+            $car->load('dealer');
+            return $this->apiResponse(
+                in_error: false,
+                message: "Draft saved successfully",
+                status_code: self::API_CREATED,
+                data: CarTransformer::summary($car),
+                reason: "Car saved as draft. No payment created."
+            );
+        }
+
+        $durationDays = match ($planSlug) {
+            'free_trial' => 15,
+            '1_month'    => 30,
+            '3_months'   => 90,
+            default      => 30,
+        };
+        $planName = match ($planSlug) {
+            'free_trial' => 'Free Trial',
+            '1_month'    => '1 Month',
+            '3_months'   => '3 Months',
+            default      => 'Custom',
+        };
+        $data['plan_slug']     = $planSlug;
+        $data['plan_name']    = $planName;
+        $data['duration_days'] = $durationDays;
+
+        if ($planSlug === 'free_trial') {
+            $data['status'] = 'pending_sponsor_approval';
+            $car = $this->carService->createCar($dealer, $data);
+            \App\Models\Approval::create([
+                'car_slug'       => $car->car_slug,
+                'dealer_slug'    => $dealer->dealer_slug,
+                'dealer_code'    => $dealer->dealer_code,
+                'dealer_name'    => $dealer->full_name ?? $dealer->business_name,
+            ]);
+            $car->load('dealer');
+            return $this->apiResponse(
+                in_error: false,
+                message: "Car submitted for approval",
+                status_code: self::API_CREATED,
+                data: CarTransformer::summary($car),
+                reason: "Free trial listing submitted. Pending dealer and admin approval before publish."
+            );
+        }
+
+        $data['status'] = 'pending_payment';
+        $car = $this->carService->createCar($dealer, $data);
         $car->load('dealer');
-
-        // Check if this car matches any buyer alerts (only if car is active)
-        // Note: New cars start as 'pending', alerts will be checked when status changes to 'active' via Observer
-
         return $this->apiResponse(
             in_error: false,
             message: "Car uploaded successfully",
             status_code: self::API_CREATED,
-            data: CarTransformer::summary($car),
-            reason: "Car uploaded successfully and is pending review. It will be activated within 24 hours if it meets our guidelines."
+            data: array_merge(CarTransformer::summary($car), [
+                'next_step' => 'Call POST /api/dealer/payment/create with car_slugs and plan_slug to initiate payment.',
+            ]),
+            reason: "Car created. Initiate payment to publish."
         );
     }
 
-    public function saveDraft(CarUploadRequest $request, Car $car): JsonResponse
+    public function saveDraft(CarUploadRequest $request): JsonResponse
     {
         $dealer = $request->user();
         $data   = $request->validated();
-
+        $data['status'] = 'draft';
         $car = $this->carService->createCar($dealer, $data);
-
+        $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
             message: "Draft saved successfully",
             status_code: self::API_CREATED,
             data: CarTransformer::summary($car),
-            reason: "Car draft created successfully."
+            reason: "Dealer draft created successfully."
         );
     }
 
@@ -232,23 +282,34 @@ class DealerCarController extends Controller
                 in_error: false,
                 message: "No approvals pending",
                 status_code: self::API_SUCCESS,
-                data: []
+                data: ['items' => [], 'meta' => ['total' => 0]]
             );
         }
 
-        $cars = \App\Models\Car::with(['brand', 'model', 'images', 'dealer'])
-            ->where('dealer_code', $dealer->dealer_code)
+        $approvals = \App\Models\Approval::where('dealer_code', $dealer->dealer_code)
             ->where('dealer_approval', false)
-            ->where('status', 'pending_sponsor_approval')
+            ->whereNull('admin_approval_at')
+            ->with('car')
             ->paginate(15);
 
-        $payload = CarResource::collection($cars)->response()->getData(true);
+        $items = $approvals->getCollection()->map(function ($approval) {
+            $car = $approval->car;
+            return $car ? CarTransformer::summary($car) : null;
+        })->filter()->values()->all();
 
         return $this->apiResponse(
             in_error: false,
             message: "Approval list retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: $payload
+            data: [
+                'items' => $items,
+                'meta'  => [
+                    'current_page' => $approvals->currentPage(),
+                    'last_page'    => $approvals->lastPage(),
+                    'per_page'     => $approvals->perPage(),
+                    'total'        => $approvals->total(),
+                ],
+            ]
         );
     }
 
@@ -256,20 +317,25 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
 
-        $car = \App\Models\Car::where('dealer_code', $dealer->dealer_code)
-            ->where('status', 'pending_sponsor_approval')
+        $approval = \App\Models\Approval::where('dealer_code', $dealer->dealer_code)
+            ->where('dealer_approval', false)
             ->findOrFail($id);
 
-        $car->update([
-            'dealer_approval' => true,
-            'status'          => 'pending_admin_approval',
+        $approval->update([
+            'dealer_approval'    => true,
+            'dealer_approval_at' => now(),
         ]);
+
+        $car = Car::where('car_slug', $approval->car_slug)->first();
+        if ($car) {
+            $car->update(['status' => 'pending_admin_approval']);
+        }
 
         return $this->apiResponse(
             in_error: false,
             message: "Car approved successfully",
             status_code: self::API_SUCCESS,
-            data: new CarResource($car->fresh('brand', 'model', 'images', 'dealer'))
+            data: $car ? CarTransformer::summary($car->fresh('dealer')) : null
         );
     }
 
@@ -277,19 +343,45 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
 
-        $car = \App\Models\Car::where('dealer_code', $dealer->dealer_code)
-            ->where('status', 'pending_sponsor_approval')
-            ->findOrFail($id);
+        $approval = \App\Models\Approval::where('dealer_code', $dealer->dealer_code)->findOrFail($id);
+        $approval->update(['dealer_approval' => false]);
 
-        $car->update([
-            'dealer_approval' => false,
-            'status'          => 'rejected',
-        ]);
+        $car = Car::where('car_slug', $approval->car_slug)->first();
+        if ($car) {
+            $car->update(['status' => 'rejected']);
+        }
 
         return $this->apiResponse(
             in_error: false,
             message: "Car rejected successfully",
             status_code: self::API_SUCCESS
+        );
+    }
+
+    public function dashboardStats(Request $request): JsonResponse
+    {
+        $dealer = $request->user();
+        $dealerSlug = $dealer->dealer_slug;
+
+        $carSlugs = Car::where('dealer_slug', $dealerSlug)->pluck('car_slug');
+        $totalViewed = \App\Models\View::whereIn('car_slug', $carSlugs)->count();
+        $expiringSoon = Car::where('dealer_slug', $dealerSlug)
+            ->where('status', 'published')
+            ->whereBetween('expiry_date', [now(), now()->addDays(3)])
+            ->count();
+        $totalActiveCars = Car::where('dealer_slug', $dealerSlug)
+            ->where('status', 'published')
+            ->count();
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Dashboard stats retrieved successfully",
+            status_code: self::API_SUCCESS,
+            data: [
+                'total_viewed'      => $totalViewed,
+                'expiring_soon'     => $expiringSoon,
+                'total_active_cars' => $totalActiveCars,
+            ]
         );
     }
 }

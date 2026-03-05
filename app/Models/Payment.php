@@ -11,40 +11,27 @@ class Payment extends Model
 
     protected $fillable = [
         'payment_slug',
-        'dealer_id',
-        'subscription_id',
-        'plan_id',
-        'payment_type',
-        'amount',
-        'phone_number',
-        'payment_method',
-        'provider',
-        'channel',
+        'dealer_slug',
+        'plan_name',
+        'plan_slug',
         'status',
+        'phone_number',
         'network',
-        'transaction_id',
-        'reference',
+        'reference_id',
+        'amount',
+        'payment_method',
         'duration_days',
-        'expires_at',
-        'metadata',
-        'raw_callback',
+        'car_slugs',
     ];
 
     protected $casts = [
         'amount'       => 'decimal:2',
-        'expires_at'   => 'datetime',
-        'metadata'     => 'array',
-        'raw_callback' => 'array',
+        'car_slugs'     => 'array',
     ];
 
     public function dealer(): BelongsTo
     {
-        return $this->belongsTo(Dealer::class);
-    }
-
-    public function subscription(): BelongsTo
-    {
-        return $this->belongsTo(Subscription::class);
+        return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 
 //     public function plan(): BelongsTo

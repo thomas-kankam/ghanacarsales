@@ -13,8 +13,8 @@ class BuyerSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'brand'        => ['nullable', 'exists:brands,id'],
-            'model'        => ['nullable', 'exists:car_models,id'],
+            'brand'        => ['nullable', 'string', 'max:100'],
+            'model'        => ['nullable', 'string', 'max:100'],
             'min_year'     => ['nullable', 'integer', 'min:1900'],
             'max_year'     => ['nullable', 'integer', 'max:' . (date('Y') + 1)],
             'min_mileage'  => ['nullable', 'integer', 'min:0'],

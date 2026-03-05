@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('views', function (Blueprint $table) {
             $table->id();
             $table->string('car_slug');
-            $table->string('buyer_slug');
+            $table->string('buyer_slug')->nullable();
             $table->timestamps();
         });
     }

@@ -57,38 +57,54 @@ class CarService
         });
     }
 
-    public function activateCar(Car $car, int $durationDays = 30): void
+    /**
+     * Activate/publish a car with start and expiry dates.
+     */
+    public function activateCar(Car $car, int $durationDays): Car
     {
+        $startDate = now();
+        $expiryDate = now()->addDays($durationDays);
         $car->update([
-            'status'          => 'active',
-            'expires_at'      => now()->addDays($durationDays),
-            'payment_made_at' => now(),
+            'status'      => 'published',
+            'start_date'  => $startDate,
+            'expiry_date' => $expiryDate,
         ]);
+        return $car;
     }
 
+    /**
+     * Delete cars that have been expired for more than 5 days.
+     */
     public function deleteExpiredCars(): int
     {
         $expiredCars = Car::where('status', 'expired')
-            ->where('expires_at', '<', now()->subDays(5))
+            ->where('expiry_date', '<', now()->subDays(5))
             ->get();
 
         $count = 0;
         foreach ($expiredCars as $car) {
-            // Delete images
-            foreach ($car->images as $image) {
-                Storage::disk('public')->delete($image->image_path);
+            if (is_array($car->images)) {
+                foreach ($car->images as $img) {
+                    $path = is_string($img) ? $img : ($img['path'] ?? $img['image_path'] ?? null);
+                    if ($path) {
+                        Storage::disk('public')->delete($path);
+                    }
+                }
             }
-            $car->delete();
+            $car->forceDelete();
             $count++;
         }
 
         return $count;
     }
 
+    /**
+     * Mark published cars past expiry_date as expired.
+     */
     public function markExpiredCars(): int
     {
-        return Car::where('status', 'active')
-            ->where('expires_at', '<', now())
+        return Car::where('status', 'published')
+            ->where('expiry_date', '<', now())
             ->update(['status' => 'expired']);
     }
 }

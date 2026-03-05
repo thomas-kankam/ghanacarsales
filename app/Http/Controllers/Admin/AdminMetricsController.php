@@ -15,10 +15,10 @@ class AdminMetricsController extends Controller
     public function metrics(): JsonResponse
     {
         $data = [
-            'dealers_total'        => Dealer::count(),
-            'dealers_active'       => Dealer::where('is_active', true)->count(),
+            'dealers_total'         => Dealer::count(),
+            'dealers_active'       => Dealer::where('status', 'active')->count(),
             'cars_total'           => Car::count(),
-            'cars_active'          => Car::where('status', 'active')->count(),
+            'cars_published'       => Car::where('status', 'published')->count(),
             'cars_draft'           => Car::where('status', 'draft')->count(),
             'cars_pending_admin'   => Car::where('status', 'pending_admin_approval')->count(),
             'cars_pending_sponsor' => Car::where('status', 'pending_sponsor_approval')->count(),
@@ -26,8 +26,8 @@ class AdminMetricsController extends Controller
             'payments_total'       => Payment::count(),
             'payments_completed'   => Payment::where('status', 'completed')->count(),
             'payments_failed'      => Payment::where('status', 'failed')->count(),
-            'cars_expiring_7_days' => Car::where('status', 'active')
-                ->whereBetween('expires_at', [now(), now()->addDays(7)])->count(),
+            'cars_expiring_7_days' => Car::where('status', 'published')
+                ->whereBetween('expiry_date', [now(), now()->addDays(7)])->count(),
         ];
 
         return $this->apiResponse(

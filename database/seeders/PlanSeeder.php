@@ -10,7 +10,7 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             [
-                'name'          => 'Free Trial',
+                'plan_name'     => 'Free Trial',
                 'plan_slug'     => 'free_trial',
                 'price'         => 0.00,
                 'duration_days' => 15,
@@ -41,7 +41,7 @@ class PlanSeeder extends Seeder
                 ],
             ],
             [
-                'name'          => '1 Month',
+                'plan_name'     => '1 Month',
                 'plan_slug'     => '1_month',
                 'price'         => 30.00,
                 'duration_days' => 30,
@@ -76,7 +76,7 @@ class PlanSeeder extends Seeder
                 ],
             ],
             [
-                'name'          => '3 Months',
+                'plan_name'     => '3 Months',
                 'plan_slug'     => '3_months',
                 'price'         => 75.00,
                 'duration_days' => 90,
