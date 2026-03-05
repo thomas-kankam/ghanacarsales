@@ -4,7 +4,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payment extends Model
 {
@@ -32,10 +31,10 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'amount'      => 'decimal:2',
-        'expires_at'  => 'datetime',
-        'metadata'    => 'array',
-        'raw_callback'=> 'array',
+        'amount'       => 'decimal:2',
+        'expires_at'   => 'datetime',
+        'metadata'     => 'array',
+        'raw_callback' => 'array',
     ];
 
     public function dealer(): BelongsTo
@@ -43,18 +42,13 @@ class Payment extends Model
         return $this->belongsTo(Dealer::class);
     }
 
-    public function paymentCars(): HasMany
-    {
-        return $this->hasMany(PaymentCar::class);
-    }
-
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
     }
 
-    public function plan(): BelongsTo
-    {
-        return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
-    }
+//     public function plan(): BelongsTo
+//     {
+//         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+//     }
 }
