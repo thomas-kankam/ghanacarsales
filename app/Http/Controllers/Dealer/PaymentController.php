@@ -25,7 +25,7 @@ class PaymentController extends Controller
         );
     }
 
-    public function createPayment(Request $request): JsonResponse
+    public function createPayment(Dealer $dealer, array$data): JsonResponse
     {
         $request->validate([
             'car_ids'       => 'required|array',

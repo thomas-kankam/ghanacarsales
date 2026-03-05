@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Requests\Dealer;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,7 +22,7 @@ class VerifyLoginOtpRequest extends FormRequest
     {
         return [
             'dealer_slug' => ['required', 'string', 'exists:dealers,dealer_slug'],
-            'token'       => ['required', 'string', 'size:5'],
+            'token'       => ['required', 'string'],
         ];
     }
 }

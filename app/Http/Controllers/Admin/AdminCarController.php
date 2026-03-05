@@ -8,7 +8,7 @@ use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class CarController extends Controller
+class AdminCarController extends Controller
 {
     public function __construct(private CarService $carService)
     {

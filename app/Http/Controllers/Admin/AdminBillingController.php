@@ -7,7 +7,7 @@ use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class BillingController extends Controller
+class AdminBillingController extends Controller
 {
     public function payments(Request $request): JsonResponse
     {

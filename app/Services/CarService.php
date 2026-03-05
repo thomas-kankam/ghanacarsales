@@ -24,9 +24,7 @@ class CarService
                     if (! is_string($img)) {
                         return null;
                     }
-                    return str_starts_with($img, 'data:')
-                        ? static::base64ImageDecode($img)
-                        : $img;
+                    return str_starts_with($img, 'data:') ? static::base64ImageDecode($img) : $img;
                 }, $data['images'])));
             }
 

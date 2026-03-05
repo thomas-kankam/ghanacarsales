@@ -26,29 +26,25 @@ class Car extends Model
         'fuel_type',
         'transmission',
         'colour',
-        'location',
         'images',
         'status',
         'description',
-        // 'expires_at',
-        // 'payment_made_at',
-        // 'admin_approval',
-        // 'dealer_approval',
-        // 'dealer_code',
-        // 'is_published',
+        'start_date',
+        'expiry_date',
+        'plan_name',
+        'plan_slug',
+        'duration_days',
+        'payment_status',
     ];
 
     protected $casts = [
-        'swap_deals' => 'boolean',
-        'aircon'     => 'boolean',
-        'registered' => 'boolean',
-        // 'admin_approval'  => 'boolean',
-        // 'dealer_approval' => 'boolean',
-        // 'is_published'    => 'boolean',
-        'price'      => 'decimal:2',
-        // 'expires_at'      => 'datetime',
-        // 'payment_made_at' => 'datetime',
-        'images'     => 'array',
+        'swap_deals'  => 'boolean',
+        'aircon'      => 'boolean',
+        'registered'  => 'boolean',
+        'price'       => 'decimal:2',
+        'images'      => 'array',
+        'start_date'  => 'datetime',
+        'expiry_date' => 'datetime',
     ];
 
     public function getRouteKeyName()
@@ -58,6 +54,6 @@ class Car extends Model
 
     public function dealer()
     {
-        return $this->belongsTo(Dealer::class,'dealer_slug','dealer_slug');
+        return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 }

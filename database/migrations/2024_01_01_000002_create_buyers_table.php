@@ -10,21 +10,21 @@ return new class extends Migration
     {
         Schema::create('buyers', function (Blueprint $table) {
             $table->id();
-            $table->uuid('buyer_slug')->unique();
-            $table->string('mobile_number', 20)->unique();
+            $table->string('buyer_slug')->unique();
+            $table->string('phone_number')->unique();
             $table->string('email')->nullable();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->timestamp('mobile_verified_at')->nullable();
-            $table->string('password')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->string('full_name')->nullable();
+            $table->timestamp('verified_at')->nullable();
+            $table->boolean('verified')->default(true);
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('mobile_number');
+            $table->index('phone_number');
             $table->index('buyer_slug');
+            $table->index('full_name');
             $table->index('email');
-            $table->index('is_active');
+            $table->index('verified');
         });
     }
 

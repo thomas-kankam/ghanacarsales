@@ -9,19 +9,18 @@ class Dealer extends Actor
         'dealer_slug',
         'phone_number',
         'email',
-        'email_verified_at',
-        'phone_verified_at',
-        'business_type',
         'full_name',
-        'business_name',
-        'region',
+        'verified',
+        'verified_at',
+        'business_type',
         'city',
+        'region',
         'landmark',
+        'business_name',
+        'dealer_code',
         'terms_accepted',
         'terms_accepted_at',
-        'is_active',
         'is_onboarded',
-        'dealer_code',
     ];
 
     protected $hidden = [
@@ -29,27 +28,15 @@ class Dealer extends Actor
     ];
 
     protected $casts = [
-        'email_verified_at'  => 'datetime',
-        'mobile_verified_at' => 'datetime',
-        'terms_accepted'     => 'boolean',
-        'terms_accepted_at'  => 'datetime',
-        'is_active'          => 'boolean',
-        'is_onboarded'       => 'boolean',
+        'verified_at'       => 'datetime',
+        'terms_accepted'    => 'boolean',
+        'terms_accepted_at' => 'datetime',
+        'is_onboarded'      => 'boolean',
     ];
 
     public function getRouteKeyName()
     {
         return "dealer_slug";
-    }
-
-    public function hasVerifiedEmail()
-    {
-        return $this->email_verified_at != null;
-    }
-
-    public function hasVerifiedPhone()
-    {
-        return $this->phone_verified_at != null;
     }
 
     public function cars(): HasMany
@@ -59,11 +46,16 @@ class Dealer extends Actor
 
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class, 'dealer_id', 'id');
+        return $this->hasMany(Payment::class, 'dealer_slug', 'dealer_slug');
     }
 
     protected function subscription()
     {
         return $this->hasOne(Subscription::class, 'dealer_slug', 'dealer_slug');
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(Approval::class, 'dealer_slug', 'dealer_slug');
     }
 }

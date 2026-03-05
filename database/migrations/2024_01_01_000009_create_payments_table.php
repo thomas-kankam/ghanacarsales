@@ -11,24 +11,23 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->uuid('payment_slug')->unique();
-            $table->string('dealer_id');
-            $table->string('payment_type');
+            $table->string('dealer_slug');
+            $table->string('plan_name');
+            $table->string('duration_days');
+            $table->string('status');
+            $table->string("phone_number")->nullable();
+            $table->string('network')->nullable();
+            $table->string('reference_id')->nullable()->unique();
             $table->decimal('amount', 15, 2);
             $table->string('payment_method');
-            $table->string("phone_number")->nullable();
-            $table->string('status');
-            $table->string('network')->nullable();
-            $table->string('transaction_id')->nullable()->unique();
             $table->integer('duration_days')->default(30);
-            $table->timestamp('expires_at')->nullable();
-            $table->json('metadata')->nullable();
+            $table->json('car_slugs')->nullable();
             $table->timestamps();
 
             $table->index('payment_slug');
-            $table->index('dealer_id');
+            $table->index('dealer_slug');
             $table->index('status');
-            $table->index('transaction_id');
-            $table->index('expires_at');
+            $table->index('reference_id');
         });
     }
 

@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-class AuthController extends Controller
+class AdminAuthController extends Controller
 {
     public function register(AdminRegisterRequest $request): JsonResponse
     {

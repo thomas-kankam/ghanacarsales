@@ -10,18 +10,19 @@ return new class extends Migration
     {
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('dealer_id')->constrained('dealers');
-            $table->foreignId('plan_id')->constrained('subscription_plans');
+            $table->string('dealer_slug');
+            $table->string('subscription_slug');
+            $table->string('plan_slug');
+            $table->string('plan_name');
+            $table->string('duration_days');
             $table->timestamp('starts_at')->nullable();
-            $table->timestamp('ends_at')->nullable();
-            $table->string('status')->default('pending');
-            $table->unsignedInteger('published_count')->default(0);
-            $table->json('metadata')->nullable();
-            $table->unsignedBigInteger('last_payment_id')->nullable();
+            $table->timestamp('exipry_date')->nullable();
+            $table->string('status');
+            $table->decimal('price', 15, 2);
             $table->timestamps();
 
-            $table->index('dealer_id');
-            $table->index('plan_id');
+            $table->index('dealer_slug');
+            $table->index('plan_slug');
             $table->index('status');
             $table->index('starts_at');
             $table->index('ends_at');
@@ -33,4 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('subscriptions');
     }
 };
-

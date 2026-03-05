@@ -11,7 +11,7 @@ class CarSearchService
     public function search(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         $query = Car::query()
-            ->where('status', 'active');
+            ->where('status', 'published');
 
         $this->applyFilters($query, $filters);
         $this->applySorting($query, $filters);

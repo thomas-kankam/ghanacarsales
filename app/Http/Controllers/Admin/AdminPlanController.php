@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-class PlanController extends Controller
+class AdminPlanController extends Controller
 {
     public function index(Request $request): JsonResponse
     {

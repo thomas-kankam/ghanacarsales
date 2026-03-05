@@ -6,7 +6,7 @@ use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class DealerController extends Controller
+class AdminDealerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
@@ -110,4 +110,3 @@ class DealerController extends Controller
         );
     }
 }
-

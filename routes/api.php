@@ -1,16 +1,17 @@
 <?php
 
-use App\Http\Controllers\Admin\AuthController as AdminAuthController;
-use App\Http\Controllers\Admin\BillingController as AdminBillingController;
-use App\Http\Controllers\Admin\CarController as AdminCarController;
-use App\Http\Controllers\Admin\DealerController as AdminDealerController;
-use App\Http\Controllers\Admin\MetricsController as AdminMetricsController;
-use App\Http\Controllers\Admin\PlanController as AdminPlanController;
-use App\Http\Controllers\Buyer\CarController as BuyerCarController;
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminBillingController;
+use App\Http\Controllers\Admin\AdminCarController;
+use App\Http\Controllers\Admin\AdminDealerController;
+use App\Http\Controllers\Admin\AdminMetricsController;
+use App\Http\Controllers\Admin\AdminPlanController;
+use App\Http\Controllers\Buyer\BuyerCarController;
 use App\Http\Controllers\Dealer\DealerAuthController;
 use App\Http\Controllers\Dealer\DealerCarController;
 use App\Http\Controllers\Dealer\PaymentController;
 use App\Http\Controllers\Dealer\SubscriptionController;
+use App\Http\Controllers\General\PlanController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,19 +91,13 @@ Route::prefix('dealer')->group(function () {
 
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
-        // Legacy car routes
+        Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
+        Route::put('/update_car/{car}', [DealerCarController::class, 'updateCar']);
+        Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
         Route::delete('/delete_car/{car}', [DealerCarController::class, 'deleteCar']);
 
-        // New listings CRUD
-        Route::get('/get_cars', [DealerCarController::class, 'listCars']);
-        Route::get('/listings', [DealerCarController::class, 'listCars']);
-
-        Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
-        Route::post('/listings', [DealerCarController::class, 'uploadCar']);
-
-        Route::put('/update_car/{car}', [DealerCarController::class, 'updateCar']);
-        Route::put('/listings/{car}', [DealerCarController::class, 'updateCar']);
+        Route::get('/dashboard_stats', [DealerCarController::class, 'dashboardStats']);
 
         // Draft workflow
         Route::get('/drafts', [DealerCarController::class, 'listDrafts']);
@@ -145,6 +140,8 @@ Route::prefix('dealer')->group(function () {
 // });
 
 // Public buyer catalog
-Route::get('/cars', [BuyerCarController::class, 'search'])->middleware('throttle:search');
-Route::get('/cars/{id}', [BuyerCarController::class, 'show']);
-Route::get('/dealers/{dealerId}/cars', [BuyerCarController::class, 'getDealerCars']);
+Route::get('/all_cars', [BuyerCarController::class, 'search']);
+Route::get('/cars/{car}', [BuyerCarController::class, 'show']);
+Route::get('/dealers/{dealer_slug}/cars', [BuyerCarController::class, 'getDealerCars']);
+
+Route::get('/all_plans', [PlanController::class, 'plans']);

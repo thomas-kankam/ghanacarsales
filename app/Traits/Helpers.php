@@ -16,24 +16,6 @@ trait Helpers
         return $actor;
     }
 
-    protected static function googleAuthCheck(string $access_token, array $payload)
-    {
-        $url = "https://www.googleapis.com/oauth2/v3/userinfo?access_token={$access_token}";
-
-        $response = Http::get($url);
-
-        if ($response->successful()) {
-            $userData = $response->json();
-
-            if ($userData['email'] !== $payload['email'] || $userData['sub'] !== $payload['provider_id']) {
-                return null;
-            }
-            return $userData;
-        }
-
-        return null;
-    }
-
     protected static function base64ImageDecode(string $base64_image)
     {
         if (preg_match('/^data:image\/(\w+);base64,/', $base64_image, $matches)) {
@@ -91,19 +73,6 @@ trait Helpers
         }
         $decoded = json_decode($value, true);
         return json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : null;
-    }
-
-    protected static function getAuthorizationToken(): string
-    {
-        $token       = "";
-        $auth_header = request()->header('Authorization');
-
-        if ($auth_header) {
-            if (str_starts_with($auth_header, 'Bearer ')) {
-                $token = substr($auth_header, 7);
-            }
-        }
-        return $token;
     }
 
     protected static function maskEmail($email): string

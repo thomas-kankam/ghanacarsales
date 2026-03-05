@@ -10,16 +10,15 @@ return new class extends Migration
     {
         Schema::create('alert_notifications', function (Blueprint $table) {
             $table->id();
-            $table->string('buyer_alert_id');
-            $table->string('car_id');
-            $table->boolean('is_sent')->default(false);
-            $table->timestamp('sent_at')->nullable();
+            $table->string('dealer_slug');
+            $table->string('car_slug');
+            $table->boolean('is_notified')->default(false);
             $table->timestamps();
 
-            $table->index('buyer_alert_id');
-            $table->index('car_id');
-            $table->index('is_sent');
-            $table->unique(['buyer_alert_id', 'car_id']);
+            $table->index('dealer_slug');
+            $table->index('car_slug');
+            $table->index('is_notified');
+            $table->unique(['dealer_slug', 'car_slug']);
         });
     }
 

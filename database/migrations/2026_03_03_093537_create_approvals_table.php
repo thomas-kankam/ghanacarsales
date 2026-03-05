@@ -18,6 +18,11 @@ return new class extends Migration
             $table->string('dealer_code')->nullable();
             $table->boolean('dealer_approval')->default(false);
             $table->boolean('admin_approval')->default(false);
+            $table->string('admin_slug')->nullable();
+            $table->timestamp('admin_approval_at')->nullable();
+            $table->timestamp('dealer_approval_at')->nullable();
+            $table->string('payment_slug')->nullable();
+            $table->string('dealer_name')->nullable();
             $table->timestamps();
 
             $table->index('car_slug');

@@ -23,12 +23,11 @@ class RegisterDealerRequest extends FormRequest
         return [
             'phone_number'  => ['required_without:email', 'nullable', 'string', 'unique:dealers,phone_number', 'min:12', 'max:12', 'starts_with:233'],
             'email'         => ['required_without:phone_number', 'nullable', 'string', 'email', 'unique:dealers,email'],
-            // 'dealer_slug    ' => ['required', 'string', 'unique:dealers,dealer_slug'],
-            'business_name' => ['nullable', 'string'],
             'business_type' => ['nullable', 'string'],
-            'region'        => ['nullable', 'string'],
             'city'          => ['nullable', 'string'],
+            'region'        => ['nullable', 'string'],
             'landmark'      => ['nullable', 'string'],
+            'business_name' => ['nullable', 'string'],
         ];
     }
 }

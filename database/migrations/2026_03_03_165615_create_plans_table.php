@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('packages', function (Blueprint $table) {
+        Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->decimal('price', 15, 2);
-            $table->unsignedInteger('duration_days');
+            $table->string('plan_name');
+            $table->string('plan_slug')->unique();
+            $table->string('duration_days');
             $table->json('features')->nullable();
+            $table->decimal('price', 15, 2);
             $table->timestamps();
 
-            $table->index('slug');
+            $table->index('plan_slug');
         });
     }
 
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('packages');
+        Schema::dropIfExists('plans');
     }
 };

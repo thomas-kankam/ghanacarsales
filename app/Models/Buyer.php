@@ -8,26 +8,25 @@ class Buyer extends Authenticatable
 {
     protected $fillable = [
         'buyer_slug',
-        'mobile_number',
+        'phone_number',
         'email',
-        'password',
-        'is_active',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
+        'full_name',
+        'verified_at',
+        'verified',
     ];
 
     protected $casts = [
-        'email_verified_at'  => 'datetime',
-        'mobile_verified_at' => 'datetime',
-        'password'           => 'hashed',
-        'is_active'          => 'boolean',
+        'verified_at' => 'datetime',
+        'verified'    => 'boolean',
     ];
 
-    public function alerts(): HasMany
+    public function getRouteKeyName()
     {
-        return $this->hasMany(BuyerAlert::class);
+        return "buyer_slug";
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(View::class);
     }
 }

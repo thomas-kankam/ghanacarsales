@@ -10,21 +10,21 @@ return new class extends Migration
     {
         Schema::create('dealers', function (Blueprint $table) {
             $table->id();
-            $table->uuid('dealer_slug')->unique();
+            $table->string('dealer_slug')->unique();
             $table->string('phone_number', 12)->nullable();
             $table->string('email')->nullable();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->timestamp('phone_verified_at')->nullable();
-            $table->string('business_type')->nullable();
             $table->string('full_name')->nullable();
+            $table->boolean('verified')->default(false);
+            $table->timestamp('verified_at')->nullable();
+            $table->string('business_type')->nullable();
+            $table->string('city')->nullable();
+            $table->string('region')->nullable();
+            $table->string('landmark')->nullable();
             $table->string('business_name')->nullable();
             $table->string('dealer_code')->nullable();
+            $table->string('status')->nullable();
             $table->boolean('terms_accepted')->default(false);
             $table->timestamp('terms_accepted_at')->nullable();
-            $table->string('region')->nullable();
-            $table->string('city')->nullable();
-            $table->string('landmark')->nullable();
-            $table->boolean('is_active')->default(false);
             $table->boolean('is_onboarded')->default(false);
             $table->rememberToken();
             $table->timestamps();
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->index('business_type');
             $table->index('full_name');
             $table->index('business_name');
-            $table->index('is_active');
+            $table->index('verified');
             $table->index('is_onboarded');
             $table->index('dealer_code');
         });

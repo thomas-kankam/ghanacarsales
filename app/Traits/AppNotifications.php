@@ -13,53 +13,6 @@ trait AppNotifications
 {
     use Helpers;
 
-    // protected static function sendSms(string $phone_number, string $msg, string $from): array
-    // {
-    //     $endpoint = "https://api.txtconnect.net/dev/api/sms/send";
-
-    //     $payload = [
-    //         "to"      => $phone_number,
-    //         "from"    => $from,
-    //         "unicode" => 0,
-    //         "sms"     => $msg,
-    //     ];
-
-    //     try {
-    //         $response = Http::withHeaders([
-    //             "Authorization" => "Bearer 2p6iDItRUfCFxjVBXbm9cGQ5eAYln0NZPzEqsLKrJvWy8hgou3",
-    //             'Accept'        => 'application/json',
-    //             "Content-Type"  => "application/json",
-    //         ])->post($endpoint, $payload);
-
-    //         $responseData = $response->json();
-
-    //         Log::channel("sent_sms")->info("SMS API Response", [
-    //             'phone_number' => $phone_number,
-    //             'response'     => $responseData,
-    //             'status_code'  => $response->status(),
-    //         ]);
-
-    //         return [
-    //             'success'     => $response->successful(),
-    //             'data'        => $responseData,
-    //             'status_code' => $response->status(),
-    //         ];
-
-    //     } catch (\Exception $e) {
-    //         Log::channel("sent_sms")->error("SMS API Exception", [
-    //             'phone_number' => $phone_number,
-    //             'error'        => $e->getMessage(),
-    //             'trace'        => $e->getTraceAsString(),
-    //         ]);
-
-    //         return [
-    //             'success' => false,
-    //             'error'   => $e->getMessage(),
-    //             'data'    => null,
-    //         ];
-    //     }
-    // }
-
     protected static function sendSms(string $phone_number, string $msg, string $from): bool
     {
         $endpoint = "https://api.txtconnect.net/dev/api/sms/send";
@@ -94,16 +47,16 @@ trait AppNotifications
         }
     }
 
-    protected static function sendOtp(Actor $actor, string $type, string $msg, string $channel, string $guard): void
-    {
-        $otp = self::otpCode(type: $type, actor_id: $actor->id, channel: $channel, guard: $guard);
-        $msg = $msg . " " . $otp;
-        self::sendSms(phone_number: $actor->phone_number, msg: $msg, from: "DEALBOXX");
-    }
+    // protected static function sendOtp(Actor $actor, string $type, string $msg, string $channel, string $guard): void
+    // {
+    //     $otp = self::otpCode(type: $type, actor_id: $actor->id, channel: $channel, guard: $guard);
+    //     $msg = $msg . " " . $otp;
+    //     self::sendSms(phone_number: $actor->phone_number, msg: $msg, from: "DEALBOXX");
+    // }
 
-    public function generateOtp(string $type, string $actor_id, string $channel, string $guard): int
+    public function generateOtp(string $type, string $actor_id, string $channel, string $guard): string
     {
-        // Generate 5-digit OTP
+        // Generate 5-digit OTP with leading zeros preserved
         $token     = str_pad((string) random_int(0, 99999), 5, '0', STR_PAD_LEFT);
         $expiresAt = now()->addMinutes(10);
 
@@ -140,7 +93,7 @@ trait AppNotifications
             ]);
         }
 
-        return (int) $token;
+        return $token;
     }
 
     protected static function sendEmail(string $email, array $parameters, string $email_class): void

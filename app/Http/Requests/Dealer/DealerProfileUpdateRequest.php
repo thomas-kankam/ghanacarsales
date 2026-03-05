@@ -14,12 +14,6 @@ class DealerProfileUpdateRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-
     public function rules(): array
     {
         $dealer = $this->user(); // authenticated dealer
@@ -41,11 +35,12 @@ class DealerProfileUpdateRequest extends FormRequest
                 Rule::unique('dealers', 'email')->ignore($dealer->id),
             ],
 
-            'business_name' => ['nullable', 'string'],
+            'full_name'     => ['nullable', 'string'],
             'business_type' => ['nullable', 'string'],
-            'region'        => ['nullable', 'string'],
             'city'          => ['nullable', 'string'],
+            'region'        => ['nullable', 'string'],
             'landmark'      => ['nullable', 'string'],
+            'business_name' => ['nullable', 'string'],
         ];
     }
 }

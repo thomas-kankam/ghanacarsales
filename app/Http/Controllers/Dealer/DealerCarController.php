@@ -6,8 +6,8 @@ use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Http\Resources\CarResource;
 use App\Models\Car;
 use App\Models\Dealer;
-use App\Services\AlertService;
 use App\Services\CarService;
+use App\Services\PaymentService;
 use App\Services\SubscriptionService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
@@ -17,18 +17,16 @@ class DealerCarController extends Controller
 {
     public function __construct(
         private CarService $carService,
-        private AlertService $alertService,
-        private SubscriptionService $subscriptionService
-    ) {
-    }
+        private SubscriptionService $subscriptionService,
+        private PaymentService $paymentService
+    ) {}
 
     public function uploadCar(CarUploadRequest $request): JsonResponse
     {
-        $dealer = $request->user();
-        $data   = $request->validated();
-        // $images = $request->file('images');
-
-        $car = $this->carService->createCar($dealer, $data);
+        $dealer  = $request->user();
+        $data    = $request->validated();
+        $car     = $this->carService->createCar($dealer, $data);
+        // $payment = $this->paymentService->createPayment($dealer, $car);
         $car->load('dealer');
 
         // Check if this car matches any buyer alerts (only if car is active)
@@ -178,53 +176,6 @@ class DealerCarController extends Controller
             data: []
         );
     }
-
-    // public function publishDraft(Request $request, Car $car): JsonResponse
-    // {
-    //     $dealer = $request->user();
-
-    //     if ($car->dealer_slug !== $dealer->dealer_slug) {
-    //         return $this->apiResponse(
-    //             in_error: true,
-    //             message: "Unauthorized action.",
-    //             status_code: self::API_FORBIDDEN,
-    //             reason: "Unauthorized action."
-    //         );
-    //     }
-
-    //     $subscription = $this->subscriptionService->getCurrentSubscription($dealer);
-    //     if (! $subscription || ! $subscription->plan) {
-    //         return $this->apiResponse(
-    //             in_error: true,
-    //             message: "No active subscription plan. Please subscribe to a plan before publishing.",
-    //             status_code: self::API_FORBIDDEN
-    //         );
-    //     }
-
-    //     $activeCount = $dealer->cars()
-    //         ->whereIn('status', ['active', 'pending_admin_approval'])
-    //         ->count();
-
-    //     if ($activeCount >= $subscription->plan->publish_quota) {
-    //         return $this->apiResponse(
-    //             in_error: true,
-    //             message: "Publish quota exceeded for current subscription plan.",
-    //             status_code: self::API_FORBIDDEN
-    //         );
-    //     }
-
-    //     $car->update([
-    //         'status' => 'active',
-    //     ]);
-
-    //     return $this->apiResponse(
-    //         in_error: false,
-    //         message: "Car published successfully",
-    //         status_code: self::API_SUCCESS,
-    //         data: new CarResource($car->fresh('brand', 'model', 'images')),
-    //         reason: "Car published successfully."
-    //     );
-    // }
 
     public function publishAllDrafts(): JsonResponse
     {

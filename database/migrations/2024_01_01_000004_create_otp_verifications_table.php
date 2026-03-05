@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('otp_verifications', function (Blueprint $table) {
             $table->id();
-            $table->string('token', 5);
+            $table->string('token');
             $table->string('actor_id');
             $table->string('guard');
             $table->string('type');

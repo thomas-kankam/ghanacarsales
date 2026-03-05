@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\Car;
@@ -12,11 +11,11 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Dealer $dealer, array $carIds, int $durationDays = 30): Payment
+    public function createPayment(Dealer $dealer, $car): Payment
     {
-        return DB::transaction(function () use ($dealer, $carIds, $durationDays) {
-            $cars = Car::whereIn('id', $carIds)
-                ->where('dealer_id', $dealer->id)
+        return DB::transaction(function () use ($dealer, $car) {
+            $cars = Car::whereIn('car_slug', $car_slugs)
+                ->where('dealer_slug', $dealer->dealer_slug)
                 ->where('status', 'pending')
                 ->get();
 
@@ -36,14 +35,7 @@ class PaymentService
                 'duration_days'  => $durationDays,
             ]);
 
-            foreach ($cars as $car) {
-                PaymentCar::create([
-                    'payment_id' => $payment->id,
-                    'car_id' => $car->id,
-                ]);
-            }
-
-            return $payment->load('paymentCars.car');
+            return $payment;
         });
     }
 
@@ -51,8 +43,8 @@ class PaymentService
     {
         return DB::transaction(function () use ($payment, $transactionId) {
             $payment->update([
-                'status'        => 'completed',
-                'transaction_id'=> $transactionId,
+                'status'         => 'completed',
+                'transaction_id' => $transactionId,
             ]);
 
             if ($payment->payment_type === 'subscription') {
@@ -78,10 +70,10 @@ class PaymentService
 
     protected function calculateAmount(int $carCount, int $durationDays): float
     {
-        // Pricing logic: adjust as needed
-        $basePrice = 50; // Base price per car
+                                                       // Pricing logic: adjust as needed
+        $basePrice = 50;                               // Base price per car
         $dailyRate = $durationDays === 90 ? 0.5 : 1.0; // 90 days is cheaper per day
-        
+
         return $carCount * $basePrice * ($durationDays * $dailyRate);
     }
 
@@ -93,8 +85,8 @@ class PaymentService
             ->get();
 
         return [
-            'cars' => $pendingCars,
-            'total_cars' => $pendingCars->count(),
+            'cars'                     => $pendingCars,
+            'total_cars'               => $pendingCars->count(),
             'estimated_amount_30_days' => $this->calculateAmount($pendingCars->count(), 30),
             'estimated_amount_90_days' => $this->calculateAmount($pendingCars->count(), 90),
         ];

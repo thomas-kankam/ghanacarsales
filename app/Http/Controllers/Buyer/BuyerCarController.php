@@ -3,12 +3,12 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Buyer\BuyerSearchRequest;
-use App\Http\Resources\CarResource;
+use App\Models\Car;
 use App\Services\CarSearchService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 
-class CarController extends Controller
+class BuyerCarController extends Controller
 {
     public function __construct(private CarSearchService $searchService)
     {
@@ -23,8 +23,8 @@ class CarController extends Controller
         $results = $this->searchService->search($filters, $perPage);
 
         $items = $results->getCollection()
-            ->load(['brand', 'model', 'images', 'dealer'])
-            ->map(fn ($car) => CarTransformer::summary($car))
+            ->load(['dealer'])
+            ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [
@@ -45,12 +45,8 @@ class CarController extends Controller
         );
     }
 
-    public function show($id): JsonResponse
+    public function show(Car $car): JsonResponse
     {
-        $car = \App\Models\Car::with(['brand', 'model', 'images', 'dealer'])
-            ->where('status', 'active')
-            ->findOrFail($id);
-
         return $this->apiResponse(
             in_error: false,
             message: "Car retrieved successfully",
@@ -59,16 +55,15 @@ class CarController extends Controller
         );
     }
 
-    public function getDealerCars($dealerId): JsonResponse
+    public function getDealerCars($dealer_slug): JsonResponse
     {
-        $cars = \App\Models\Car::with(['brand', 'model', 'images'])
-            ->where('dealer_id', $dealerId)
-            ->where('status', 'active')
+        $cars = Car::where('dealer_slug', $dealer_slug)
+            ->where('status', 'published')
             ->paginate(15);
 
         $items = $cars->getCollection()
-            ->load(['brand', 'model', 'images', 'dealer'])
-            ->map(fn ($car) => CarTransformer::summary($car))
+        // ->load(['brand', 'model', 'images', 'dealer'])
+            ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [
