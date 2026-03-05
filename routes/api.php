@@ -144,4 +144,4 @@ Route::get('/all_cars', [BuyerCarController::class, 'search']);
 Route::get('/cars/{car}', [BuyerCarController::class, 'show']);
 Route::get('/dealers/{dealer_slug}/cars', [BuyerCarController::class, 'getDealerCars']);
 
-Route::get('/all_plans', [PlanController::class, 'plans']);
+Route::get('/all_plans', [PlanController::class, 'getPlans']);
