@@ -6,6 +6,7 @@ use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Http\Resources\CarResource;
 use App\Models\Car;
 use App\Models\Dealer;
+use App\Models\Approval;
 use App\Services\CarService;
 use App\Services\PaymentService;
 use App\Services\SubscriptionService;
@@ -46,7 +47,7 @@ class DealerCarController extends Controller
             'free_trial' => 15,
             '1_month'    => 30,
             '3_months'   => 90,
-            default      => 30,
+            default      => 15,
         };
         $planName = match ($planSlug) {
             'free_trial' => 'Free Trial',
@@ -59,12 +60,12 @@ class DealerCarController extends Controller
         $data['duration_days'] = $durationDays;
 
         if ($planSlug === 'free_trial') {
-            $data['status'] = 'pending_sponsor_approval';
+            $data['status'] = 'pending_approval';
             $car = $this->carService->createCar($dealer, $data);
-            \App\Models\Approval::create([
+            Approval::create([
                 'car_slug'       => $car->car_slug,
                 'dealer_slug'    => $dealer->dealer_slug,
-                'dealer_code'    => $dealer->dealer_code,
+                'dealer_code'    => $data['dealer_code'],
                 'dealer_name'    => $dealer->full_name ?? $dealer->business_name,
             ]);
             $car->load('dealer');

@@ -31,6 +31,7 @@ class CarUploadRequest extends FormRequest
             "status"              => ['nullable', 'string', 'in:draft,pending_payment,pending_approval'],
             'description'         => ['nullable', 'string'],
             'plan_name'           => ['nullable', 'string'],
+            'dealer_code'           => ['nullable', 'string'],
             'plan_slug'           => ['nullable', 'string', 'in:free_trial,1_month,3_months'],
             'duration_days'       => ['nullable', 'integer'],
             'start_date'          => ['nullable', 'date'],
