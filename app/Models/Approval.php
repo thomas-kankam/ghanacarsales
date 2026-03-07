@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,12 +19,12 @@ class Approval extends Model
         'admin_approval_at',
         'dealer_approval_at',
         'payment_slug',
-        'dealer_name'
+        'dealer_name',
     ];
 
     protected $casts = [
-        'dealer_approval' => 'boolean',
-        'admin_approval'  => 'boolean',
+        'dealer_approval'    => 'boolean',
+        'admin_approval'     => 'boolean',
         'dealer_approval_at' => 'datetime',
         'admin_approval_at'  => 'datetime',
     ];
@@ -33,5 +32,10 @@ class Approval extends Model
     public function car()
     {
         return $this->belongsTo(Car::class, 'car_slug', 'car_slug');
+    }
+
+    public function dealer()
+    {
+        return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 }

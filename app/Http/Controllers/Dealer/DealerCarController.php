@@ -3,10 +3,9 @@ namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\CarUploadRequest;
-use App\Http\Resources\CarResource;
+use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
-use App\Models\Approval;
 use App\Services\CarService;
 use App\Services\PaymentService;
 use App\Services\SubscriptionService;
@@ -27,12 +26,12 @@ class DealerCarController extends Controller
         $dealer = $request->user();
         $data   = $request->validated();
 
-        $isDraft = ($data['status'] ?? '') === 'draft';
+        $isDraft  = ($data['status'] ?? '') === 'draft';
         $planSlug = $data['plan_slug'] ?? null;
 
         if ($isDraft) {
             $data['status'] = 'draft';
-            $car = $this->carService->createCar($dealer, $data);
+            $car            = $this->carService->createCar($dealer, $data);
             $car->load('dealer');
             return $this->apiResponse(
                 in_error: false,
@@ -56,17 +55,20 @@ class DealerCarController extends Controller
             default      => 'Custom',
         };
         $data['plan_slug']     = $planSlug;
-        $data['plan_name']    = $planName;
+        $data['plan_name']     = $planName;
         $data['duration_days'] = $durationDays;
 
         if ($planSlug === 'free_trial') {
             $data['status'] = 'pending_approval';
-            $car = $this->carService->createCar($dealer, $data);
+            $car            = $this->carService->createCar($dealer, $data);
+            $car->update([
+                "start_date" => $car->created_at,
+            ]);
             Approval::create([
-                'car_slug'       => $car->car_slug,
-                'dealer_slug'    => $dealer->dealer_slug,
-                'dealer_code'    => $data['dealer_code'],
-                'dealer_name'    => $dealer->full_name ?? $dealer->business_name,
+                'car_slug'    => $car->car_slug,
+                'dealer_slug' => $dealer->dealer_slug,
+                'dealer_code' => $data['dealer_code'],
+                'dealer_name' => $dealer->full_name ?? $dealer->business_name,
             ]);
             $car->load('dealer');
             return $this->apiResponse(
@@ -79,7 +81,7 @@ class DealerCarController extends Controller
         }
 
         $data['status'] = 'pending_payment';
-        $car = $this->carService->createCar($dealer, $data);
+        $car            = $this->carService->createCar($dealer, $data);
         $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
@@ -94,10 +96,10 @@ class DealerCarController extends Controller
 
     public function saveDraft(CarUploadRequest $request): JsonResponse
     {
-        $dealer = $request->user();
-        $data   = $request->validated();
+        $dealer         = $request->user();
+        $data           = $request->validated();
         $data['status'] = 'draft';
-        $car = $this->carService->createCar($dealer, $data);
+        $car            = $this->carService->createCar($dealer, $data);
         $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
@@ -287,10 +289,10 @@ class DealerCarController extends Controller
             );
         }
 
-        $approvals = \App\Models\Approval::where('dealer_code', $dealer->dealer_code)
+        $approvals = Approval::where('dealer_code', $dealer->dealer_code)
             ->where('dealer_approval', false)
             ->whereNull('admin_approval_at')
-            ->with('car')
+            ->with(['car', 'dealer'])
             ->paginate(15);
 
         $items = $approvals->getCollection()->map(function ($approval) {
@@ -318,7 +320,7 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
 
-        $approval = \App\Models\Approval::where('dealer_code', $dealer->dealer_code)
+        $approval = Approval::where('dealer_code', $dealer->dealer_code)
             ->where('dealer_approval', false)
             ->findOrFail($id);
 
@@ -344,7 +346,7 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
 
-        $approval = \App\Models\Approval::where('dealer_code', $dealer->dealer_code)->findOrFail($id);
+        $approval = Approval::where('dealer_code', $dealer->dealer_code)->findOrFail($id);
         $approval->update(['dealer_approval' => false]);
 
         $car = Car::where('car_slug', $approval->car_slug)->first();
@@ -361,11 +363,11 @@ class DealerCarController extends Controller
 
     public function dashboardStats(Request $request): JsonResponse
     {
-        $dealer = $request->user();
+        $dealer     = $request->user();
         $dealerSlug = $dealer->dealer_slug;
 
-        $carSlugs = Car::where('dealer_slug', $dealerSlug)->pluck('car_slug');
-        $totalViewed = \App\Models\View::whereIn('car_slug', $carSlugs)->count();
+        $carSlugs     = Car::where('dealer_slug', $dealerSlug)->pluck('car_slug');
+        $totalViewed  = View::whereIn('car_slug', $carSlugs)->count();
         $expiringSoon = Car::where('dealer_slug', $dealerSlug)
             ->where('status', 'published')
             ->whereBetween('expiry_date', [now(), now()->addDays(3)])
