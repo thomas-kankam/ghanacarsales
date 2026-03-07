@@ -6,6 +6,8 @@ use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
+use App\Models\Plan;
+use App\Models\View;
 use App\Services\CarService;
 use App\Services\PaymentService;
 use App\Services\SubscriptionService;
@@ -54,6 +56,9 @@ class DealerCarController extends Controller
             '3_months'   => '3 Months',
             default      => 'Custom',
         };
+
+        $plan = Plan::where("plan_slug", $planSlug)->first();
+
         $data['plan_slug']     = $planSlug;
         $data['plan_name']     = $planName;
         $data['duration_days'] = $durationDays;
@@ -82,14 +87,21 @@ class DealerCarController extends Controller
 
         $data['status'] = 'pending_payment';
         $car            = $this->carService->createCar($dealer, $data);
+        $payment        = $this->paymentService->createPayment(
+            $dealer,
+            [$car->car_slug],
+            $planSlug,
+            $durationDays,
+            $planName,
+            (float) $plan->price,
+            $data['phone_number'] ?? null
+        );
         $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
             message: "Car uploaded successfully",
             status_code: self::API_CREATED,
-            data: array_merge(CarTransformer::summary($car), [
-                'next_step' => 'Call POST /api/dealer/payment/create with car_slugs and plan_slug to initiate payment.',
-            ]),
+            data: CarTransformer::summary($car),
             reason: "Car created. Initiate payment to publish."
         );
     }

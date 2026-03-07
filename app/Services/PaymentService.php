@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, int $durationDays, float $amount, ?string $phoneNumber = null): Payment
+    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, int $durationDays, string $planName, float $amount, ?string $phoneNumber = null): Payment
     {
-        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $amount, $phoneNumber) {
+        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $planName, $amount, $phoneNumber) {
             $cars = Car::whereIn('car_slug', $carSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
                 ->whereIn('status', ['pending_payment', 'pending_approval'])
@@ -22,8 +22,6 @@ class PaymentService
             if ($cars->isEmpty()) {
                 throw new \InvalidArgumentException('No valid cars found for payment');
             }
-
-            $planName = $this->planSlugToName($planSlug);
 
             $payment = Payment::create([
                 'payment_slug'   => Str::uuid()->toString(),
@@ -36,7 +34,7 @@ class PaymentService
                 'duration_days'  => $durationDays,
                 'car_slugs'      => $cars->pluck('car_slug')->values()->all(),
                 'phone_number'   => $phoneNumber,
-                'reference_id'   => strtoupper(Str::random(12)),
+                'reference_id'   => "GHCS" . time() . strtoupper(Str::random(6)),
             ]);
 
             return $payment;
@@ -51,9 +49,9 @@ class PaymentService
                 'reference_id' => $transactionId,
             ]);
 
-            $startDate = $payment->created_at ?? now();
+            $startDate  = $payment->created_at ?? now();
             $expiryDate = $startDate->copy()->addDays((int) $payment->duration_days);
-            $carSlugs = $payment->car_slugs ?? [];
+            $carSlugs   = $payment->car_slugs ?? [];
 
             foreach ($carSlugs as $carSlug) {
                 $car = Car::where('car_slug', $carSlug)->where('dealer_slug', $payment->dealer_slug)->first();
@@ -63,25 +61,25 @@ class PaymentService
             }
 
             $subscription = Subscription::create([
-                'dealer_slug'    => $payment->dealer_slug,
+                'dealer_slug'       => $payment->dealer_slug,
                 'subscription_slug' => Str::uuid()->toString(),
-                'plan_slug'      => $payment->plan_slug ?? 'custom',
-                'plan_name'      => $payment->plan_name ?? 'Custom',
-                'duration_days'  => (string) $payment->duration_days,
-                'starts_at'      => $startDate,
-                'expiry_date'    => $expiryDate,
-                'status'         => 'active',
-                'price'          => $payment->amount,
+                'plan_slug'         => $payment->plan_slug ?? 'custom',
+                'plan_name'         => $payment->plan_name ?? 'Custom',
+                'duration_days'     => (string) $payment->duration_days,
+                'starts_at'         => $startDate,
+                'expiry_date'       => $expiryDate,
+                'status'            => 'active',
+                'price'             => $payment->amount,
             ]);
 
             SubscriptionArchive::create([
-                'dealer_slug'        => $payment->dealer_slug,
-                'subscription_slug'   => $subscription->subscription_slug,
-                'plan_slug'          => $payment->plan_slug,
-                'plan_name'          => $payment->plan_name,
-                'duration_days'      => (string) $payment->duration_days,
-                'price'              => $payment->amount,
-                'status'             => 'completed',
+                'dealer_slug'       => $payment->dealer_slug,
+                'subscription_slug' => $subscription->subscription_slug,
+                'plan_slug'         => $payment->plan_slug,
+                'plan_name'         => $payment->plan_name,
+                'duration_days'     => (string) $payment->duration_days,
+                'price'             => $payment->amount,
+                'status'            => 'completed',
             ]);
 
             return true;
@@ -91,16 +89,6 @@ class PaymentService
     protected function carService(): CarService
     {
         return app(CarService::class);
-    }
-
-    protected function planSlugToName(string $slug): string
-    {
-        return match ($slug) {
-            'free_trial' => 'Free Trial',
-            '1_month'    => '1 Month',
-            '3_months'   => '3 Months',
-            default      => ucfirst(str_replace('_', ' ', $slug)),
-        };
     }
 
     public function getPaymentSummary(Dealer $dealer): array

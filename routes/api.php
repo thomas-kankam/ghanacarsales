@@ -119,6 +119,7 @@ Route::prefix('dealer')->group(function () {
         Route::get('/plans', [SubscriptionController::class, 'plans']);
         Route::get('/subscription', [SubscriptionController::class, 'current']);
         Route::get('/payments', [SubscriptionController::class, 'payments']);
+        Route::post('/create_payment', [PaymentController::class, 'createPayment']);
     });
 
     // Payment callback (public)
