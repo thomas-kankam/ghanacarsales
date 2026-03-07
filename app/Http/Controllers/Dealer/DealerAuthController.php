@@ -9,6 +9,9 @@ use App\Http\Requests\Dealer\LoginRequest;
 use App\Http\Requests\Dealer\OtpVerifyRequest;
 use App\Http\Requests\Dealer\RegisterDealerRequest;
 use App\Http\Requests\Dealer\VerifyLoginOtpRequest;
+use App\Jobs\SendEmailJob;
+use App\Mail\EmailVerification;
+use App\Mail\LoginVerification;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -61,23 +64,6 @@ class DealerAuthController extends Controller
             guard: "dealer"
         );
 
-        self::sendEmail(
-            $dealer->email,
-            email_class: "App\Mail\EmailVerification",
-            parameters: [
-                $dealer->email,
-                $otp,
-            ]
-        );
-
-        self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
-
-        // if ($channel === 'email') {
-        //     SendEmailJob::dispatch(
-        //         $dealer->email,
-        //         [$dealer->full_name, $otp],
-        //         EmailVerification::class
-        //     );
         // self::sendEmail(
         //     $dealer->email,
         //     email_class: "App\Mail\EmailVerification",
@@ -86,12 +72,29 @@ class DealerAuthController extends Controller
         //         $otp,
         //     ]
         // );
-        // } else {
-        //     self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
-        // }
 
-        // $message = "OTP sent to your {$channel} for verification (expires in 10 minutes)";
-        $message = "OTP sent to your email and phone number for verification (expires in 10 minutes)";
+        // self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
+
+        if ($channel === 'email') {
+            SendEmailJob::dispatch(
+                $dealer->email,
+                [$dealer->full_name, $otp],
+                EmailVerification::class
+            );
+            self::sendEmail(
+                $dealer->email,
+                email_class: "App\Mail\EmailVerification",
+                parameters: [
+                    $dealer->email,
+                    $otp,
+                ]
+            );
+        } else {
+            self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
+        }
+
+        $message = "OTP sent to your {$channel} for verification (expires in 10 minutes)";
+        // $message = "OTP sent to your email and phone number for verification (expires in 10 minutes)";
 
         return self::apiResponse(
             in_error: false,
@@ -166,22 +169,6 @@ class DealerAuthController extends Controller
             guard: "dealer"
         );
 
-        self::sendEmail(
-            $identifier,
-            email_class: "App\Mail\EmailVerification",
-            parameters: [
-                $identifier,
-                $otp,
-            ]
-        );
-        self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
-
-        // if ($channel === 'email') {
-        //     SendEmailJob::dispatch(
-        //         $dealer->email,
-        //         [$dealer->full_name, $otp],
-        //         EmailVerification::class
-        //     );
         // self::sendEmail(
         //     $identifier,
         //     email_class: "App\Mail\EmailVerification",
@@ -190,12 +177,28 @@ class DealerAuthController extends Controller
         //         $otp,
         //     ]
         // );
-        // } else {
-        //     self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
-        // }
+        // self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
 
-        // $message = "OTP resent to your {$channel} for verification (expires in 10 minutes)";
-        $message = "OTP resent to your email and phone number for verification (expires in 10 minutes)";
+        if ($channel === 'email') {
+            SendEmailJob::dispatch(
+                $dealer->email,
+                [$dealer->full_name, $otp],
+                EmailVerification::class
+            );
+            self::sendEmail(
+                $identifier,
+                email_class: "App\Mail\EmailVerification",
+                parameters: [
+                    $identifier,
+                    $otp,
+                ]
+            );
+        } else {
+            self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
+        }
+
+        $message = "OTP resent to your {$channel} for verification (expires in 10 minutes)";
+        // $message = "OTP resent to your email and phone number for verification (expires in 10 minutes)";
 
         return self::apiResponse(
             in_error: false,
@@ -274,30 +277,6 @@ class DealerAuthController extends Controller
             guard: "dealer"
         );
 
-        self::sendEmail(
-            $dealer->email,
-            email_class: "App\Mail\LoginVerification",
-            parameters: [
-                $dealer->email,
-                $otp,
-            ]
-        );
-
-        self::sendSms(
-            $phone_number,
-            'OTP Login code: ' . $otp,
-            'GHCARSALES'
-        );
-
-        // -----------------------------------------
-        // Send OTP
-        // -----------------------------------------
-        // if ($channel === 'email') {
-        //     SendEmailJob::dispatch(
-        //         $dealer->email,
-        //         [$dealer->full_name, $otp],
-        //         LoginVerification::class
-        //     );
         // self::sendEmail(
         //     $dealer->email,
         //     email_class: "App\Mail\LoginVerification",
@@ -307,22 +286,44 @@ class DealerAuthController extends Controller
         //     ]
         // );
 
-        // } else {
+        // self::sendSms(
+        //     $phone_number,
+        //     'OTP Login code: ' . $otp,
+        //     'GHCARSALES'
+        // );
 
-        //     self::sendSms(
-        //         $phone_number,
-        //         'OTP Login code: ' . $otp,
-        //         'GHCARSALES'
-        //     );
-        // }
+        // -----------------------------------------
+        // Send OTP
+        // -----------------------------------------
+        if ($channel === 'email') {
+            SendEmailJob::dispatch(
+                $dealer->email,
+                [$dealer->full_name, $otp],
+                LoginVerification::class
+            );
+            self::sendEmail(
+                $dealer->email,
+                email_class: "App\Mail\LoginVerification",
+                parameters: [
+                    $dealer->email,
+                    $otp,
+                ]
+            );
+        } else {
+            self::sendSms(
+                $phone_number,
+                'OTP Login code: ' . $otp,
+                'GHCARSALES'
+            );
+        }
 
         return self::apiResponse(
             in_error: false,
             message: "Action Successful",
             status_code: self::API_SUCCESS,
             data: $dealer?->toArray(),
-            // reason: "OTP sent to your {$channel} for login (expires in 10 minutes)"
-            reason: "OTP sent to your email and phone number for login (expires in 10 minutes)"
+            // reason: "OTP sent to your email and phone number for login (expires in 10 minutes)"
+            reason: "OTP sent to your {$channel} for login (expires in 10 minutes)"
         );
     }
 

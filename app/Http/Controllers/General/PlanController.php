@@ -8,12 +8,16 @@ class PlanController extends Controller
 {
     public function getPlans()
     {
-        $plans = Plan::all();
+        // $plans = Plan::orderBy('price')->get();
+        // dd($plans);
+        $plan = Plan::first();
+
+        dd($plan->features);
         return $this->apiResponse(
             in_error: false,
             message: "Plans retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: $plans->toArray(),
+            data: $plans,
             reason: "Plans retrieved successfully."
         );
     }

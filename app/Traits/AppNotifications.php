@@ -47,13 +47,6 @@ trait AppNotifications
         }
     }
 
-    // protected static function sendOtp(Actor $actor, string $type, string $msg, string $channel, string $guard): void
-    // {
-    //     $otp = self::otpCode(type: $type, actor_id: $actor->id, channel: $channel, guard: $guard);
-    //     $msg = $msg . " " . $otp;
-    //     self::sendSms(phone_number: $actor->phone_number, msg: $msg, from: "DEALBOXX");
-    // }
-
     public function generateOtp(string $type, string $actor_id, string $channel, string $guard): string
     {
         // Generate 5-digit OTP with leading zeros preserved
