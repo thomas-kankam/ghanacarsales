@@ -121,9 +121,6 @@ Route::prefix('dealer')->group(function () {
         Route::get('/payments', [SubscriptionController::class, 'payments']);
         Route::post('/create_payment', [PaymentController::class, 'createPayment']);
     });
-
-    // Payment callback (public)
-    Route::post('/payment/callback', [PaymentController::class, 'callback']);
 });
 
 // Buyer routes (car.com)
@@ -145,3 +142,7 @@ Route::get('/cars/{car}', [BuyerCarController::class, 'show']);
 Route::get('/dealers/{dealer_slug}/cars', [BuyerCarController::class, 'getDealerCars']);
 
 Route::get('/all_plans', [PlanController::class, 'getPlans']);
+
+// Payment callback (public)
+Route::post('/payment/callback', [PaymentController::class, 'callback']);
+Route::post('/check_payment', [PaymentController::class, 'checkPayment']);

@@ -18,9 +18,13 @@ return new class extends Migration
             $table->string('plan_slug')->nullable();
             $table->string('status')->nullable();
             $table->timestamps();
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('expiry_date')->nullable();
 
             $table->index('subscription_slug');
             $table->index('status');
+            $table->index('starts_at');
+            $table->index('expiry_date');
         });
     }
 

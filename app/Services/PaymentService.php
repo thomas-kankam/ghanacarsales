@@ -41,12 +41,12 @@ class PaymentService
         });
     }
 
-    public function processPayment(Payment $payment, string $transactionId): bool
+    public function processPayment(Payment $payment, string $reference_id): bool
     {
-        return DB::transaction(function () use ($payment, $transactionId) {
+        return DB::transaction(function () use ($payment, $reference_id) {
             $payment->update([
-                'status'       => 'completed',
-                'reference_id' => $transactionId,
+                'status'       => 'paid',
+                'reference_id' => $reference_id,
             ]);
 
             $startDate  = $payment->created_at ?? now();
@@ -60,28 +60,32 @@ class PaymentService
                 }
             }
 
-            $subscription = Subscription::create([
-                'dealer_slug'       => $payment->dealer_slug,
-                'subscription_slug' => Str::uuid()->toString(),
-                'plan_slug'         => $payment->plan_slug ?? 'custom',
-                'plan_name'         => $payment->plan_name ?? 'Custom',
-                'duration_days'     => (string) $payment->duration_days,
-                'starts_at'         => $startDate,
-                'expiry_date'       => $expiryDate,
-                'status'            => 'active',
-                'price'             => $payment->amount,
-            ]);
+            $subscription = Subscription::updateOrCreate(
+                ['dealer_slug' => $payment->dealer_slug],
+                [
+                    'subscription_slug' => Str::uuid()->toString(),
+                    'plan_slug'         => $payment->plan_slug ?? 'custom',
+                    'plan_name'         => $payment->plan_name ?? 'Custom',
+                    'duration_days'     => (string) $payment->duration_days,
+                    'starts_at'         => $startDate,
+                    'expiry_date'       => $expiryDate,
+                    'status'            => 'active',
+                    'price'             => $payment->amount,
+                ]);
 
-            SubscriptionArchive::create([
-                'dealer_slug'       => $payment->dealer_slug,
-                'subscription_slug' => $subscription->subscription_slug,
-                'plan_slug'         => $payment->plan_slug,
-                'plan_name'         => $payment->plan_name,
-                'duration_days'     => (string) $payment->duration_days,
-                'price'             => $payment->amount,
-                'status'            => 'completed',
-            ]);
-
+            SubscriptionArchive::updateOrCreate(
+                ['reference_id' => $payment->reference_id],
+                [
+                    'dealer_slug'       => $payment->dealer_slug,
+                    'subscription_slug' => $subscription->subscription_slug,
+                    'plan_slug'         => $payment->plan_slug,
+                    'plan_name'         => $payment->plan_name,
+                    'duration_days'     => (string) $payment->duration_days,
+                    'price'             => $payment->amount,
+                    'status'            => 'paid',
+                    'start_at'          => $subscription->starts_at,
+                    'end_at'            => $subscription->expiry_date,
+                ]);
             return true;
         });
     }

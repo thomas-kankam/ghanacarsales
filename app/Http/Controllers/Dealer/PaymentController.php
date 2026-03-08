@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
@@ -29,16 +30,16 @@ class PaymentController extends Controller
     public function createPayment(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'car_slugs'     => 'required|array',
-            'car_slugs.*'   => 'string|exists:cars,car_slug',
-            'plan_slug'     => 'required|string|in:free_trial,1_month,3_months',
-            'phone_number'  => 'nullable|string',
+            'car_slugs'    => 'required|array',
+            'car_slugs.*'  => 'string|exists:cars,car_slug',
+            'plan_slug'    => 'required|string|in:free_trial,1_month,3_months',
+            'phone_number' => 'nullable|string',
         ]);
 
-        $dealer = $request->user();
-        $plan = Plan::where('plan_slug', $data['plan_slug'])->first();
+        $dealer       = $request->user();
+        $plan         = Plan::where('plan_slug', $data['plan_slug'])->first();
         $durationDays = $plan ? (int) $plan->duration_days : ($data['plan_slug'] === 'free_trial' ? 15 : ($data['plan_slug'] === '3_months' ? 90 : 30));
-        $amount = $plan ? (float) $plan->price : 0;
+        $amount       = $plan ? (float) $plan->price : 0;
 
         $payment = $this->paymentService->createPayment(
             $dealer,
@@ -62,17 +63,32 @@ class PaymentController extends Controller
 
     public function callback(Request $request): JsonResponse
     {
-        $request->validate([
-            'transaction_id' => 'required|string',
-            'payment_slug'   => 'required|exists:payments,payment_slug',
-            'status'         => 'required|in:success,failed',
-        ]);
+        $response = file_get_contents("php://input");
+        // Log::channel("payments")->info("[Payswitch Callback Raw]", ['raw' => $response]);
 
-        $payment = \App\Models\Payment::where('payment_slug', $request->payment_slug)->firstOrFail();
+        // $request->validate([
+        //     'transaction_id' => 'required|string',
+        //     'payment_slug'   => 'required|exists:payments,payment_slug',
+        //     'status'         => 'required|in:success,failed',
+        // ]);
 
-        if ($request->status === 'success') {
+        $response = json_decode($response, true);
+
+        if (! $response) {
+            // Log::channel("payments")->error("[Invalid Callback Data]");
+            return response()->json(['status' => 'error', 'message' => 'Invalid data'], 400);
+        }
+
+        // $merchant_data = json_decode($response['merchant_data'] ?? '{}', true);
+        // $paymentType   = $merchant_data['payment_type'] ?? null;
+
+        $payment = Payment::where("reference_id", $response['transaction_id'] ?? null)->first();
+
+        if ($request->status === 'success' || 'paid' || 'Approved') {
             $this->paymentService->processPayment($payment, $request->transaction_id);
-        } else {
+        }
+
+        if (in_array($response["status"], ["Ambiguous", "pending", "Failed"])) {
             $payment->update(['status' => 'failed']);
         }
 
@@ -81,6 +97,30 @@ class PaymentController extends Controller
             message: "Payment processed",
             status_code: self::API_SUCCESS,
             data: ['payment' => $payment->fresh()]
+        );
+    }
+
+    public function checkPayment(Request $request): JsonResponse
+    {
+        $request->validate([
+            'reference_id' => 'required|string',
+        ]);
+
+        $payment = Payment::where('reference_id', $request->reference_id)->firstOrFail();
+
+        if ($request->status === 'paid') {
+            $this->paymentService->processPayment($payment, $request->reference_id);
+        }
+
+        if ($request->status === 'failed') {
+            $payment->update(['status' => 'failed']);
+        }
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Payment processed",
+            status_code: self::API_SUCCESS,
+            data: [$payment->fresh()]
         );
     }
 }

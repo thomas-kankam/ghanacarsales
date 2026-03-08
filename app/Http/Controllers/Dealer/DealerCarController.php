@@ -66,9 +66,9 @@ class DealerCarController extends Controller
         if ($planSlug === 'free_trial') {
             $data['status'] = 'pending_approval';
             $car            = $this->carService->createCar($dealer, $data);
-            $car->update([
-                "start_date" => $car->created_at,
-            ]);
+            // $car->update([
+            //     "start_date" => $car->created_at,
+            // ]);
             Approval::create([
                 'car_slug'    => $car->car_slug,
                 'dealer_slug' => $dealer->dealer_slug,
@@ -101,7 +101,11 @@ class DealerCarController extends Controller
             in_error: false,
             message: "Car uploaded successfully",
             status_code: self::API_CREATED,
-            data: CarTransformer::summary($car),
+            data: [
+                'car'         => CarTransformer::summary($car),
+                'payment'     => $payment,
+                'payment_url' => url("/api/check_payment?reference_id={$payment->reference_id}"),
+            ],
             reason: "Car created. Initiate payment to publish."
         );
     }
