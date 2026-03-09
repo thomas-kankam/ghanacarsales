@@ -6,6 +6,7 @@ use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
+use App\Models\Plan;
 use App\Models\View;
 use App\Services\CarService;
 use App\Services\PaymentService;
@@ -30,6 +31,8 @@ class DealerCarController extends Controller
         $isDraft  = ($data['status'] ?? '') === 'draft';
         $planSlug = $data['plan_slug'] ?? null;
 
+        $plan = Plan::where("plan_slug", $planSlug)->first();
+
         if ($isDraft) {
             $data['status'] = 'draft';
             $car            = $this->carService->createCar($dealer, $data);
@@ -52,21 +55,21 @@ class DealerCarController extends Controller
                 $dealer,
                 [$car->car_slug],
                 $data['plan_slug'] ?? null,
-                $data['plan_name'] ?? null,
-                $data['plan_price'] ?? 0.00,
+                $plan->plan_name ?? null,
+                $plan->price ?? 0.00,
                 $data['phone_number'] ?? null,
                 $data['network'] ?? null,
                 $data['payment_method'] ?? 'friend_code',
                 $data['plan_details']
             );
             Approval::create([
-                'car_slug'    => $car->car_slug,
-                'dealer_slug' => $dealer->dealer_slug,
-                'status'      => 'pending',
-                'type'        => "friend_code",
-                'dealer_code' => $data['dealer_code'],
+                'car_slug'     => $car->car_slug,
+                'dealer_slug'  => $dealer->dealer_slug,
+                'status'       => 'pending',
+                'type'         => "friend_code",
+                'dealer_code'  => $data['dealer_code'],
                 'payment_slug' => $payment->payment_slug,
-                'dealer_name' => $dealer->full_name ?? $dealer->business_name,
+                'dealer_name'  => $dealer->full_name ?? $dealer->business_name,
             ]);
             return $this->apiResponse(
                 in_error: false,
@@ -86,8 +89,8 @@ class DealerCarController extends Controller
             $dealer,
             [$car->car_slug],
             $data['plan_slug'] ?? null,
-            $data['plan_name'] ?? null,
-            $data['plan_price'] ?? 0.00,
+            $plan->plan_name ?? null,
+            $plan->price ?? 0.00,
             $data['phone_number'] ?? null,
             $data['network'] ?? null,
             $data['payment_method'] ?? null,
