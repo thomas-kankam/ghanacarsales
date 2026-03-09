@@ -135,12 +135,18 @@ class DealerCarController extends Controller
             ->whereNull('deleted_at')
             ->paginate(15);
 
+        // Map each car model through the transformer
+        $items = collect($cars->items())
+            ->map(fn($car) => CarTransformer::summary($car))
+            ->values()
+            ->all();
+
         return $this->apiResponse(
             in_error: false,
             message: "Cars retrieved successfully",
             status_code: self::API_SUCCESS,
             data: [
-                'items' => CarTransformer::summary($cars->items()),
+                'items' => $items,
                 'meta'  => [
                     'current_page' => $cars->currentPage(),
                     'last_page'    => $cars->lastPage(),
