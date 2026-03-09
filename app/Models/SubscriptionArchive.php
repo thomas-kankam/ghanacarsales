@@ -19,9 +19,11 @@ class SubscriptionArchive extends Model
         'starts_at',
         'expiry_date',
         'reference_id',
+        'features',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price'    => 'decimal:2',
+        'features' => 'array',
     ];
 }

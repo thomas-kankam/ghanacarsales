@@ -18,12 +18,14 @@ class Subscription extends Model
         'starts_at',
         'expiry_date',
         'status',
-        'price'
+        'price',
+        'features',
     ];
 
     protected $casts = [
         'starts_at'   => 'datetime',
         'expiry_date' => 'datetime',
+        'features'    => 'array',
     ];
 
     public function dealer(): BelongsTo
@@ -31,4 +33,3 @@ class Subscription extends Model
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 }
-

@@ -22,11 +22,13 @@ class Payment extends Model
         'payment_method',
         'duration_days',
         'car_slugs',
+        'features',
     ];
 
     protected $casts = [
-        'amount'       => 'decimal:2',
-        'car_slugs'     => 'array',
+        'amount'    => 'decimal:2',
+        'car_slugs' => 'array',
+        'features'  => 'array',
     ];
 
     public function dealer(): BelongsTo

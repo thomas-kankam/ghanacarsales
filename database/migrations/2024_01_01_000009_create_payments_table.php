@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('dealer_slug');
             $table->string('plan_name')->nullable();
             $table->string('plan_slug')->nullable();
-            $table->unsignedSmallInteger('duration_days')->default(30);
+            $table->integer('duration_days');
             $table->string('status');
             $table->string("phone_number")->nullable();
             $table->string('network')->nullable();
@@ -22,6 +22,7 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             $table->string('payment_method')->nullable();
             $table->json('car_slugs')->nullable();
+            $table->json('features')->nullable();
             $table->timestamps();
 
             $table->index('payment_slug');

@@ -13,20 +13,22 @@ class Approval extends Model
         'car_slug',
         'dealer_slug',
         'dealer_code',
-        'dealer_approval',
+        'type',
+        // 'dealer_approval',
         'admin_approval',
         'admin_slug',
         'admin_approval_at',
-        'dealer_approval_at',
-        'payment_slug',
+        // 'dealer_approval_at',
+        // 'payment_slug',
         'dealer_name',
+        'status',
     ];
 
     protected $casts = [
-        'dealer_approval'    => 'boolean',
-        'admin_approval'     => 'boolean',
-        'dealer_approval_at' => 'datetime',
-        'admin_approval_at'  => 'datetime',
+        // 'dealer_approval'    => 'boolean',
+        'admin_approval'    => 'boolean',
+        // 'dealer_approval_at' => 'datetime',
+        'admin_approval_at' => 'datetime',
     ];
 
     public function car()
@@ -38,4 +40,9 @@ class Approval extends Model
     {
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
+
+    // public function payment()
+    // {
+    //     return $this->belongsTo(Payment::class, 'dealer_slug', 'dealer_slug');
+    // }
 }

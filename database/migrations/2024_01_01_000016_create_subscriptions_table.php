@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('status');
             $table->decimal('price', 15, 2)->default(0);
             $table->timestamps();
+            $table->json('features')->nullable();
 
             $table->index('dealer_slug');
             $table->index('plan_slug');

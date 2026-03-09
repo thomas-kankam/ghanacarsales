@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Dealer;
 use App\Http\Controllers\Controller;
 use App\Models\Car;
 use App\Models\Payment;
-use App\Models\Plan;
 use App\Services\PaymentService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
@@ -39,20 +38,22 @@ class PaymentController extends Controller
             'network'      => 'nullable|string',
         ]);
 
-        $dealer       = $request->user();
-        $plan         = Plan::where('plan_slug', $data['plan_slug'])->first();
-        $durationDays = $plan ? (int) $plan->duration_days : ($data['plan_slug'] === 'free_trial' ? 15 : ($data['plan_slug'] === '3_months' ? 90 : 30));
-        $amount       = $plan ? (float) $plan->price : 0;
+        $dealer = $request->user();
+        // $plan         = Plan::where('plan_slug', $data['plan_slug'])->first();
+        // $durationDays = $plan ? (int) $plan->duration_days : ($data['plan_slug'] === 'free_trial' ? 15 : ($data['plan_slug'] === '3_months' ? 90 : 30));
+        // $amount       = $plan ? (float) $plan->price : 0;
 
         $payment = $this->paymentService->createPayment(
             $dealer,
             $data['car_slugs'],
+            $data['plan_name'] ?? null,
             $data['plan_slug'],
-            $durationDays,
-            $plan->plan_name,
-            $amount,
+            $data['duration_days'] ?? null,
+            $data['price'] ?? null,
+            $data['features'] ?? null,
             $data['phone_number'] ?? null,
-            $data['network'] ?? null
+            $data['network'] ?? null,
+            $data['payment_method'] ?? null
         );
 
         return $this->apiResponse(
@@ -130,7 +131,7 @@ class PaymentController extends Controller
         $payment = Payment::where('reference_id', $request->reference_id)->firstOrFail();
 
         if ($payment->status === 'paid') {
-            // $this->paymentService->processPayment($payment, $request->reference_id);
+            $this->paymentService->processPayment($payment, $request->reference_id);
             return $this->apiResponse(
                 in_error: true,
                 message: "Payment approved",
@@ -141,7 +142,7 @@ class PaymentController extends Controller
         }
 
         if ($payment->status === 'failed') {
-            // $payment->update(['status' => 'failed']);
+            $payment->update(['status' => 'failed']);
             return $this->apiResponse(
                 in_error: true,
                 message: "Payment pending failed",

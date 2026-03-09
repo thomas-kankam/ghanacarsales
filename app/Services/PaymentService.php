@@ -1,22 +1,21 @@
 <?php
 namespace App\Services;
 
+use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
-use App\Models\Subscription;
-use App\Models\SubscriptionArchive;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, string $durationDays, string $planName, float $amount, ?string $phoneNumber = null, ?string $network): Payment
+    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, string $durationDays, string $planName, float $amount, array $features, ?string $phoneNumber = null, ?string $network, ?string $payment_method): Payment
     {
-        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $planName, $amount, $phoneNumber, $network) {
+        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $planName, $amount, $features, $phoneNumber, $network, $payment_method) {
             $cars = Car::whereIn('car_slug', $carSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
-            // ->whereIn('status', ['pending_payment', 'pending_approval'])
+                ->whereIn('status', ['pending_payment', 'pending_approval'])
                 ->get();
 
             if ($cars->isEmpty()) {
@@ -29,12 +28,13 @@ class PaymentService
                 'plan_name'      => $planName,
                 'plan_slug'      => $planSlug,
                 'amount'         => $amount,
-                'payment_method' => 'momo',
+                'payment_method' => $payment_method,
                 'status'         => 'pending',
                 'duration_days'  => $durationDays,
                 'car_slugs'      => $cars->pluck('car_slug')->values()->all(),
                 'phone_number'   => $phoneNumber,
                 'network'        => $network,
+                'features'       => $features,
                 'reference_id'   => "GHCS" . time() . strtoupper(Str::random(6)),
             ]);
 
@@ -42,51 +42,97 @@ class PaymentService
         });
     }
 
-    public function processPayment(Payment $payment, string $reference_id): bool
+    // public function processPayment(Payment $payment, ?string $reference_id): bool
+    // {
+    //     return DB::transaction(function () use ($payment, $reference_id) {
+    //         $payment->update([
+    //             'status' => 'paid',
+    //             // 'reference_id' => $reference_id,
+    //         ]);
+
+    //         // $startDate  = $payment->created_at ?? now();
+    //         // $expiryDate = $startDate->copy()->addDays((int) $payment->duration_days);
+    //         $carSlugs = $payment->car_slugs ?? [];
+    //         foreach ($carSlugs as $carSlug) {
+    //             $car = Car::where('car_slug', $carSlug)->where('dealer_slug', $payment->dealer_slug)->first();
+    //             if ($car) {
+    //                 $dealer = $car->dealer();
+    //                 Approval::create([
+    //                     'car_slug'    => $car->car_slug,
+    //                     'dealer_slug' => $dealer->dealer_slug,
+    //                     'dealer_code' => null,
+    //                     'type'        => $payment->payment_method,
+    //                     'dealer_name' => $dealer->full_name ?? $dealer->business_name,
+    //                 ]);
+    //                 $this->carService()->activateCar($car, (int) $payment->duration_days);
+    //             }
+    //         }
+
+    //         // $subscription = Subscription::updateOrCreate(
+    //         //     ['dealer_slug' => $payment->dealer_slug],
+    //         //     [
+    //         //         'subscription_slug' => Str::uuid()->toString(),
+    //         //         'plan_slug'         => $payment->plan_slug ?? 'custom',
+    //         //         'plan_name'         => $payment->plan_name ?? 'Custom',
+    //         //         'duration_days'     => (string) $payment->duration_days,
+    //         //         'starts_at'         => $startDate,
+    //         //         'expiry_date'       => $expiryDate,
+    //         //         'status'            => 'active',
+    //         //         'price'             => $payment->amount,
+    //         //     ]);
+
+    //         // SubscriptionArchive::updateOrCreate(
+    //         //     ['reference_id' => $payment->reference_id],
+    //         //     [
+    //         //         'dealer_slug'       => $payment->dealer_slug,
+    //         //         'subscription_slug' => $subscription->subscription_slug,
+    //         //         'plan_slug'         => $payment->plan_slug,
+    //         //         'plan_name'         => $payment->plan_name,
+    //         //         'duration_days'     => (string) $payment->duration_days,
+    //         //         'price'             => $payment->amount,
+    //         //         'status'            => 'paid',
+    //         //         'starts_at'         => $subscription->starts_at,
+    //         //         'expiry_date'       => $subscription->expiry_date,
+    //         //     ]);
+    //         return true;
+    //     });
+    // }
+
+    public function processPayment(Payment $payment, ?string $reference_id): bool
     {
         return DB::transaction(function () use ($payment, $reference_id) {
+            // Update payment status
             $payment->update([
                 'status'       => 'paid',
-                'reference_id' => $reference_id,
+                'reference_id' => $reference_id, // Uncommented this
             ]);
 
-            $startDate  = $payment->created_at ?? now();
-            $expiryDate = $startDate->copy()->addDays((int) $payment->duration_days);
-            $carSlugs   = $payment->car_slugs ?? [];
+            $carSlugs = $payment->car_slugs ?? [];
 
             foreach ($carSlugs as $carSlug) {
-                $car = Car::where('car_slug', $carSlug)->where('dealer_slug', $payment->dealer_slug)->first();
+                $car = Car::where('car_slug', $carSlug)
+                    ->where('dealer_slug', $payment->dealer_slug)
+                    ->first();
+
                 if ($car) {
-                    $this->carService()->activateCar($car, (int) $payment->duration_days);
+                    // Fix: Remove parentheses to get the dealer model
+                    $dealer = $car->dealer;
+
+                    if ($dealer) {
+                        Approval::create([
+                            'car_slug'     => $car->car_slug,
+                            'dealer_slug'  => $dealer->dealer_slug,
+                            'type'         => $payment->payment_method,
+                            'dealer_name'  => $dealer->full_name ?? $dealer->business_name,
+                            // 'payment_slug' => $payment->payment_slug,
+                            'status'       => 'pending',
+                        ]);
+
+                        $this->carService()->activateCar($car, (int) $payment->duration_days);
+                    }
                 }
             }
 
-            $subscription = Subscription::updateOrCreate(
-                ['dealer_slug' => $payment->dealer_slug],
-                [
-                    'subscription_slug' => Str::uuid()->toString(),
-                    'plan_slug'         => $payment->plan_slug ?? 'custom',
-                    'plan_name'         => $payment->plan_name ?? 'Custom',
-                    'duration_days'     => (string) $payment->duration_days,
-                    'starts_at'         => $startDate,
-                    'expiry_date'       => $expiryDate,
-                    'status'            => 'active',
-                    'price'             => $payment->amount,
-                ]);
-
-            SubscriptionArchive::updateOrCreate(
-                ['reference_id' => $payment->reference_id],
-                [
-                    'dealer_slug'       => $payment->dealer_slug,
-                    'subscription_slug' => $subscription->subscription_slug,
-                    'plan_slug'         => $payment->plan_slug,
-                    'plan_name'         => $payment->plan_name,
-                    'duration_days'     => (string) $payment->duration_days,
-                    'price'             => $payment->amount,
-                    'status'            => 'paid',
-                    'starts_at'         => $subscription->starts_at,
-                    'expiry_date'       => $subscription->expiry_date,
-                ]);
             return true;
         });
     }

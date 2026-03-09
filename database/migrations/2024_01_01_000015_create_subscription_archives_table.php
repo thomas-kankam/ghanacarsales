@@ -21,6 +21,7 @@ return new class extends Migration
             $table->timestamps();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('expiry_date')->nullable();
+            $table->json('features')->nullable();
 
             $table->index('subscription_slug');
             $table->index('status');

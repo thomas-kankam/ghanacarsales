@@ -33,7 +33,12 @@ class CarUploadRequest extends FormRequest
             'dealer_code'         => ['nullable', 'string'],
             'phone_number'        => ['nullable', 'string'],
             'network'             => ['nullable', 'string'],
-            'plan_slug'           => ['nullable', 'string', 'in:free_trial,1_month,3_months'],
+            'plan_name'           => ['nullable', 'string'],
+            'plan_slug'           => ['nullable', 'string'],
+            'duration_days'       => ['nullable', 'string'],
+            'duration_days'       => ['nullable', 'string'],
+            'plan_price'          => ['nullable', 'numeric', 'min:0'],
+            "features"            => ["nullable", "array"],
         ];
     }
 }

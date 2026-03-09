@@ -10,8 +10,8 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             [
-                'plan_name'     => 'Free Trial',
-                'plan_slug'     => 'free_trial',
+                'plan_name'     => 'Friend Code',
+                'plan_slug'     => 'friend_code',
                 'price'         => 0.00,
                 'duration_days' => 15,
                 'features'      => [
@@ -20,7 +20,7 @@ class PlanSeeder extends Seeder
                     //     'featured'       => 0,
                     //     'images_per_car' => 5,
                     // ],
-                    'listing_duration'  => 15,
+                    'listing_duration' => 15,
                     // 'visibility'        => 'standard',
                     // 'support'           => 'email_only',
                     // 'analytics'         => [
@@ -51,7 +51,7 @@ class PlanSeeder extends Seeder
                     //     'featured'       => 2,
                     //     'images_per_car' => 10,
                     // ],
-                    'listing_duration'  => 30,
+                    'listing_duration' => 30,
                     // 'visibility'        => 'enhanced',
                     // 'support'           => 'priority_email',
                     // 'analytics'         => [
@@ -86,7 +86,7 @@ class PlanSeeder extends Seeder
                     //     'featured'       => 10,
                     //     'images_per_car' => 20,
                     // ],
-                    'listing_duration'  => 90,
+                    'listing_duration' => 90,
                     // 'visibility'        => 'premium',
                     // 'support'           => '24_7_priority',
                     // 'analytics'         => [

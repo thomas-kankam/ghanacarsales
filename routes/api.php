@@ -108,9 +108,9 @@ Route::prefix('dealer')->group(function () {
         Route::get('/publish_all_drafts', [DealerCarController::class, 'publishAllDrafts']);
 
         // Sponsor approvals
-        Route::get('/approvals', [DealerCarController::class, 'approvals']);
-        Route::post('/approvals/{id}/approve', [DealerCarController::class, 'approveCar']);
-        Route::post('/approvals/{id}/reject', [DealerCarController::class, 'rejectCar']);
+        // Route::get('/approvals', [DealerCarController::class, 'approvals']);
+        // Route::post('/approvals/{id}/approve', [DealerCarController::class, 'approveCar']);
+        // Route::post('/approvals/{id}/reject', [DealerCarController::class, 'rejectCar']);
 
         Route::get('/payment/summary', [PaymentController::class, 'getSummary']);
         Route::post('/create_payment/{car}', [PaymentController::class, 'createPayment']);

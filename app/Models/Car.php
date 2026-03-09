@@ -35,6 +35,8 @@ class Car extends Model
         'plan_slug',
         'duration_days',
         'payment_status',
+        'plan_price',
+        'features',
     ];
 
     protected $casts = [
@@ -42,7 +44,9 @@ class Car extends Model
         'aircon'      => 'boolean',
         'registered'  => 'boolean',
         'price'       => 'decimal:2',
+        'plan_price'       => 'decimal:2',
         'images'      => 'array',
+        'features'      => 'array',
         'start_date'  => 'datetime',
         'expiry_date' => 'datetime',
     ];

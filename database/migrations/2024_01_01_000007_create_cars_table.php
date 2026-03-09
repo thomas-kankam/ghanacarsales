@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('mileage_unit')->nullable();
             $table->boolean('swap_deals')->default(false);
             $table->decimal('price', 10, 2);
+            $table->decimal('plan_price', 10, 2);
             $table->boolean('aircon')->default(false);
             $table->boolean('registered')->default(false);
             $table->year('registration_year')->nullable();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->string('transmission');
             $table->string('colour');
             $table->json("images")->nullable();
+            $table->json("features")->nullable();
             $table->string('status')->nullable();
             $table->longText('description')->nullable();
             $table->timestamp('start_date')->nullable();
