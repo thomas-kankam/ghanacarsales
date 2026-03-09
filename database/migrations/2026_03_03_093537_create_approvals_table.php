@@ -27,7 +27,7 @@ return new class extends Migration
 
             $table->index('car_slug');
             $table->index('dealer_slug');
-            $table->index('friend_code');
+            $table->index('dealer_code');
         });
     }
 
