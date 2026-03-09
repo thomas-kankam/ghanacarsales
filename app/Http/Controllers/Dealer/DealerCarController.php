@@ -6,7 +6,6 @@ use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
-use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\View;
 use App\Services\CarService;
@@ -132,61 +131,23 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
 
-        // Get paginated cars
         $cars = $dealer->cars()
             ->whereNull('deleted_at')
             ->paginate(15);
-
-        // Get all car slugs from the current page
-        $carSlugs = $cars->getCollection()->pluck('car_slug')->toArray();
-
-        // Eager load payments for all these cars in a single query
-        $payments = Payment::where(function ($query) use ($carSlugs) {
-            foreach ($carSlugs as $slug) {
-                $query->whereI('car_slugs', $slug);
-            }
-        })->get();
-
-        // Group payments by car_slug for easy access
-        $paymentsByCar = [];
-        foreach ($payments as $payment) {
-            foreach ($payment->car_slugs as $carSlug) {
-                if (in_array($carSlug, $carSlugs)) {
-                    if (! isset($paymentsByCar[$carSlug])) {
-                        $paymentsByCar[$carSlug] = [];
-                    }
-                    $paymentsByCar[$carSlug][] = $payment;
-                }
-            }
-        }
-
-        // Attach payment info to each car
-        $cars->getCollection()->each(function ($car) use ($paymentsByCar) {
-            $car->payment_info   = $paymentsByCar[$car->car_slug] ?? [];
-            $car->latest_payment = $paymentsByCar[$car->car_slug][0] ?? null;
-        });
-
-        // Transform cars
-        $items = $cars->getCollection()
-            ->map(fn($car) => CarTransformer::summary($car))
-            ->values()
-            ->all();
-
-        $payload = [
-            'items' => $items,
-            'meta'  => [
-                'current_page' => $cars->currentPage(),
-                'last_page'    => $cars->lastPage(),
-                'per_page'     => $cars->perPage(),
-                'total'        => $cars->total(),
-            ],
-        ];
 
         return $this->apiResponse(
             in_error: false,
             message: "Cars retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: $payload,
+            data: [
+                'items' => CarTransformer::summary($cars->items()),
+                'meta'  => [
+                    'current_page' => $cars->currentPage(),
+                    'last_page'    => $cars->lastPage(),
+                    'per_page'     => $cars->perPage(),
+                    'total'        => $cars->total(),
+                ],
+            ],
             reason: "Dealer cars retrieved successfully."
         );
     }
@@ -220,14 +181,7 @@ class DealerCarController extends Controller
     public function singleCar(Request $request, Car $car): JsonResponse
     {
         $dealer = $request->user();
-
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
-
-        // Load dealer and manually add payment info
-        // $car->load(['dealer']);
-
-        // Add payment info as a custom attribute
-        $car->payment_info = Payment::whereIn('car_slugs', $car->car_slug)->first();
 
         return $this->apiResponse(
             in_error: false,

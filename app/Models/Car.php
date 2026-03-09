@@ -67,4 +67,19 @@ class Car extends Model
     {
         return $this->hasOne(Payment::class, 'car_slug', 'car_slug');
     }
+
+    // In Car.php model
+    protected $appends = ['payment_info', 'latest_payment'];
+
+    public function getPaymentInfoAttribute()
+    {
+        return Payment::whereJsonContains('car_slugs', $this->car_slug)->get();
+    }
+
+    public function getLatestPaymentAttribute()
+    {
+        return Payment::whereJsonContains('car_slugs', $this->car_slug)
+            ->latest()
+            ->first();
+    }
 }
