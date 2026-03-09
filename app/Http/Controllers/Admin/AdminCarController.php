@@ -73,8 +73,9 @@ class AdminCarController extends Controller
                 'admin_approval'    => true,
                 'admin_approval_at' => now(),
                 'admin_slug'        => $request->user()?->admin_slug ?? 'system',
-                'status' => ''
+                'status' => 'approved'
             ]);
+
             // Payment::create([
             //     'payment_slug'   => Str::uuid()->toString(),
             //     'dealer_slug'    => $car->dealer_slug,

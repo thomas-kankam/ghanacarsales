@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Route;
 //     Route::get('/brands', [\App\Http\Controllers\Api\V1\Common\BrandController::class, 'index']);
 // });
 
+Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
 // Admin routes (admin.car.com)
 Route::prefix('admin')->group(function () {
     Route::post('/register', [AdminAuthController::class, 'register']);
