@@ -63,9 +63,8 @@ class Car extends Model
         return $this->hasMany(View::class, 'car_slug', 'car_slug');
     }
 
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(Payment::class, 'car_slugs', 'car_slug')
-            ->whereJsonContains('car_slugs', $this->car_slug);
+        return $this->hasOne(Payment::class, 'car_slug', 'car_slug');
     }
 }

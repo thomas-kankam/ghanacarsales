@@ -35,9 +35,8 @@ class Payment extends Model
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 
-    public function cars()
+    public function car(): BelongsTo
     {
-        return $this->belongsToMany(Car::class, 'payments', 'car_slugs', 'car_slug')
-            ->whereRaw('JSON_CONTAINS(car_slugs, ?)', [$this->car_slug]);
+        return $this->belongsTo(Car::class, 'car_slug', 'car_slug');
     }
 }
