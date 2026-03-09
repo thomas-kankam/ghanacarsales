@@ -143,7 +143,7 @@ class DealerCarController extends Controller
         // Eager load payments for all these cars in a single query
         $payments = Payment::where(function ($query) use ($carSlugs) {
             foreach ($carSlugs as $slug) {
-                $query->orWhereJsonContains('car_slugs', $slug);
+                $query->whereI('car_slugs', $slug);
             }
         })->get();
 
@@ -224,10 +224,10 @@ class DealerCarController extends Controller
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
 
         // Load dealer and manually add payment info
-        $car->load(['dealer']);
+        // $car->load(['dealer']);
 
         // Add payment info as a custom attribute
-        $car->payment_info = Payment::whereJsonContains('car_slugs', $car->car_slug)->first();
+        $car->payment_info = Payment::whereIn('car_slugs', $car->car_slug)->first();
 
         return $this->apiResponse(
             in_error: false,
