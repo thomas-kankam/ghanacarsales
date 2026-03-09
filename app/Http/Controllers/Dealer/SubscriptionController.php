@@ -47,6 +47,7 @@ class SubscriptionController extends Controller
         return $this->apiResponse(
             in_error: false,
             message: "Payment history retrieved successfully",
+            reason: "Action succesful",
             status_code: self::API_SUCCESS,
             data: $payments
         );

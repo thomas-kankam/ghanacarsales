@@ -11,12 +11,12 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, int $durationDays, string $planName, float $amount, ?string $phoneNumber = null): Payment
+    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, string $durationDays, string $planName, float $amount, ?string $phoneNumber = null, ?string $network): Payment
     {
-        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $planName, $amount, $phoneNumber) {
+        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $planName, $amount, $phoneNumber, $network) {
             $cars = Car::whereIn('car_slug', $carSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
-                ->whereIn('status', ['pending_payment', 'pending_approval'])
+            // ->whereIn('status', ['pending_payment', 'pending_approval'])
                 ->get();
 
             if ($cars->isEmpty()) {
@@ -34,6 +34,7 @@ class PaymentService
                 'duration_days'  => $durationDays,
                 'car_slugs'      => $cars->pluck('car_slug')->values()->all(),
                 'phone_number'   => $phoneNumber,
+                'network'        => $network,
                 'reference_id'   => "GHCS" . time() . strtoupper(Str::random(6)),
             ]);
 
@@ -83,8 +84,8 @@ class PaymentService
                     'duration_days'     => (string) $payment->duration_days,
                     'price'             => $payment->amount,
                     'status'            => 'paid',
-                    'start_at'          => $subscription->starts_at,
-                    'end_at'            => $subscription->expiry_date,
+                    'starts_at'         => $subscription->starts_at,
+                    'expiry_date'       => $subscription->expiry_date,
                 ]);
             return true;
         });

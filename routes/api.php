@@ -113,13 +113,12 @@ Route::prefix('dealer')->group(function () {
         Route::post('/approvals/{id}/reject', [DealerCarController::class, 'rejectCar']);
 
         Route::get('/payment/summary', [PaymentController::class, 'getSummary']);
-        Route::post('/payment/create', [PaymentController::class, 'createPayment']);
+        Route::post('/create_payment/{car}', [PaymentController::class, 'createPayment']);
+        Route::post('/check_payment', [PaymentController::class, 'checkPayment']);
 
         // Subscription & plans
-        Route::get('/plans', [SubscriptionController::class, 'plans']);
-        Route::get('/subscription', [SubscriptionController::class, 'current']);
-        Route::get('/payments', [SubscriptionController::class, 'payments']);
-        Route::post('/create_payment', [PaymentController::class, 'createPayment']);
+        Route::get('/current_subscription', [SubscriptionController::class, 'current']);
+        Route::get('/payment_history', [SubscriptionController::class, 'payments']);
     });
 });
 
@@ -145,4 +144,3 @@ Route::get('/all_plans', [PlanController::class, 'getPlans']);
 
 // Payment callback (public)
 Route::post('/payment/callback', [PaymentController::class, 'callback']);
-Route::post('/check_payment', [PaymentController::class, 'checkPayment']);

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('price', 15, 2);
             $table->string('plan_slug')->nullable();
             $table->string('status')->nullable();
+            $table->string('reference_id')->nullable();
             $table->timestamps();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('expiry_date')->nullable();

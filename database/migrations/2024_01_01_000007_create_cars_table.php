@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('mileage');
             $table->string('mileage_unit')->nullable();
             $table->boolean('swap_deals')->default(false);
-            $table->decimal('price', 15, 2);
+            $table->decimal('price', 10, 2);
             $table->boolean('aircon')->default(false);
             $table->boolean('registered')->default(false);
             $table->year('registration_year')->nullable();

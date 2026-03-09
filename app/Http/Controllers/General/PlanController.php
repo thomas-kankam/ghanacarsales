@@ -8,11 +8,8 @@ class PlanController extends Controller
 {
     public function getPlans()
     {
-        // $plans = Plan::orderBy('price')->get();
-        // dd($plans);
-        $plan = Plan::first();
+        $plans = Plan::orderBy('price')->get();
 
-        dd($plan->features);
         return $this->apiResponse(
             in_error: false,
             message: "Plans retrieved successfully",

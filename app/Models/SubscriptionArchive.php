@@ -16,8 +16,9 @@ class SubscriptionArchive extends Model
         'price',
         'plan_slug',
         'status',
-        'start_at',
-        'end_at',
+        'starts_at',
+        'expiry_date',
+        'reference_id',
     ];
 
     protected $casts = [

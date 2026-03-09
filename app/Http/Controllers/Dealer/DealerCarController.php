@@ -44,38 +44,22 @@ class DealerCarController extends Controller
             );
         }
 
-        $durationDays = match ($planSlug) {
-            'free_trial' => 15,
-            '1_month'    => 30,
-            '3_months'   => 90,
-            default      => 15,
-        };
-        $planName = match ($planSlug) {
-            'free_trial' => 'Free Trial',
-            '1_month'    => '1 Month',
-            '3_months'   => '3 Months',
-            default      => 'Custom',
-        };
+        $plan = Plan::where("plan_slug", $data['plan_slug'])->first();
 
-        $plan = Plan::where("plan_slug", $planSlug)->first();
-
-        $data['plan_slug']     = $planSlug;
-        $data['plan_name']     = $planName;
-        $data['duration_days'] = $durationDays;
+        $data['plan_slug']     = $plan->plan_slug;
+        $data['plan_name']     = $plan->plan_name;
+        $data['duration_days'] = $plan->duration_days;
 
         if ($planSlug === 'free_trial') {
             $data['status'] = 'pending_approval';
             $car            = $this->carService->createCar($dealer, $data);
-            // $car->update([
-            //     "start_date" => $car->created_at,
-            // ]);
             Approval::create([
                 'car_slug'    => $car->car_slug,
                 'dealer_slug' => $dealer->dealer_slug,
-                'dealer_code' => $data['dealer_code'],
+                'dealer_code' => $data['dealer_code'] ?? null,
                 'dealer_name' => $dealer->full_name ?? $dealer->business_name,
             ]);
-            $car->load('dealer');
+            // $car->load('dealer');
             return $this->apiResponse(
                 in_error: false,
                 message: "Car submitted for approval",
@@ -90,13 +74,13 @@ class DealerCarController extends Controller
         $payment        = $this->paymentService->createPayment(
             $dealer,
             [$car->car_slug],
-            $planSlug,
-            $durationDays,
-            $planName,
-            (float) $plan->price,
-            $data['phone_number'] ?? null
+            $data['plan_slug'],
+            $data['duration_days'],
+            $data['plan_name'],
+            $plan->price,
+            $data['phone_number'] ?? null,
+            $data['network'] ?? null
         );
-        $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
             message: "Car uploaded successfully",
@@ -104,7 +88,7 @@ class DealerCarController extends Controller
             data: [
                 'car'         => CarTransformer::summary($car),
                 'payment'     => $payment,
-                'payment_url' => url("/api/check_payment?reference_id={$payment->reference_id}"),
+                'payment_url' => url("/api/dealer/check_payment?reference_id={$payment->reference_id}"),
             ],
             reason: "Car created. Initiate payment to publish."
         );
@@ -208,9 +192,85 @@ class DealerCarController extends Controller
         );
     }
 
+    // public function updateCar(CarUploadRequest $request, Car $car): JsonResponse
+    // {
+    //     $data = $request->validated();
+
+    //     $car = $this->carService->updateCar($car, $data);
+
+    //     return $this->apiResponse(
+    //         in_error: false,
+    //         message: "Car updated successfully",
+    //         status_code: self::API_SUCCESS,
+    //         data: CarTransformer::summary($car)
+    //     );
+    // }
+
     public function updateCar(CarUploadRequest $request, Car $car): JsonResponse
     {
-        $data = $request->validated();
+        $data   = $request->validated();
+        $dealer = $request->user();
+
+        // Check if plan is being changed
+        if (isset($data['plan_slug']) && $data['plan_slug'] !== $car->plan_slug) {
+            // Handle plan change logic
+            $plan = Plan::where("plan_slug", $data['plan_slug'])->first();
+
+            if (! $plan) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Invalid plan selected",
+                    status_code: self::API_BAD_REQUEST,
+                    reason: "The specified plan does not exist"
+                );
+            }
+
+            // If changing to free trial
+            if ($data['plan_slug'] === 'free_trial') {
+                $data['status'] = 'pending_approval';
+                // Create approval record if needed
+                Approval::updateOrCreate(
+                    ['car_slug' => $car->car_slug],
+                    [
+                        'dealer_slug' => $car->dealer_slug,
+                        'dealer_code' => $data['dealer_code'] ?? null,
+                        'dealer_name' => $car->dealer->full_name ?? $car->dealer->business_name,
+                    ]
+                );
+                return $this->apiResponse(
+                    in_error: false,
+                    message: "Car submitted for approval",
+                    status_code: self::API_CREATED,
+                    data: CarTransformer::summary($car),
+                    reason: "Free trial listing submitted. Pending dealer and admin approval before publish."
+                );
+            } else {
+                // If changing to paid plan, might need new payment
+                $data['status'] = 'pending_payment';
+                // You might want to create a new payment here
+                $payment = $this->paymentService->createPayment(
+                    $dealer,
+                    [$car->car_slug],
+                    $data['plan_slug'],
+                    $data['duration_days'],
+                    $data['plan_name'],
+                    $plan->price,
+                    $data['phone_number'] ?? null,
+                    $data['network'] ?? null
+                );
+                return $this->apiResponse(
+                    in_error: false,
+                    message: "Car uploaded successfully",
+                    status_code: self::API_CREATED,
+                    data: [
+                        'car'         => CarTransformer::summary($car),
+                        'payment'     => $payment,
+                        'payment_url' => url("/api/dealer/check_payment?reference_id={$payment->reference_id}"),
+                    ],
+                    reason: "Car created. Initiate payment to publish."
+                );
+            }
+        }
 
         $car = $this->carService->updateCar($car, $data);
 
@@ -373,7 +433,9 @@ class DealerCarController extends Controller
         return $this->apiResponse(
             in_error: false,
             message: "Car rejected successfully",
-            status_code: self::API_SUCCESS
+            status_code: self::API_SUCCESS,
+            reason: "Car rejected",
+            data: []
         );
     }
 

@@ -17,7 +17,7 @@ class Plan extends Model
     ];
 
     protected $casts = [
-        'price'    => 'decimal',
+        'price'    => 'decimal:2',
         'features' => 'array',
     ];
 }
