@@ -33,22 +33,19 @@ class Car extends Model
         'expiry_date',
         'plan_name',
         'plan_slug',
-        'duration_days',
         'payment_status',
-        'plan_price',
-        'features',
+        'plan_details',
     ];
 
     protected $casts = [
-        'swap_deals'  => 'boolean',
-        'aircon'      => 'boolean',
-        'registered'  => 'boolean',
-        'price'       => 'decimal:2',
-        'plan_price'       => 'decimal:2',
-        'images'      => 'array',
-        'features'      => 'array',
-        'start_date'  => 'datetime',
-        'expiry_date' => 'datetime',
+        'swap_deals'   => 'boolean',
+        'aircon'       => 'boolean',
+        'registered'   => 'boolean',
+        'price'        => 'decimal:2',
+        'images'       => 'array',
+        'plan_details' => 'array',
+        'start_date'   => 'datetime',
+        'expiry_date'  => 'datetime',
     ];
 
     public function getRouteKeyName()

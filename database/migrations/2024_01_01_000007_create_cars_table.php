@@ -27,15 +27,14 @@ return new class extends Migration
             $table->string('transmission');
             $table->string('colour');
             $table->json("images")->nullable();
-            $table->json("features")->nullable();
+            $table->json("plan_details")->nullable();
             $table->string('status')->nullable();
             $table->longText('description')->nullable();
             $table->timestamp('start_date')->nullable();
             $table->timestamp('expiry_date')->nullable();
-            $table->string('payment_status')->default('pending');
+            // $table->string('payment_status')->nullable();
             $table->string('plan_name')->nullable();
             $table->string('plan_slug')->nullable();
-            $table->string('duration_days')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

@@ -10,9 +10,9 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, string $durationDays, string $planName, float $amount, array $features, ?string $phoneNumber = null, ?string $network, ?string $payment_method): Payment
+    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, string $planName, float $plan_price, ?string $phoneNumber = null, ?string $network, ?string $payment_method, ?array $plan_details): Payment
     {
-        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $durationDays, $planName, $amount, $features, $phoneNumber, $network, $payment_method) {
+        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $planName, $plan_price, $phoneNumber, $network, $payment_method, $plan_details) {
             $cars = Car::whereIn('car_slug', $carSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
                 ->whereIn('status', ['pending_payment', 'pending_approval'])
@@ -27,14 +27,13 @@ class PaymentService
                 'dealer_slug'    => $dealer->dealer_slug,
                 'plan_name'      => $planName,
                 'plan_slug'      => $planSlug,
-                'amount'         => $amount,
+                'plan_details'   => $plan_details,
+                'plan_price'     => $plan_price,
                 'payment_method' => $payment_method,
                 'status'         => 'pending',
-                'duration_days'  => $durationDays,
                 'car_slugs'      => $cars->pluck('car_slug')->values()->all(),
                 'phone_number'   => $phoneNumber,
                 'network'        => $network,
-                'features'       => $features,
                 'reference_id'   => "GHCS" . time() . strtoupper(Str::random(6)),
             ]);
 
@@ -122,10 +121,10 @@ class PaymentService
                         Approval::create([
                             'car_slug'     => $car->car_slug,
                             'dealer_slug'  => $dealer->dealer_slug,
+                            'status'       => 'pending',
                             'type'         => $payment->payment_method,
                             'dealer_name'  => $dealer->full_name ?? $dealer->business_name,
-                            // 'payment_slug' => $payment->payment_slug,
-                            'status'       => 'pending',
+                            'payment_slug' => $payment->payment_slug,
                         ]);
 
                         $this->carService()->activateCar($car, (int) $payment->duration_days);

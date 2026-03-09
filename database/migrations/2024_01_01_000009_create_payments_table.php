@@ -14,15 +14,14 @@ return new class extends Migration
             $table->string('dealer_slug');
             $table->string('plan_name')->nullable();
             $table->string('plan_slug')->nullable();
-            $table->integer('duration_days');
-            $table->string('status');
+            $table->string('status')->nullable();
             $table->string("phone_number")->nullable();
             $table->string('network')->nullable();
             $table->string('reference_id')->nullable()->unique();
-            $table->decimal('amount', 15, 2);
+            $table->decimal('plan_price', 15, 2)->nullable();
             $table->string('payment_method')->nullable();
             $table->json('car_slugs')->nullable();
-            $table->json('features')->nullable();
+            $table->json('plan_details')->nullable();
             $table->timestamps();
 
             $table->index('payment_slug');

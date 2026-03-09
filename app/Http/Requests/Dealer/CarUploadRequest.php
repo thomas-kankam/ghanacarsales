@@ -35,10 +35,9 @@ class CarUploadRequest extends FormRequest
             'network'             => ['nullable', 'string'],
             'plan_name'           => ['nullable', 'string'],
             'plan_slug'           => ['nullable', 'string'],
-            'duration_days'       => ['nullable', 'string'],
-            'duration_days'       => ['nullable', 'string'],
-            'plan_price'          => ['nullable', 'numeric', 'min:0'],
-            "features"            => ["nullable", "array"],
+            'plan_details'        => ['nullable', 'array'],
+            'plan_price'          => ['nullable', 'string'],
+            'payment_method'      => ['nullable', 'string'],
         ];
     }
 }

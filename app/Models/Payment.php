@@ -18,17 +18,16 @@ class Payment extends Model
         'phone_number',
         'network',
         'reference_id',
-        'amount',
+        'plan_price',
         'payment_method',
-        'duration_days',
         'car_slugs',
-        'features',
+        'plan_details',
     ];
 
     protected $casts = [
-        'amount'    => 'decimal:2',
-        'car_slugs' => 'array',
-        'features'  => 'array',
+        'plan_price'   => 'decimal:2',
+        'car_slugs'    => 'array',
+        'plan_details' => 'array',
     ];
 
     public function dealer(): BelongsTo
