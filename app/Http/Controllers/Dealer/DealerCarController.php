@@ -31,7 +31,9 @@ class DealerCarController extends Controller
         $isDraft  = ($data['status'] ?? '') === 'draft';
         $planSlug = $data['plan_slug'] ?? null;
 
-        $plan = Plan::where("plan_slug", $planSlug)->first();
+        $plan               = Plan::where("plan_slug", $planSlug)->first();
+        $data['plan_name']  = $plan->plan_name;
+        $data['plan_price'] = $plan->price;
 
         if ($isDraft) {
             $data['status'] = 'draft';
@@ -55,8 +57,8 @@ class DealerCarController extends Controller
                 $dealer,
                 [$car->car_slug],
                 $data['plan_slug'] ?? null,
-                $plan->plan_name ?? null,
-                $plan->price ?? 0.00,
+                $data['plan_name'] ?? null,
+                $data['plan_price'] ?? 0.00,
                 $data['phone_number'] ?? null,
                 $data['network'] ?? null,
                 $data['payment_method'] ?? 'friend_code',
@@ -89,8 +91,8 @@ class DealerCarController extends Controller
             $dealer,
             [$car->car_slug],
             $data['plan_slug'] ?? null,
-            $plan->plan_name ?? null,
-            $plan->price ?? 0.00,
+            $data['plan_name'] ?? null,
+            $data['plan_price'] ?? 0.00,
             $data['phone_number'] ?? null,
             $data['network'] ?? null,
             $data['payment_method'] ?? null,
