@@ -62,4 +62,9 @@ class Car extends Model
     {
         return $this->hasMany(View::class, 'car_slug', 'car_slug');
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'car_slug', 'car_slug');
+    }
 }

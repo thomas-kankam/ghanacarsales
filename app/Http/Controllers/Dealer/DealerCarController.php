@@ -133,7 +133,7 @@ class DealerCarController extends Controller
         $cars   = $dealer->cars()->whereNull('deleted_at')->paginate(15);
 
         $items = $cars->getCollection()
-            ->load(['dealer'])
+            ->load(['dealer', 'payment'])
             ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 
@@ -185,6 +185,7 @@ class DealerCarController extends Controller
     public function singleCar(Request $request, Car $car): JsonResponse
     {
         $dealer = $request->user();
+        $car->load(['dealer', 'payment']);
 
         // Ensure car belongs to dealer
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);

@@ -35,8 +35,8 @@ class Payment extends Model
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 
-//     public function plan(): BelongsTo
-//     {
-//         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
-//     }
+    public function car(): BelongsTo
+    {
+        return $this->belongsTo(Car::class, 'car_slug', 'car_slug');
+    }
 }
