@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Providers;
 
 use Illuminate\Auth\Events\Registered;
@@ -25,7 +24,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \App\Models\Car::observe(\App\Observers\CarObserver::class);
+        // \App\Models\Car::observe(\App\Observers\CarObserver::class);
     }
 
     /**

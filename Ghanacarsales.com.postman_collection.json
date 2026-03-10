@@ -1,0 +1,612 @@
+{
+  "info": {
+    "_postman_id": "024c7f3d-841b-44cc-b21d-107b259dbaa4",
+    "name": "Ghanacarsales.com",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "API collection for Ghana Car Sales: Dealer, Buyer (General), and Admin."
+  },
+  "variable": [
+    { "key": "localhost", "value": "http://127.0.0.1:8000" },
+    { "key": "dealer_base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "admin_base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "dealer_local_token", "value": "" },
+    { "key": "dealer_live_token", "value": "" },
+    { "key": "admin_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Dealer",
+      "item": [
+        {
+          "name": "Authentication",
+          "item": [
+            {
+              "name": "Send Dealer OTP (email)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"dealer@example.com\",\n  \"business_name\": \"Premium Auto Sales\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/send_otp", "host": ["{{localhost}}"], "path": ["api", "dealer", "send_otp"] }
+              }
+            },
+            {
+              "name": "Send Dealer OTP (phone)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone_number\": \"233556906969\",\n  \"full_name\": \"Premium Auto Sales\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/send_otp", "host": ["{{localhost}}"], "path": ["api", "dealer", "send_otp"] }
+              }
+            },
+            {
+              "name": "Verify Token",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dealer_slug\": \"YOUR_DEALER_SLUG\",\n  \"token\": \"12345\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/verify_token", "host": ["{{localhost}}"], "path": ["api", "dealer", "verify_token"] }
+              }
+            },
+            {
+              "name": "Resend OTP",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"dealer@example.com\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/resend_otp", "host": ["{{localhost}}"], "path": ["api", "dealer", "resend_otp"] }
+              }
+            },
+            {
+              "name": "Login OTP",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone_number\": \"233556906969\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/login_otp", "host": ["{{localhost}}"], "path": ["api", "dealer", "login_otp"] }
+              }
+            },
+            {
+              "name": "Login (verify OTP)",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dealer_slug\": \"YOUR_DEALER_SLUG\",\n  \"token\": \"12345\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/login", "host": ["{{localhost}}"], "path": ["api", "dealer", "login"] }
+              }
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "url": { "raw": "{{localhost}}/api/dealer/logout", "host": ["{{localhost}}"], "path": ["api", "dealer", "logout"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Onboarding",
+          "item": [
+            {
+              "name": "Save Dealer Data After Verification",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"dealer@example.com\",\n  \"business_type\": \"Individual\",\n  \"business_name\": \"Toytal Ghana\",\n  \"region\": \"Greater Accra\",\n  \"city\": \"Accra\",\n  \"landmark\": \"Fidelity Bank\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/register_dealer", "host": ["{{localhost}}"], "path": ["api", "dealer", "register_dealer"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Car Management",
+          "item": [
+            {
+              "name": "Car Upload (draft)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"brand\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year_of_manufacture\": 2020,\n  \"mileage\": 200,\n  \"mileage_unit\": \"kilometers\",\n  \"colour\": \"Mate Black\",\n  \"price\": 250000,\n  \"swap_deals\": true,\n  \"registered\": true,\n  \"aircon\": true,\n  \"registration_year\": 2022,\n  \"fuel_type\": \"petrol\",\n  \"transmission\": \"automatic\",\n  \"description\": \"Good shape\",\n  \"status\": \"draft\",\n  \"images\": []\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/upload_car", "host": ["{{localhost}}"], "path": ["api", "dealer", "upload_car"] }
+              }
+            },
+            {
+              "name": "Car Upload (friend_code – pending approval)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"brand\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year_of_manufacture\": 2020,\n  \"mileage\": 200,\n  \"mileage_unit\": \"kilometers\",\n  \"colour\": \"Mate Black\",\n  \"price\": 250000,\n  \"swap_deals\": true,\n  \"registered\": true,\n  \"aircon\": true,\n  \"registration_year\": 2022,\n  \"fuel_type\": \"petrol\",\n  \"transmission\": \"automatic\",\n  \"description\": \"Good shape\",\n  \"status\": \"pending_approval\",\n  \"dealer_code\": \"GHCS072026105233\",\n  \"plan_slug\": \"friend_code\",\n  \"images\": []\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/upload_car", "host": ["{{localhost}}"], "path": ["api", "dealer", "upload_car"] }
+              }
+            },
+            {
+              "name": "Car Upload (1_month – pending payment)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"brand\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year_of_manufacture\": 2020,\n  \"mileage\": 200,\n  \"mileage_unit\": \"kilometers\",\n  \"colour\": \"Mate Black\",\n  \"price\": 250000,\n  \"swap_deals\": true,\n  \"registered\": true,\n  \"aircon\": true,\n  \"registration_year\": 2022,\n  \"fuel_type\": \"petrol\",\n  \"transmission\": \"automatic\",\n  \"description\": \"Good shape\",\n  \"status\": \"pending_payment\",\n  \"plan_slug\": \"1_month\",\n  \"phone_number\": \"233556906969\",\n  \"network\": \"MTN\",\n  \"payment_method\": \"momo\",\n  \"images\": []\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/upload_car", "host": ["{{localhost}}"], "path": ["api", "dealer", "upload_car"] }
+              }
+            },
+            {
+              "name": "Get all car listings",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/get_cars", "host": ["{{localhost}}"], "path": ["api", "dealer", "get_cars"] }
+              }
+            },
+            {
+              "name": "Single car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/single_car/:car_slug", "host": ["{{localhost}}"], "path": ["api", "dealer", "single_car", ":car_slug"], "variable": [{ "key": "car_slug", "value": "YOUR_CAR_SLUG" }] }
+              }
+            },
+            {
+              "name": "Update car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "PUT",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"brand\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year_of_manufacture\": 2020,\n  \"mileage\": 250,\n  \"mileage_unit\": \"kilometers\",\n  \"colour\": \"Black\",\n  \"price\": 260000,\n  \"swap_deals\": true,\n  \"registered\": true,\n  \"aircon\": true,\n  \"registration_year\": 2022,\n  \"fuel_type\": \"petrol\",\n  \"transmission\": \"automatic\",\n  \"description\": \"Updated description\",\n  \"status\": \"draft\",\n  \"images\": []\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/update_car/:car_slug", "host": ["{{localhost}}"], "path": ["api", "dealer", "update_car", ":car_slug"], "variable": [{ "key": "car_slug", "value": "YOUR_CAR_SLUG" }] }
+              }
+            },
+            {
+              "name": "Delete car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "DELETE",
+                "url": { "raw": "{{localhost}}/api/dealer/delete_car/:car_slug", "host": ["{{localhost}}"], "path": ["api", "dealer", "delete_car", ":car_slug"], "variable": [{ "key": "car_slug", "value": "YOUR_CAR_SLUG" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Drafts",
+          "item": [
+            {
+              "name": "Get all drafts",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/drafts", "host": ["{{localhost}}"], "path": ["api", "dealer", "drafts"] }
+              }
+            },
+            {
+              "name": "Get single draft",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/drafts/:car_slug", "host": ["{{localhost}}"], "path": ["api", "dealer", "drafts", ":car_slug"], "variable": [{ "key": "car_slug", "value": "YOUR_CAR_SLUG" }] }
+              }
+            },
+            {
+              "name": "Save draft",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"brand\": \"Hyundai\",\n  \"model\": \"Elantra\",\n  \"year_of_manufacture\": 2020,\n  \"mileage\": 200,\n  \"mileage_unit\": \"kilometers\",\n  \"colour\": \"White\",\n  \"price\": 180000,\n  \"swap_deals\": false,\n  \"registered\": true,\n  \"aircon\": true,\n  \"registration_year\": 2021,\n  \"fuel_type\": \"petrol\",\n  \"transmission\": \"automatic\",\n  \"description\": \"Draft listing\",\n  \"status\": \"draft\",\n  \"images\": []\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/drafts", "host": ["{{localhost}}"], "path": ["api", "dealer", "drafts"] }
+              }
+            },
+            {
+              "name": "Publish All Drafts",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/publish_all_drafts", "host": ["{{localhost}}"], "path": ["api", "dealer", "publish_all_drafts"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Profile",
+          "item": [
+            {
+              "name": "Profile Update",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"dealer@example.com\",\n  \"business_type\": \"Group\",\n  \"business_name\": \"Goshen Gardens\",\n  \"region\": \"Greater Accra\",\n  \"city\": \"Accra\",\n  \"landmark\": \"Banky Nuts\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/profile_update", "host": ["{{localhost}}"], "path": ["api", "dealer", "profile_update"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard",
+          "item": [
+            {
+              "name": "Get dashboard stats",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/dashboard_stats", "host": ["{{localhost}}"], "path": ["api", "dealer", "dashboard_stats"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment",
+          "item": [
+            {
+              "name": "Get payment summary",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/payment/summary", "host": ["{{localhost}}"], "path": ["api", "dealer", "payment", "summary"] }
+              }
+            },
+            {
+              "name": "Create payment (renew or new)",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"car_slugs\": [\"YOUR_CAR_SLUG\"],\n  \"plan_slug\": \"1_month\",\n  \"phone_number\": \"233556906969\",\n  \"network\": \"MTN\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/create_payment/:car_slug", "host": ["{{localhost}}"], "path": ["api", "dealer", "create_payment", ":car_slug"], "variable": [{ "key": "car_slug", "value": "YOUR_CAR_SLUG" }] }
+              }
+            },
+            {
+              "name": "Check payment status",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reference_id\": \"GHCS1773012890VRNROJ\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/dealer/check_payment", "host": ["{{localhost}}"], "path": ["api", "dealer", "check_payment"] }
+              }
+            },
+            {
+              "name": "Payment history",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/payment_history", "host": ["{{localhost}}"], "path": ["api", "dealer", "payment_history"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subscription",
+          "item": [
+            {
+              "name": "Get current subscription",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{dealer_local_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealer/current_subscription", "host": ["{{localhost}}"], "path": ["api", "dealer", "current_subscription"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "General (Buyer)",
+      "item": [
+        {
+          "name": "Cars",
+          "item": [
+            {
+              "name": "Get all cars (search)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{localhost}}/api/all_cars?brand=Toyota&model=Camry&min_year=2018&max_year=2025&min_price=20000&max_price=300000&fuel_type=petrol&transmission=automatic&sort_by=price&sort_order=asc&page=1&per_page=15",
+                  "host": ["{{localhost}}"],
+                  "path": ["api", "all_cars"],
+                  "query": [
+                    { "key": "brand", "value": "Toyota" },
+                    { "key": "model", "value": "Camry" },
+                    { "key": "min_year", "value": "2018" },
+                    { "key": "max_year", "value": "2025" },
+                    { "key": "min_price", "value": "20000" },
+                    { "key": "max_price", "value": "300000" },
+                    { "key": "fuel_type", "value": "petrol" },
+                    { "key": "transmission", "value": "automatic" },
+                    { "key": "sort_by", "value": "price" },
+                    { "key": "sort_order", "value": "asc" },
+                    { "key": "page", "value": "1" },
+                    { "key": "per_page", "value": "15" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get single car details",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/cars/:car_slug", "host": ["{{localhost}}"], "path": ["api", "cars", ":car_slug"], "variable": [{ "key": "car_slug", "value": "YOUR_CAR_SLUG" }] }
+              }
+            },
+            {
+              "name": "Get dealer cars",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/dealers/:dealer_slug/cars", "host": ["{{localhost}}"], "path": ["api", "dealers", ":dealer_slug", "cars"], "variable": [{ "key": "dealer_slug", "value": "YOUR_DEALER_SLUG" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Plans",
+          "item": [
+            {
+              "name": "Get all plans",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/all_plans", "host": ["{{localhost}}"], "path": ["api", "all_plans"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Administrator",
+      "item": [
+        {
+          "name": "Authentication",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@ghanacarsales.com\",\n  \"password\": \"secret\",\n  \"password_confirmation\": \"secret\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/admin/register", "host": ["{{localhost}}"], "path": ["api", "admin", "register"] }
+              }
+            },
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@ghanacarsales.com\",\n  \"password\": \"secret\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/admin/login", "host": ["{{localhost}}"], "path": ["api", "admin", "login"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Car management",
+          "item": [
+            {
+              "name": "List cars",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/cars?per_page=20", "host": ["{{localhost}}"], "path": ["api", "admin", "cars"], "query": [{ "key": "per_page", "value": "20" }, { "key": "status", "value": "pending_approval", "disabled": true }] }
+              }
+            },
+            {
+              "name": "Show car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/cars/:id", "host": ["{{localhost}}"], "path": ["api", "admin", "cars", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Approve car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "POST",
+                "url": { "raw": "{{localhost}}/api/admin/cars/:id/approve", "host": ["{{localhost}}"], "path": ["api", "admin", "cars", ":id", "approve"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Reject car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "POST",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Images do not meet guidelines\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{localhost}}/api/admin/cars/:id/reject", "host": ["{{localhost}}"], "path": ["api", "admin", "cars", ":id", "reject"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Force expire car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "POST",
+                "url": { "raw": "{{localhost}}/api/admin/cars/:id/force-expire", "host": ["{{localhost}}"], "path": ["api", "admin", "cars", ":id", "force-expire"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            },
+            {
+              "name": "Delete car",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "DELETE",
+                "url": { "raw": "{{localhost}}/api/admin/cars/:id", "host": ["{{localhost}}"], "path": ["api", "admin", "cars", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dealers",
+          "item": [
+            {
+              "name": "List dealers",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/dealers", "host": ["{{localhost}}"], "path": ["api", "admin", "dealers"] }
+              }
+            },
+            {
+              "name": "Show dealer",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/dealers/:id", "host": ["{{localhost}}"], "path": ["api", "admin", "dealers", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Plans",
+          "item": [
+            {
+              "name": "List plans",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/plans", "host": ["{{localhost}}"], "path": ["api", "admin", "plans"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Billing",
+          "item": [
+            {
+              "name": "List payments",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/payments", "host": ["{{localhost}}"], "path": ["api", "admin", "payments"] }
+              }
+            },
+            {
+              "name": "List subscriptions",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/subscriptions", "host": ["{{localhost}}"], "path": ["api", "admin", "subscriptions"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Metrics",
+          "item": [
+            {
+              "name": "Metrics",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/metrics", "host": ["{{localhost}}"], "path": ["api", "admin", "metrics"] }
+              }
+            },
+            {
+              "name": "Health",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{admin_token}}", "type": "string" } ] },
+                "method": "GET",
+                "url": { "raw": "{{localhost}}/api/admin/health", "host": ["{{localhost}}"], "path": ["api", "admin", "health"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Payment callback (Webhook)",
+      "item": [
+        {
+          "name": "Payment callback",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"GHCS1773012890VRNROJ\",\n  \"status\": \"success\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{localhost}}/api/payment/callback", "host": ["{{localhost}}"], "path": ["api", "payment", "callback"] }
+          }
+        }
+      ]
+    }
+  ]
+}

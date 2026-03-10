@@ -10,16 +10,18 @@ class Approval extends Model
     use HasFactory;
 
     protected $fillable = [
+        'approval_slug',
         'car_slug',
         'dealer_slug',
-        'dealer_code',
         'type',
+        'status',
+        'dealer_code',
+        'dealer_name',
+        'payment_slug',
         'admin_approval',
         'admin_slug',
         'admin_approval_at',
-        'payment_slug',
-        'dealer_name',
-        'status',
+        'reason',
     ];
 
     protected $casts = [
@@ -37,8 +39,8 @@ class Approval extends Model
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 
-    public function payment()
+    public function payment(): BelongsTo
     {
-        return $this->belongsTo(Payment::class, 'dealer_slug', 'dealer_slug');
+        return $this->belongsTo(Payment::class, 'payment_slug', 'payment_slug');
     }
 }

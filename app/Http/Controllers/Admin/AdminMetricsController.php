@@ -24,7 +24,7 @@ class AdminMetricsController extends Controller
             'cars_pending_sponsor' => Car::where('status', 'pending_sponsor_approval')->count(),
             'subscriptions_active' => Subscription::where('status', 'active')->count(),
             'payments_total'       => Payment::count(),
-            'payments_completed'   => Payment::where('status', 'completed')->count(),
+            'payments_completed'   => Payment::where('status', 'paid')->count(),
             'payments_failed'      => Payment::where('status', 'failed')->count(),
             'cars_expiring_7_days' => Car::where('status', 'published')
                 ->whereBetween('expiry_date', [now(), now()->addDays(7)])->count(),

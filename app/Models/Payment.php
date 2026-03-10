@@ -18,16 +18,15 @@ class Payment extends Model
         'phone_number',
         'network',
         'reference_id',
+        'reference',
         'plan_price',
+        'amount',
         'payment_method',
-        // 'car_slugs',
-        'plan_details',
     ];
 
     protected $casts = [
-        'plan_price'   => 'decimal:2',
-        // 'car_slugs'    => 'array',
-        'plan_details' => 'array',
+        'plan_price' => 'decimal:2',
+        'amount'     => 'decimal:2',
     ];
 
     public function dealer(): BelongsTo
@@ -35,15 +34,20 @@ class Payment extends Model
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 
-    public function cars()
+    public function paymentItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PaymentItem::class, 'payment_slug', 'payment_slug');
+    }
+
+    public function cars(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(
             Car::class,
-            'payment_cars',
+            'payment_items',
             'payment_slug',
             'car_slug',
             'payment_slug',
             'car_slug'
-        );
+        )->withPivot('price');
     }
 }

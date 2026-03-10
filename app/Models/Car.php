@@ -29,12 +29,11 @@ class Car extends Model
         'images',
         'status',
         'description',
+        'plan_slug',
+        'plan_price',
+        'plan_details',
         'start_date',
         'expiry_date',
-        // 'plan_name',
-        'plan_slug',
-        'payment_status',
-        'plan_details',
     ];
 
     protected $casts = [
@@ -42,8 +41,9 @@ class Car extends Model
         'aircon'       => 'boolean',
         'registered'   => 'boolean',
         'price'        => 'decimal:2',
-        'images'       => 'array',
+        'plan_price'   => 'decimal:2',
         'plan_details' => 'array',
+        'images'       => 'array',
         'start_date'   => 'datetime',
         'expiry_date'  => 'datetime',
     ];
@@ -63,15 +63,20 @@ class Car extends Model
         return $this->hasMany(View::class, 'car_slug', 'car_slug');
     }
 
-    public function payments()
+    public function paymentItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PaymentItem::class, 'car_slug', 'car_slug');
+    }
+
+    public function payments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(
             Payment::class,
-            'payment_cars',
+            'payment_items',
             'car_slug',
             'payment_slug',
             'car_slug',
             'payment_slug'
-        );
+        )->withPivot('price');
     }
 }

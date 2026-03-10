@@ -6,27 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('payment_cars', function (Blueprint $table) {
+        Schema::create('payment_items', function (Blueprint $table) {
             $table->id();
-            $table->string('payment_slug');
-            $table->string('car_slug');
+            $table->string('payment_slug', 36);
+            $table->string('car_slug', 36);
+            $table->decimal('price', 12, 2)->default(0);
             $table->timestamps();
 
             $table->index('payment_slug');
             $table->index('car_slug');
+            $table->index('price');
+            $table->unique(['payment_slug', 'car_slug']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('payment_cars');
+        Schema::dropIfExists('payment_items');
     }
 };

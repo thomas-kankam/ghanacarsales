@@ -76,11 +76,11 @@ class DealerAuthController extends Controller
         // self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
 
         if ($channel === 'email') {
-            SendEmailJob::dispatch(
-                $dealer->email,
-                [$dealer->full_name, $otp],
-                EmailVerification::class
-            );
+            // SendEmailJob::dispatch(
+            //     $dealer->email,
+            //     [$dealer->full_name, $otp],
+            //     EmailVerification::class
+            // );
             self::sendEmail(
                 $dealer->email,
                 email_class: "App\Mail\EmailVerification",
@@ -93,8 +93,8 @@ class DealerAuthController extends Controller
             self::sendSms($identifier, 'Your otp code: ' . $otp, 'GHCARSALES');
         }
 
-        $message = "OTP sent to your {$channel} for verification (expires in 10 minutes)";
-        // $message = "OTP sent to your email and phone number for verification (expires in 10 minutes)";
+        // $message = "OTP sent to your {$channel} for verification (expires in 10 minutes)";
+        $message = "OTP sent to your email and phone number for verification (expires in 10 minutes)";
 
         return self::apiResponse(
             in_error: false,

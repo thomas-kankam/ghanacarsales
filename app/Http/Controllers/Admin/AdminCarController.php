@@ -5,16 +5,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Payment;
+use App\Models\Plan;
+use App\Services\ApprovalService;
 use App\Services\CarService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class AdminCarController extends Controller
 {
-    public function __construct(private CarService $carService)
-    {
+    public function __construct(
+        private CarService $carService,
+        private ApprovalService $approvalService
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -63,50 +66,23 @@ class AdminCarController extends Controller
 
     public function approve(Request $request, $id): JsonResponse
     {
-        $car          = Car::findOrFail($id);
-        $durationDays = (int) ($car->duration_days ?: 15);
+        $car = Car::findOrFail($id);
+        $approval = Approval::where('car_slug', $car->car_slug)->whereIn('status', ['pending'])->latest()->first();
+
+        $durationDays = 15;
+        $plan = null;
+        if ($car->plan_slug) {
+            $plan = Plan::where('plan_slug', $car->plan_slug)->first();
+        }
+        if (!$plan && $approval && $approval->payment_slug) {
+            $payment = Payment::where('payment_slug', $approval->payment_slug)->first();
+            $plan = $payment ? Plan::where('plan_slug', $payment->plan_slug)->first() : null;
+        }
+        $durationDays = $plan ? (int) $plan->duration_days : 15;
+
         $this->carService->activateCar($car, $durationDays);
-
-        $approval = Approval::where('car_slug', $car->car_slug)->first();
         if ($approval) {
-            $approval->update([
-                'admin_approval'    => true,
-                'admin_approval_at' => now(),
-                'admin_slug'        => $request->user()?->admin_slug ?? 'system',
-                'status' => 'approved'
-            ]);
-
-            // Payment::create([
-            //     'payment_slug'   => Str::uuid()->toString(),
-            //     'dealer_slug'    => $car->dealer_slug,
-            //     'plan_name'      => $car->plan_name ?? 'Friend Code',
-            //     'plan_slug'      => $car->plan_slug ?? 'friend_code',
-            //     'amount'         => 0,
-            //     'payment_method' => 'friend_code',
-            //     'status'         => 'paid',
-            //     'duration_days'  => $durationDays,
-            //     'car_slugs'      => [$car->car_slug],
-            // ]);
-            // $subscription = Subscription::create([
-            //     'dealer_slug'        => $car->dealer_slug,
-            //     'subscription_slug'  => Str::uuid()->toString(),
-            //     'plan_slug'         => $car->plan_slug ?? 'free_trial',
-            //     'plan_name'         => $car->plan_name ?? 'Free Trial',
-            //     'duration_days'     => (string) $durationDays,
-            //     'starts_at'         => $car->start_date ?? now(),
-            //     'expiry_date'       => $car->expiry_date,
-            //     'status'            => 'active',
-            //     'price'             => 0,
-            // ]);
-            // SubscriptionArchive::create([
-            //     'dealer_slug'        => $car->dealer_slug,
-            //     'subscription_slug'  => $subscription->subscription_slug,
-            //     'plan_slug'          => $car->plan_slug ?? 'free_trial',
-            //     'plan_name'          => $car->plan_name ?? 'Free Trial',
-            //     'duration_days'      => (string) $durationDays,
-            //     'price'              => 0,
-            //     'status'             => 'completed',
-            // ]);
+            $this->approvalService->approve($approval, $request->user()?->admin_slug);
         }
 
         return $this->apiResponse(
@@ -120,7 +96,11 @@ class AdminCarController extends Controller
     public function reject(Request $request, $id): JsonResponse
     {
         $car = Car::findOrFail($id);
+        $approval = Approval::where('car_slug', $car->car_slug)->whereIn('status', ['pending'])->latest()->first();
 
+        if ($approval) {
+            $this->approvalService->reject($approval, $request->input('reason'), $request->user()?->admin_slug);
+        }
         $car->update(['status' => 'rejected']);
 
         return $this->apiResponse(

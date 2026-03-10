@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Services;
 
-use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
+use App\Models\PaymentItem;
+use App\Models\Plan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -15,23 +17,20 @@ class PaymentService
         array $carSlugs,
         string $planSlug,
         string $planName,
-        float $plan_price,
+        float $planPrice,
         ?string $phoneNumber = null,
         ?string $network = null,
-        ?string $payment_method = null,
-        ?array $plan_details = null
+        ?string $paymentMethod = null
     ): Payment {
-
         return DB::transaction(function () use (
             $dealer,
             $carSlugs,
             $planSlug,
             $planName,
-            $plan_price,
+            $planPrice,
             $phoneNumber,
             $network,
-            $payment_method,
-            $plan_details
+            $paymentMethod
         ) {
 
             $cars = Car::whereIn('car_slug', $carSlugs)
@@ -43,27 +42,26 @@ class PaymentService
                 throw new \Exception("No valid cars found");
             }
 
+            $amount = $planPrice * count($cars);
             $payment = Payment::create([
-                'payment_slug'   => Str::uuid(),
-                'dealer_slug'    => $dealer->dealer_slug,
-                'plan_name'      => $planName,
-                'plan_slug'      => $planSlug,
-                'plan_price'     => $plan_price,
-                'plan_details'   => $plan_details,
-                'payment_method' => $payment_method,
-                'status'         => 'pending',
-                'phone_number'   => $phoneNumber,
-                'network'        => $network,
-                'reference_id'   => "GHCS" . time() . strtoupper(Str::random(6)),
+                'payment_slug'   => (string) Str::uuid(),
+                'dealer_slug'   => $dealer->dealer_slug,
+                'plan_name'     => $planName,
+                'plan_slug'     => $planSlug,
+                'plan_price'    => $planPrice,
+                'amount'        => $amount,
+                'payment_method'=> $paymentMethod,
+                'status'        => 'pending',
+                'phone_number'  => $phoneNumber,
+                'network'       => $network,
+                'reference_id'  => 'GHCS' . time() . strtoupper(Str::random(6)),
             ]);
 
             foreach ($cars as $car) {
-
-                DB::table('payment_cars')->insert([
+                PaymentItem::create([
                     'payment_slug' => $payment->payment_slug,
                     'car_slug'     => $car->car_slug,
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
+                    'price'        => $planPrice,
                 ]);
             }
 
@@ -71,94 +69,82 @@ class PaymentService
         });
     }
 
-    // public function processPayment(Payment $payment, ?string $reference_id): bool
-    // {
-    //     return DB::transaction(function () use ($payment, $reference_id) {
-    //         $payment->update([
-    //             'status' => 'paid',
-    //             // 'reference_id' => $reference_id,
-    //         ]);
+    /**
+     * Create payment and payment_items for cars. Amount = plan price × number of cars.
+     */
+    public function createPaymentForCars(
+        Dealer $dealer,
+        array $cars,
+        Plan $plan,
+        ?string $phoneNumber = null,
+        ?string $network = null,
+        ?string $paymentMethod = null
+    ): Payment {
+        $pricePerCar = (float) $plan->price;
+        $totalAmount = $pricePerCar * count($cars);
 
-    //         // $startDate  = $payment->created_at ?? now();
-    //         // $expiryDate = $startDate->copy()->addDays((int) $payment->duration_days);
-    //         $carSlugs = $payment->car_slugs ?? [];
-    //         foreach ($carSlugs as $carSlug) {
-    //             $car = Car::where('car_slug', $carSlug)->where('dealer_slug', $payment->dealer_slug)->first();
-    //             if ($car) {
-    //                 $dealer = $car->dealer();
-    //                 Approval::create([
-    //                     'car_slug'    => $car->car_slug,
-    //                     'dealer_slug' => $dealer->dealer_slug,
-    //                     'dealer_code' => null,
-    //                     'type'        => $payment->payment_method,
-    //                     'dealer_name' => $dealer->full_name ?? $dealer->business_name,
-    //                 ]);
-    //                 $this->carService()->activateCar($car, (int) $payment->duration_days);
-    //             }
-    //         }
+        return DB::transaction(function () use ($dealer, $cars, $plan, $pricePerCar, $totalAmount, $phoneNumber, $network, $paymentMethod) {
+            $payment = Payment::create([
+                'payment_slug'   => (string) Str::uuid(),
+                'dealer_slug'   => $dealer->dealer_slug,
+                'plan_name'     => $plan->plan_name,
+                'plan_slug'     => $plan->plan_slug,
+                'plan_price'    => $plan->price,
+                'amount'        => $totalAmount,
+                'reference_id'  => 'GHCS' . time() . strtoupper(Str::random(6)),
+                'payment_method'=> $paymentMethod,
+                'status'        => 'pending',
+                'phone_number'  => $phoneNumber,
+                'network'       => $network,
+            ]);
 
-    //         // $subscription = Subscription::updateOrCreate(
-    //         //     ['dealer_slug' => $payment->dealer_slug],
-    //         //     [
-    //         //         'subscription_slug' => Str::uuid()->toString(),
-    //         //         'plan_slug'         => $payment->plan_slug ?? 'custom',
-    //         //         'plan_name'         => $payment->plan_name ?? 'Custom',
-    //         //         'duration_days'     => (string) $payment->duration_days,
-    //         //         'starts_at'         => $startDate,
-    //         //         'expiry_date'       => $expiryDate,
-    //         //         'status'            => 'active',
-    //         //         'price'             => $payment->amount,
-    //         //     ]);
+            foreach ($cars as $car) {
+                if ($car instanceof Car) {
+                    PaymentItem::create([
+                        'payment_slug' => $payment->payment_slug,
+                        'car_slug'     => $car->car_slug,
+                        'price'        => $pricePerCar,
+                    ]);
+                }
+            }
 
-    //         // SubscriptionArchive::updateOrCreate(
-    //         //     ['reference_id' => $payment->reference_id],
-    //         //     [
-    //         //         'dealer_slug'       => $payment->dealer_slug,
-    //         //         'subscription_slug' => $subscription->subscription_slug,
-    //         //         'plan_slug'         => $payment->plan_slug,
-    //         //         'plan_name'         => $payment->plan_name,
-    //         //         'duration_days'     => (string) $payment->duration_days,
-    //         //         'price'             => $payment->amount,
-    //         //         'status'            => 'paid',
-    //         //         'starts_at'         => $subscription->starts_at,
-    //         //         'expiry_date'       => $subscription->expiry_date,
-    //         //     ]);
-    //         return true;
-    //     });
-    // }
+            return $payment;
+        });
+    }
 
     public function processPayment(Payment $payment, ?string $reference_id): bool
     {
-        return DB::transaction(function () use ($payment, $reference_id) {
-            // Update payment status
+        return $this->processPaymentSuccess($payment, $reference_id);
+    }
+
+    /**
+     * After successful payment: mark payment paid and create one approval per car (admin approves later).
+     */
+    public function processPaymentSuccess(Payment $payment, ?string $referenceId): bool
+    {
+        return DB::transaction(function () use ($payment, $referenceId) {
             $payment->update([
                 'status'       => 'paid',
-                'reference_id' => $reference_id, // Uncommented this
+                'reference_id' => $referenceId ?? $payment->reference_id,
+                'reference'    => $referenceId ?? $payment->reference,
             ]);
 
-            $carSlugs = $payment->car_slugs ?? [];
+            $payment->load('paymentItems.car');
+            $dealer = $payment->dealer;
+            $approvalService = app(ApprovalService::class);
 
-            foreach ($carSlugs as $carSlug) {
-                $car = Car::where('car_slug', $carSlug)
-                    ->where('dealer_slug', $payment->dealer_slug)
-                    ->first();
-
-                if ($car) {
-                    // Fix: Remove parentheses to get the dealer model
-                    $dealer = $car->dealer;
-
-                    if ($dealer) {
-                        Approval::create([
-                            'car_slug'     => $car->car_slug,
-                            'dealer_slug'  => $dealer->dealer_slug,
-                            'status'       => 'pending',
-                            'type'         => $payment->payment_method,
-                            'dealer_name'  => $dealer->full_name ?? $dealer->business_name,
-                            'payment_slug' => $payment->payment_slug,
-                        ]);
-
-                        $this->carService()->activateCar($car, (int) $payment->duration_days);
-                    }
+            foreach ($payment->paymentItems as $item) {
+                $car = $item->car;
+                if ($car && $dealer) {
+                    $car->update(['status' => 'pending_approval']);
+                    $approvalService->createForCar(
+                        $car->car_slug,
+                        $dealer,
+                        'listing_review',
+                        'pending',
+                        null,
+                        $payment->payment_slug
+                    );
                 }
             }
 

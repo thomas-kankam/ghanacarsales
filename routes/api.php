@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Route;
 //     Route::get('/brands', [\App\Http\Controllers\Api\V1\Common\BrandController::class, 'index']);
 // });
 
-Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
+// Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
 // Admin routes (admin.car.com)
 Route::prefix('admin')->group(function () {
     Route::post('/register', [AdminAuthController::class, 'register']);
@@ -93,7 +93,7 @@ Route::prefix('dealer')->group(function () {
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
         Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
-        Route::put('/update_car/{car}', [DealerCarController::class, 'updateCar']);
+        // Route::put('/update_car/{car}', [DealerCarController::class, 'updateCar']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
         Route::delete('/delete_car/{car}', [DealerCarController::class, 'deleteCar']);

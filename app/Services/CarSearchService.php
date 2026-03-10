@@ -8,15 +8,20 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class CarSearchService
 {
+    /**
+     * Search cars: status=published and (expiry_date null or > now).
+     */
     public function search(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         $query = Car::query()
-            ->where('status', 'published');
+            ->where('status', 'published')
+            ->where(function (Builder $q) {
+                $q->whereNull('expiry_date')->orWhere('expiry_date', '>', now());
+            });
 
         $this->applyFilters($query, $filters);
         $this->applySorting($query, $filters);
-
-        return $query->paginate($perPage);
+        return $query->with('dealer')->paginate($perPage);
     }
 
     protected function applyFilters(Builder $query, array $filters): void
