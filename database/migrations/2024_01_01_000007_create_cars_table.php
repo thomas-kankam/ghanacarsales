@@ -33,7 +33,7 @@ return new class extends Migration
             $table->timestamp('start_date')->nullable();
             $table->timestamp('expiry_date')->nullable();
             // $table->string('payment_status')->nullable();
-            $table->string('plan_name')->nullable();
+            // $table->string('plan_name')->nullable();
             $table->string('plan_slug')->nullable();
             $table->timestamps();
             $table->softDeletes();

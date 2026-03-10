@@ -10,32 +10,62 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
-    public function createPayment(Dealer $dealer, array $carSlugs, string $planSlug, string $planName, float $plan_price, ?string $phoneNumber = null, ?string $network, ?string $payment_method, ?array $plan_details): Payment
-    {
-        return DB::transaction(function () use ($dealer, $carSlugs, $planSlug, $planName, $plan_price, $phoneNumber, $network, $payment_method, $plan_details) {
+    public function createPayment(
+        Dealer $dealer,
+        array $carSlugs,
+        string $planSlug,
+        string $planName,
+        float $plan_price,
+        ?string $phoneNumber = null,
+        ?string $network = null,
+        ?string $payment_method = null,
+        ?array $plan_details = null
+    ): Payment {
+
+        return DB::transaction(function () use (
+            $dealer,
+            $carSlugs,
+            $planSlug,
+            $planName,
+            $plan_price,
+            $phoneNumber,
+            $network,
+            $payment_method,
+            $plan_details
+        ) {
+
             $cars = Car::whereIn('car_slug', $carSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
                 ->whereIn('status', ['pending_payment', 'pending_approval'])
                 ->get();
 
             if ($cars->isEmpty()) {
-                throw new \InvalidArgumentException('No valid cars found for payment');
+                throw new \Exception("No valid cars found");
             }
 
             $payment = Payment::create([
-                'payment_slug'   => Str::uuid()->toString(),
+                'payment_slug'   => Str::uuid(),
                 'dealer_slug'    => $dealer->dealer_slug,
                 'plan_name'      => $planName,
                 'plan_slug'      => $planSlug,
-                'plan_details'   => $plan_details,
                 'plan_price'     => $plan_price,
+                'plan_details'   => $plan_details,
                 'payment_method' => $payment_method,
                 'status'         => 'pending',
-                'car_slugs'      => $cars->pluck('car_slug')->values()->all(),
                 'phone_number'   => $phoneNumber,
                 'network'        => $network,
                 'reference_id'   => "GHCS" . time() . strtoupper(Str::random(6)),
             ]);
+
+            foreach ($cars as $car) {
+
+                DB::table('payment_cars')->insert([
+                    'payment_slug' => $payment->payment_slug,
+                    'car_slug'     => $car->car_slug,
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
+            }
 
             return $payment;
         });

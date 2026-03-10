@@ -20,13 +20,13 @@ class Payment extends Model
         'reference_id',
         'plan_price',
         'payment_method',
-        'car_slugs',
+        // 'car_slugs',
         'plan_details',
     ];
 
     protected $casts = [
         'plan_price'   => 'decimal:2',
-        'car_slugs'    => 'array',
+        // 'car_slugs'    => 'array',
         'plan_details' => 'array',
     ];
 
@@ -35,8 +35,15 @@ class Payment extends Model
         return $this->belongsTo(Dealer::class, 'dealer_slug', 'dealer_slug');
     }
 
-    public function car(): BelongsTo
+    public function cars()
     {
-        return $this->belongsTo(Car::class, 'car_slug', 'car_slug');
+        return $this->belongsToMany(
+            Car::class,
+            'payment_cars',
+            'payment_slug',
+            'car_slug',
+            'payment_slug',
+            'car_slug'
+        );
     }
 }

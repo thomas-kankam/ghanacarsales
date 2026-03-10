@@ -50,10 +50,10 @@ class Dealer extends Actor
         return $this->hasMany(Payment::class, 'dealer_slug', 'dealer_slug');
     }
 
-    public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(Subscription::class, 'dealer_slug', 'dealer_slug');
-    }
+    // public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    // {
+    //     return $this->hasMany(Subscription::class, 'dealer_slug', 'dealer_slug');
+    // }
 
     public function approvals(): HasMany
     {

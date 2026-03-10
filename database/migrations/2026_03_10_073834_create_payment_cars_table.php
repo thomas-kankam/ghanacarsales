@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('views', function (Blueprint $table) {
+        Schema::create('payment_cars', function (Blueprint $table) {
             $table->id();
+            $table->string('payment_slug');
             $table->string('car_slug');
-            // $table->string('buyer_slug')->nullable();
             $table->timestamps();
+
+            $table->index('payment_slug');
+            $table->index('car_slug');
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('views');
+        Schema::dropIfExists('payment_cars');
     }
 };

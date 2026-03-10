@@ -11,13 +11,13 @@ class View extends Model
 
     protected $fillable = [
         'car_slug',
-        'buyer_slug',
+        // 'buyer_slug',
     ];
 
-    public function buyer(): BelongsTo
-    {
-        return $this->belongsTo(Buyer::class);
-    }
+    // public function buyer(): BelongsTo
+    // {
+    //     return $this->belongsTo(Buyer::class);
+    // }
 
     public function car(): BelongsTo
     {

@@ -55,8 +55,8 @@ class BuyerCarController extends Controller
         $buyerSlug = "1";
         // $buyerSlug = auth('buyer')->id(); // or request header / session
         View::create([
-            'car_slug'   => $car->car_slug,
-            'buyer_slug' => $buyerSlug,
+            'car_slug' => $car->car_slug,
+            // 'buyer_slug' => $buyerSlug,
         ]);
         // $car->load('dealer');
         return $this->apiResponse(
