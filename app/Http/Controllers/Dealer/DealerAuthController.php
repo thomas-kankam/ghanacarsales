@@ -242,6 +242,7 @@ class DealerAuthController extends Controller
             'terms_accepted'    => true,
             'terms_accepted_at' => now(),
             'is_onboarded'      => true,
+            'status'      => 'active',
         ]));
 
         $userWithToken = self::apiToken($dealer);
