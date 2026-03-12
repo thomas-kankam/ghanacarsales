@@ -93,7 +93,7 @@ trait AppNotifications
     {
         try {
             Mail::to($email)->send(new $email_class(...$parameters));
-            SendEmailJob::dispatch($email, $parameters, $email_class);
+            // SendEmailJob::dispatch($email, $parameters, $email_class);
 
         } catch (\Exception $e) {
             Log::error("Failed to send email to {$email}: " . $e->getMessage());
