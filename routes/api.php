@@ -77,7 +77,8 @@ Route::prefix('admin')->group(function () {
 Route::prefix('dealer')->group(function () {
     // Public routes
     // Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp'])->middleware('throttle:otp');
-    Route::post('/testSms', [DealerAuthController::class, 'testSms']);
+    Route::get('/testSms/{msisdn}', [DealerAuthController::class, 'testSms']);
+    Route::get('/testEmail{email}', [DealerAuthController::class, 'testEmail']);
     Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp']);
     Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp']);
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);
@@ -93,7 +94,8 @@ Route::prefix('dealer')->group(function () {
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
         Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
-        // Route::put('/update_car/{car}', [DealerCarController::class, 'updateCar']);
+        Route::put('/cars/{car}', [DealerCarController::class, 'updateCar']);
+        Route::post('/drafts/{car}/publish', [DealerCarController::class, 'publishDraft']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
         Route::delete('/delete_car/{car}', [DealerCarController::class, 'deleteCar']);
@@ -143,5 +145,6 @@ Route::get('/dealers/{dealer_slug}/cars', [BuyerCarController::class, 'getDealer
 
 Route::get('/all_plans', [PlanController::class, 'getPlans']);
 
-// Payment callback (public)
-Route::post('/payment/callback', [PaymentController::class, 'callback']);
+// Payment: webhook (server-to-server) and callback (browser redirect → forwards to frontend)
+Route::post('/payment/webhook', [PaymentController::class, 'webhook']);
+Route::get('/payment/callback', [PaymentController::class, 'callback']);

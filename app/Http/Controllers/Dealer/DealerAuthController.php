@@ -19,16 +19,36 @@ use Illuminate\Support\Str;
 
 class DealerAuthController extends Controller
 {
-    public function testSms(): JsonResponse
+    public function testSms($msisdn): JsonResponse
     {
-        self::sendSms('233556906969', 'This is a test message from Ghana Car Sales', 'GHCARSALES');
+        $response = self::sendSms($msisdn, 'This is a test message from Ghana Car Sales', 'GHCARSALES');
 
         return self::apiResponse(
             in_error: false,
             message: "Action Successful",
             status_code: self::API_SUCCESS,
-            data: [],
+            data: $response,
             reason: "Test SMS sent successfully."
+        );
+    }
+
+    public function testEmail($email): JsonResponse
+    {
+        $otp = random_int(111111, 999999) . now();
+        self::sendEmail(
+            $email,
+            email_class: "App\Mail\EmailVerification",
+            parameters: [
+                $email,
+                $otp,
+            ]
+        );
+        return self::apiResponse(
+            in_error: false,
+            message: "Action Successful",
+            status_code: self::API_SUCCESS,
+            data: [],
+            reason: "Test Email sent successfully."
         );
     }
 

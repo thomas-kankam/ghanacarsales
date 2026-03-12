@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Payment;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PaystackService
 {
@@ -25,9 +26,8 @@ class PaystackService
         string $callbackUrl,
         ?string $email = null
     ): array {
-        $reference = $payment->reference_id ?? $payment->reference ?? ('GHCS' . time() . strtoupper(\Illuminate\Support\Str::random(8)));
-        $payment->update(['reference_id' => $reference]);
-        // $payment->update(['reference_id' => $reference, 'reference' => $reference]);
+        $reference = $payment->reference_id ?? $payment->reference ?? ('GHCS' . time() . strtoupper(Str::random(8)));
+        $payment->update(['reference_id' => $reference, 'reference' => $reference]);
 
         $amountInCedis = (float) $payment->amount;
         $amountInPesewas = (int) round($amountInCedis * 100);
@@ -36,23 +36,29 @@ class PaystackService
             ->post("{$this->paymentUrl}/transaction/initialize", [
                 'email'       => $email ?? $payment->dealer?->email ?? 'customer@example.com',
                 'amount'      => $amountInPesewas,
-                'reference'   => $reference,
                 'callback_url' => $callbackUrl,
+                'reference'    => $reference,
                 'metadata'    => [
                     'payment_slug' => $payment->payment_slug,
                     'dealer_slug'  => $payment->dealer_slug,
+                    'car_slugs'    => $payment->cars->pluck('car_slug')->toArray(),
+                    'plan_slug'    => $payment->plan_slug,
+                    'reference_id' => $reference,
                 ],
-                'channels' => ['card', 'mobile_money'],
+                'channels' => ['card', 'momo'],
             ]);
 
         $body = $response->json();
         if (!($response->successful() && ($body['status'] ?? false))) {
-            Log::warning('Paystack initialize failed', ['response' => $body]);
+            Log::channel('single')->warning('Paystack initialize failed', [
+                'message' => $body['message'] ?? 'Unknown',
+                'status'  => $response->status(),
+            ]);
             return [
-                'success' => false,
-                'authorization_url' => null,
-                'reference' => $reference,
-                'message' => $body['message'] ?? 'Failed to initialize payment',
+                'success'            => false,
+                'authorization_url'  => null,
+                'reference'          => $reference,
+                'message'            => $body['message'] ?? 'Failed to initialize payment',
             ];
         }
 
@@ -66,13 +72,20 @@ class PaystackService
     }
 
     /**
-     * Verify Paystack webhook signature.
+     * Verify Paystack webhook signature. Production: webhook_secret must be set.
      */
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
         $secret = config('services.paystack.webhook_secret');
         if (empty($secret)) {
+            if (config('app.env') === 'production') {
+                Log::channel('single')->warning('Paystack webhook: PAYSTACK_WEBHOOK_SECRET not set in production');
+                return false;
+            }
             return true;
+        }
+        if (empty($signature)) {
+            return false;
         }
         $computed = hash_hmac('sha512', $payload, $secret);
         return hash_equals($computed, $signature);

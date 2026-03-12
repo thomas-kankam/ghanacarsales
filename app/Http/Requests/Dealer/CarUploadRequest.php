@@ -38,6 +38,7 @@ class CarUploadRequest extends FormRequest
             'plan_details'        => ['nullable', 'array'],
             'plan_price'          => ['nullable', 'numeric'],
             'payment_method'      => ['nullable', 'string'],
+            'callback_url'        => ['nullable', 'url'],
         ];
     }
 }

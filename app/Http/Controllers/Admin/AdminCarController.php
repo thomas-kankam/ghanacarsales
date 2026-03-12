@@ -31,7 +31,7 @@ class AdminCarController extends Controller
         $cars = $query->paginate((int) $request->get('per_page', 20));
 
         $items = collect($cars->items())
-            ->map(fn($car) => CarTransformer::summary($car))
+            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer'])))
             ->all();
 
         $payload = [
@@ -54,13 +54,13 @@ class AdminCarController extends Controller
 
     public function show($id): JsonResponse
     {
-        $car = Car::with(['dealer'])->findOrFail($id);
+        $car = Car::with(['paymentItems.payment', 'dealer'])->findOrFail($id);
 
         return $this->apiResponse(
             in_error: false,
             message: "Car retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car)
+            data: CarTransformer::summary($car->load(['paymentItems.payment', 'dealer']))
         );
     }
 
@@ -89,7 +89,7 @@ class AdminCarController extends Controller
             in_error: false,
             message: "Car approved successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->fresh())
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer']))
         );
     }
 
@@ -143,7 +143,7 @@ class AdminCarController extends Controller
         $cars = Car::onlyTrashed()->paginate((int) $request->get('per_page', 20));
 
         $items = collect($cars->items())
-            ->map(fn($car) => CarTransformer::summary($car))
+            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer'])))
             ->all();
 
         $payload = [
@@ -173,7 +173,7 @@ class AdminCarController extends Controller
             in_error: false,
             message: "Car restored successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->fresh())
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer'])   )
         );
     }
 

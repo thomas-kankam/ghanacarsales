@@ -119,10 +119,16 @@ class PaymentService
 
     /**
      * After successful payment: mark payment paid and create one approval per car (admin approves later).
+     * Idempotent: safe to call again if payment already paid (no duplicate approvals).
      */
     public function processPaymentSuccess(Payment $payment, ?string $referenceId): bool
     {
         return DB::transaction(function () use ($payment, $referenceId) {
+            $payment->refresh();
+            if ($payment->status === 'paid') {
+                return true;
+            }
+
             $payment->update([
                 'status'       => 'paid',
                 'reference_id' => $referenceId ?? $payment->reference_id,
@@ -131,16 +137,19 @@ class PaymentService
 
             $payment->load('paymentItems.car');
             $dealer = $payment->dealer;
-            $approvalService = app(ApprovalService::class);
+            if (!$dealer) {
+                return true;
+            }
 
+            $approvalService = app(ApprovalService::class);
             foreach ($payment->paymentItems as $item) {
                 $car = $item->car;
-                if ($car && $dealer) {
+                if ($car) {
                     $car->update(['status' => 'pending_approval']);
                     $approvalService->createForCar(
                         $car->car_slug,
                         $dealer,
-                        'listing_review',
+                        $payment->plan_slug,
                         'pending',
                         null,
                         $payment->payment_slug

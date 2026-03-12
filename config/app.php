@@ -57,6 +57,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'frontend_url' => env('APP_FRONTEND_URL', 'http://127.0.0.1:8000'),
+    // 'frontend_url' => env('APP_FRONTEND_URL', 'https://ghanacarsales.com'),
+
     'asset_url' => env('ASSET_URL'),
 
     /*

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Dealer\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,3 +58,6 @@ Route::get("/", function () {
         'author_state' => 'Greater Accra',
     ]);
 });
+
+// Payment callback (public)
+Route::get('/payment/callback', [PaymentController::class, 'callback']);

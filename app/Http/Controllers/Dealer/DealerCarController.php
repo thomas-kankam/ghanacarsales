@@ -98,10 +98,7 @@ class DealerCarController extends Controller
                     in_error: false,
                     message: "Car submitted for approval",
                     status_code: self::API_CREATED,
-                    data: [
-                        'car' => CarTransformer::summary($car->load('paymentItems.payment')),
-                        // 'payment' => $payment->fresh(),
-                    ]
+                    data: ['car' => CarTransformer::summary($car->load('dealer'))]
                 );
             }
 
@@ -127,22 +124,22 @@ class DealerCarController extends Controller
             );
 
             $paymentUrl = url("/api/dealer/check_payment?reference_id={$payment->reference_id}");
-            // if (config('services.paystack.secret_key')) {
-            //     $callbackUrl = url('/api/payment/callback');
-            //     $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
-            //     if (!empty($result['authorization_url'])) {
-            //         $paymentUrl = $result['authorization_url'];
-            //     }
-            // }
+            $callbackUrl = $data['callback_url'] ?? $paymentUrl;
+            if (config('services.paystack.secret_key')) {
+                $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
+                if (!empty($result['authorization_url'])) {
+                    $paymentUrl = $result['authorization_url'];
+                }
+            }
 
             return $this->apiResponse(
                 in_error: false,
                 message: "Car uploaded successfully",
                 status_code: self::API_CREATED,
                 data: [
-                    'car'         => CarTransformer::summary($car->load('paymentItems.payment')),
-                    // 'payment'     => $payment->fresh(),
+                    'car'         => CarTransformer::summary($car->load('dealer')),
                     'payment_url' => $paymentUrl,
+                    'reference'   => $payment->reference_id,
                 ],
                 reason: "Car created. Complete payment to submit for approval."
             );
@@ -170,7 +167,7 @@ class DealerCarController extends Controller
         $dealer = $request->user();
 
         $cars = $dealer->cars()
-            ->with(['paymentItems.payment'])
+            ->with('dealer')
             ->whereNull('deleted_at')
             ->paginate(15);
 
@@ -229,7 +226,7 @@ class DealerCarController extends Controller
 
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
 
-        $car->load('paymentItems.payment');
+        $car->load('dealer');
         $data = CarTransformer::summary($car);
 
         return $this->apiResponse(
@@ -345,15 +342,138 @@ class DealerCarController extends Controller
             ->where('status', 'published')
             ->count();
 
+        $recentPendingApproval = Car::where('dealer_slug', $dealerSlug)
+            ->where('status', 'pending_approval')
+            ->with(['paymentItems.payment', 'dealer'])
+            ->latest()
+            ->limit(6)
+            ->get();
+        $recentPendingApprovalData = $recentPendingApproval->map(fn($car) => CarTransformer::summary($car))->values()->all();
+
         return $this->apiResponse(
             in_error: false,
             message: "Dashboard stats retrieved successfully",
             status_code: self::API_SUCCESS,
             data: [
-                'total_viewed'      => $totalViewed,
-                'expiring_soon'     => $expiringSoon,
-                'total_active_cars' => $totalActiveCars,
+                'total_viewed'                => $totalViewed,
+                'expiring_soon'               => $expiringSoon,
+                'total_active_cars'           => $totalActiveCars,
+                'recent_pending_approval_cars' => $recentPendingApprovalData,
             ]
+        );
+    }
+
+    /**
+     * Publish a draft car: update car and create payment + approval (no new car).
+     * Body: plan_slug (friend_code|1_month|3_months), phone_number?, network?, dealer_code? (friend_code), callback_url? (frontend success URL for redirect).
+     */
+    public function publishDraft(Request $request, Car $car): JsonResponse
+    {
+        $dealer = $request->user();
+        abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
+        abort_if($car->status !== 'draft', 422, 'Car must be draft to publish.');
+
+        $data = $request->validate([
+            'plan_slug'    => 'required|string|in:friend_code,1_month,3_months',
+            'phone_number' => 'nullable|string',
+            'network'      => 'nullable|string',
+            'dealer_code'  => 'nullable|string',
+            'callback_url' => 'nullable|url',
+        ]);
+
+        $plan = Plan::where('plan_slug', $data['plan_slug'])->first();
+        if (!$plan) {
+            return $this->apiResponse(in_error: true, message: "Invalid plan", status_code: self::API_BAD_REQUEST, data: []);
+        }
+
+        return DB::transaction(function () use ($dealer, $car, $plan, $data) {
+            if ($data['plan_slug'] === 'friend_code') {
+                $car->update([
+                    'status'       => 'pending_approval',
+                    'plan_slug'    => 'friend_code',
+                    'plan_price'   => 0,
+                    'plan_details' => $car->plan_details ?? null,
+                ]);
+                $payment = $this->paymentService->createPaymentForCars(
+                    $dealer,
+                    [$car],
+                    $plan,
+                    $data['phone_number'] ?? null,
+                    $data['network'] ?? null,
+                    'friend_code'
+                );
+                $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
+                $this->approvalService->createForCar(
+                    $car->car_slug,
+                    $dealer,
+                    'friend_code',
+                    'pending',
+                    $data['dealer_code'] ?? null,
+                    $payment->payment_slug
+                );
+                return $this->apiResponse(
+                    in_error: false,
+                    message: "Car submitted for approval",
+                    status_code: self::API_SUCCESS,
+                    data: ['car' => CarTransformer::summary($car->load('dealer'))]
+                );
+            }
+
+            $car->update([
+                'status'       => 'pending_payment',
+                'plan_slug'    => $plan->plan_slug,
+                'plan_price'   => $plan->price,
+                'plan_details' => $car->plan_details ?? null,
+            ]);
+            $payment = $this->paymentService->createPaymentForCars(
+                $dealer,
+                [$car],
+                $plan,
+                $data['phone_number'] ?? null,
+                $data['network'] ?? null,
+                'momo'
+            );
+
+            $paymentUrl = url("/api/dealer/check_payment?reference_id={$payment->reference_id}");
+            $callbackUrl = $data['callback_url'] ?? $paymentUrl;
+            if (config('services.paystack.secret_key')) {
+                $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
+                if (!empty($result['authorization_url'])) {
+                    $paymentUrl = $result['authorization_url'];
+                }
+            }
+
+            return $this->apiResponse(
+                in_error: false,
+                message: "Car ready for payment",
+                status_code: self::API_SUCCESS,
+                data: [
+                    'car'         => CarTransformer::summary($car->load('dealer')),
+                    'payment_url' => $paymentUrl,
+                    'reference'   => $payment->reference_id,
+                ]
+            );
+        });
+    }
+
+    /**
+     * Update car. Allowed only when status is draft or pending_approval.
+     */
+    public function updateCar(CarUploadRequest $request, Car $car): JsonResponse
+    {
+        $dealer = $request->user();
+        abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
+        abort_if(!in_array($car->status, ['draft', 'pending_approval'], true), 403, 'You can only edit draft or pending-approval cars.');
+
+        $data = $request->validated();
+        unset($data['status'], $data['plan_slug'], $data['plan_price'], $data['plan_details']);
+        $this->carService->updateCar($car, $data);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Car updated successfully",
+            status_code: self::API_SUCCESS,
+            data: CarTransformer::summary($car->fresh('dealer'))
         );
     }
 }

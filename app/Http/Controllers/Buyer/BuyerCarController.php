@@ -49,14 +49,11 @@ class BuyerCarController extends Controller
 
     public function show(Car $car): JsonResponse
     {
-        if ($car->status !== 'published') {
-            abort(404);
-        }
-        $buyerSlug = "1";
-        // $buyerSlug = auth('buyer')->id(); // or request header / session
+        // if ($car->status !== 'published') {
+        //     abort(404);
+        // }
         View::create([
             'car_slug' => $car->car_slug,
-            // 'buyer_slug' => $buyerSlug,
         ]);
         // $car->load('dealer');
         return $this->apiResponse(
@@ -71,7 +68,7 @@ class BuyerCarController extends Controller
     public function getDealerCars($dealer_slug): JsonResponse
     {
         $cars = Car::where('dealer_slug', $dealer_slug)
-            ->where('status', 'published')
+            // ->where('status', 'published')
             ->paginate(15);
 
         $items = $cars->getCollection()

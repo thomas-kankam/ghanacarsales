@@ -58,19 +58,22 @@ class AdminAuthController extends Controller
             return $this->apiResponse(
                 in_error: true,
                 message: "Invalid credentials",
-                status_code: self::API_UNAUTHORIZED
+                status_code: self::API_UNAUTHORIZED,
+                data: null,
+                reason: "Invalid credentials"
             );
         }
 
         $token = $admin->createToken('Admin Token')->accessToken;
+        // add token to as response data
+        $admin->token = $token;
 
         return $this->apiResponse(
             in_error: false,
             message: "Login successful",
-            data: [
-                'admin' => $admin,
-                'token' => $token,
-            ]
+            status_code: self::API_SUCCESS,
+            data: $admin,
+            reason: "Login successful"
         );
     }
 }
