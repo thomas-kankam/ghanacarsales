@@ -32,8 +32,8 @@ return [
     ],
 
     'paystack' => [
-        'public_key'     => env('PAYSTACK_PUBLIC_KEY'),
-        'secret_key'     => env('PAYSTACK_SECRET_KEY'),
+        'public_key'     => env('PAYSTACK_PUBLIC_KEY', 'pk_test_a92b460015192324c3073e5fbe9888ad6caaacca'),
+        'secret_key'     => env('PAYSTACK_SECRET_KEY', 'sk_test_a5679995ef57939e9410a291ac015ea679c4bb72'),
         'payment_url'    => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
         'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
     ],

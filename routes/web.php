@@ -59,5 +59,16 @@ Route::get("/", function () {
     ]);
 });
 
-// Payment callback (public)
-Route::get('/payment/callback', [PaymentController::class, 'callback']);
+// success page but just a text
+Route::get('/payment/success', function () {
+    return response()->json([
+        'message' => 'Payment successful',
+    ]);
+});
+
+// failure page but just a text
+Route::get('/payment/failure', function () {
+    return response()->json([
+        'message' => 'Payment failed',
+    ]);
+});

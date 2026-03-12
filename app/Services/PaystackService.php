@@ -45,7 +45,7 @@ class PaystackService
                     'plan_slug'    => $payment->plan_slug,
                     'reference_id' => $reference,
                 ],
-                'channels' => ['card', 'momo'],
+                'channels' => ['card', 'mobile_money'],
             ]);
 
         $body = $response->json();

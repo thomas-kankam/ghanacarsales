@@ -31,7 +31,6 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
         $data   = $request->validated();
-
         return DB::transaction(function () use ($dealer, $data) {
 
             $isDraft  = ($data['status'] ?? '') === 'draft';
@@ -120,15 +119,15 @@ class DealerCarController extends Controller
                 $plan,
                 $data['phone_number'] ?? null,
                 $data['network'] ?? null,
-                $data['payment_method'] ?? 'momo'
+                $data['payment_method'] ?? null
             );
 
-            $paymentUrl = url("/api/dealer/check_payment?reference_id={$payment->reference_id}");
-            $callbackUrl = $data['callback_url'] ?? $paymentUrl;
+            $paymentUrl = null;
+            $callbackUrl = "https://backend.ghanacarsales.com/api/payment/callback" ?? null;
             if (config('services.paystack.secret_key')) {
                 $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
                 if (!empty($result['authorization_url'])) {
-                    $paymentUrl = $result['authorization_url'];
+                    $paymentUrl = $result['authorization_url'] ?? null;
                 }
             }
 

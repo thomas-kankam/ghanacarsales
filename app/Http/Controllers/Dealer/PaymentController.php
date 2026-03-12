@@ -116,7 +116,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend = rtrim(config('app.frontend_url', 'https://ghanacarsales.com'), '/');
+        $frontend = rtrim(config('app.frontend_url', 'https://backend.ghanacarsales.com'), '/');
         $reference = $request->query('reference') ?? $request->query('trxref');
         if (!$reference) {
             return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reason' => 'missing_reference']));
@@ -128,10 +128,12 @@ class PaymentController extends Controller
         }
 
         if ($payment->status === 'paid') {
-            return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
+            return redirect()->away("{$frontend}/payment/success");
+            // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
         }
         if ($payment->status === 'failed') {
-            return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
+            return redirect()->away("{$frontend}/payment/failure");
+            // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
         }
 
         // Pending: webhook may not have run yet; verify with Paystack and update
@@ -139,15 +141,18 @@ class PaymentController extends Controller
             $verified = $this->paystackService->verifyTransaction($payment->reference_id ?? $payment->reference);
             if ($verified && ($verified['paid'] ?? false)) {
                 $this->paymentService->processPaymentSuccess($payment, $payment->reference_id ?? $payment->reference);
-                return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
+                return redirect()->away("{$frontend}/payment/success");
+                // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
             }
             if ($verified && ($verified['status'] ?? '') === 'failed') {
                 $payment->update(['status' => 'failed']);
                 return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
+                // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
             }
         }
 
-        return redirect()->away("{$frontend}/payment/callback?" . http_build_query(['reference' => $reference]));
+        return redirect()->away("{$frontend}/payment/callback");
+        // return redirect()->away("{$frontend}/payment/callback?" . http_build_query(['reference' => $reference]));
     }
 
     /**
@@ -159,6 +164,14 @@ class PaymentController extends Controller
     {
         $rawPayload = $request->getContent();
         $payload = json_decode($rawPayload, true);
+        Log::info('Paystack webhook', ['payload' => $payload]);
+        Log::info('Paystack webhook', ['rawPayload' => $rawPayload]);
+        Log::info('Paystack webhook', ['signature' => $request->header('x-paystack-signature')]);
+        Log::info('Paystack webhook', ['reference' => $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null]);
+        Log::info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
+        Log::info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
+        Log::info('Paystack webhook', ['event' => $payload['event'] ?? '']);
+        Log::info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
 
         if (!$payload || !is_array($payload)) {
             Log::channel('single')->warning('Paystack webhook: invalid JSON');
