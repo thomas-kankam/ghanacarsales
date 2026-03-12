@@ -45,8 +45,8 @@ class PaymentController extends Controller
         ]);
 
         $dealer = $request->user();
-        $plan = Plan::where('plan_slug', $data['plan_slug'])->first();
-        if (!$plan) {
+        $plan   = Plan::where('plan_slug', $data['plan_slug'])->first();
+        if (! $plan) {
             return $this->apiResponse(
                 in_error: true,
                 message: "Invalid plan",
@@ -72,11 +72,11 @@ class PaymentController extends Controller
         $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
         if (config('services.paystack.secret_key')) {
             $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
-            if (!empty($result['authorization_url'])) {
+            if (! empty($result['authorization_url'])) {
                 $paymentUrl = $result['authorization_url'];
             }
         }
-        if (!$paymentUrl) {
+        if (! $paymentUrl) {
             $paymentUrl = config('app.frontend_url', 'https://ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
         }
 
@@ -100,12 +100,12 @@ class PaymentController extends Controller
     protected function paymentPayloadForFrontend(Payment $payment): array
     {
         return [
-            'payment_slug'  => $payment->payment_slug,
-            'reference_id'  => $payment->reference_id,
-            'amount'        => (float) $payment->amount,
-            'plan_slug'     => $payment->plan_slug,
-            'plan_name'     => $payment->plan_name,
-            'status'        => $payment->status,
+            'payment_slug' => $payment->payment_slug,
+            'reference_id' => $payment->reference_id,
+            'amount'       => (float) $payment->amount,
+            'plan_slug'    => $payment->plan_slug,
+            'plan_name'    => $payment->plan_name,
+            'status'       => $payment->status,
         ];
     }
 
@@ -116,14 +116,14 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend = rtrim(config('app.frontend_url', 'https://backend.ghanacarsales.com'), '/');
+        $frontend  = rtrim(config('app.frontend_url', 'https://backend.ghanacarsales.com'), '/');
         $reference = $request->query('reference') ?? $request->query('trxref');
-        if (!$reference) {
+        if (! $reference) {
             return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reason' => 'missing_reference']));
         }
 
         $payment = Payment::where('reference_id', $reference)->orWhere('reference', $reference)->first();
-        if (!$payment) {
+        if (! $payment) {
             return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference, 'reason' => 'not_found']));
         }
 
@@ -163,35 +163,34 @@ class PaymentController extends Controller
     public function webhook(Request $request): JsonResponse
     {
         $rawPayload = $request->getContent();
-        $payload = json_decode($rawPayload, true);
-        Log::info('Paystack webhook', ['payload' => $payload]);
-        Log::info('Paystack webhook', ['rawPayload' => $rawPayload]);
-        Log::info('Paystack webhook', ['signature' => $request->header('x-paystack-signature')]);
-        Log::info('Paystack webhook', ['reference' => $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null]);
-        Log::info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
-        Log::info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
+        $payload    = json_decode($rawPayload, true);
+        // Log::info('Paystack webhook', ['payload' => $payload]);
+        // Log::info('Paystack webhook', ['rawPayload' => $rawPayload]);
+        // Log::info('Paystack webhook', ['signature' => $request->header('x-paystack-signature')]);
+        // Log::info('Paystack webhook', ['reference' => $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null]);
         Log::info('Paystack webhook', ['event' => $payload['event'] ?? '']);
         Log::info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
+        Log::info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
 
-        if (!$payload || !is_array($payload)) {
+        if (! $payload || ! is_array($payload)) {
             Log::channel('single')->warning('Paystack webhook: invalid JSON');
             return response()->json(['status' => 'error', 'message' => 'Invalid data'], 400);
         }
 
         $signature = $request->header('x-paystack-signature', '');
-        if (!$this->paystackService->verifyWebhookSignature($rawPayload, $signature)) {
+        if (! $this->paystackService->verifyWebhookSignature($rawPayload, $signature)) {
             Log::channel('single')->warning('Paystack webhook: invalid or missing signature');
             return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
         }
 
-        $event = $payload['event'] ?? '';
+        $event     = $payload['event'] ?? '';
         $reference = $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null;
-        if (!$reference) {
+        if (! $reference) {
             return response()->json(['status' => 'error', 'message' => 'Missing reference'], 400);
         }
 
         $payment = Payment::where('reference_id', $reference)->orWhere('reference', $reference)->first();
-        if (!$payment) {
+        if (! $payment) {
             Log::channel('single')->warning('Paystack webhook: payment not found', ['reference' => $reference]);
             return response()->json(['status' => 'error', 'message' => 'Payment not found'], 404);
         }
@@ -235,7 +234,7 @@ class PaymentController extends Controller
             ->orWhere('reference', $request->reference_id)
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             return $this->apiResponse(
                 in_error: true,
                 message: "Payment not found",

@@ -32,7 +32,8 @@ class AdminDealerController extends Controller
 
     public function show($id): JsonResponse
     {
-        $dealer = Dealer::with('cars', 'payments', 'subscriptions')->findOrFail($id);
+        // let the data show a dealer with his car and it's associated payments
+        $dealer = Dealer::with('cars.paymentItems.payment')->findOrFail($id);
 
         return $this->apiResponse(
             in_error: false,

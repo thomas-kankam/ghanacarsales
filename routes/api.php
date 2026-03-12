@@ -65,7 +65,7 @@ Route::prefix('admin')->group(function () {
 
         // Billing
         Route::get('/payments', [AdminBillingController::class, 'payments']);
-        Route::get('/subscriptions', [AdminBillingController::class, 'subscriptions']);
+        // Route::get('/subscriptions', [AdminBillingController::class, 'subscriptions']);
 
         // Metrics & health
         Route::get('/metrics', [AdminMetricsController::class, 'metrics']);
