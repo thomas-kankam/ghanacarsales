@@ -64,7 +64,13 @@ class ApprovalService
         ]);
         $car = $approval->car;
         if ($car) {
-            $car->update(['status' => 'pending_approval']);
+            $car->update(
+                [
+                    'status' => 'pending_approval',
+                    'start_date' => null,
+                    'expiry_date' => null,
+                ]
+            );
         }
     }
 }
