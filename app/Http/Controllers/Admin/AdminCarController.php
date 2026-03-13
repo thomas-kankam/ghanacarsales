@@ -103,10 +103,15 @@ class AdminCarController extends Controller
         }
         $car->update(['status' => 'rejected']);
 
+        $approval = $approval ? $approval->fresh() : null;
         return $this->apiResponse(
             in_error: false,
             message: "Car rejected successfully",
-            status_code: self::API_SUCCESS
+            status_code: self::API_SUCCESS,
+            data: [
+                'car'               => CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer'])),
+                'rejection_reason'  => $approval?->reason,
+            ]
         );
     }
 
@@ -123,6 +128,34 @@ class AdminCarController extends Controller
             in_error: false,
             message: "Car expired successfully",
             status_code: self::API_SUCCESS
+        );
+    }
+
+    /**
+     * Revert car from published/rejected/expired back to pending_approval.
+     * Resets the latest approval for this car to pending and sets car status to pending_approval.
+     */
+    public function revertApproval(Request $request, $id): JsonResponse
+    {
+        $car = Car::findOrFail($id);
+        $approval = Approval::where('car_slug', $car->car_slug)->latest()->first();
+
+        if (!$approval) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "No approval found for this car",
+                status_code: self::API_BAD_REQUEST,
+                data: []
+            );
+        }
+
+        $this->approvalService->revertToPending($approval);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Car reverted to pending approval successfully",
+            status_code: self::API_SUCCESS,
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer']))
         );
     }
 

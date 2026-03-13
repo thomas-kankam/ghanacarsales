@@ -48,4 +48,23 @@ class ApprovalService
             'reason'            => $reason,
         ]);
     }
+
+    /**
+     * Revert an approval (and car) from approved/rejected/expired back to pending_approval.
+     * Resets approval status to pending and clears admin/reason fields; sets car status to pending_approval.
+     */
+    public function revertToPending(Approval $approval): void
+    {
+        $approval->update([
+            'admin_approval'    => null,
+            'admin_approval_at' => null,
+            'admin_slug'        => null,
+            'status'            => 'pending',
+            'reason'            => null,
+        ]);
+        $car = $approval->car;
+        if ($car) {
+            $car->update(['status' => 'pending_approval']);
+        }
+    }
 }

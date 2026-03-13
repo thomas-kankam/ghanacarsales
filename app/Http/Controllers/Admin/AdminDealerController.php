@@ -62,6 +62,38 @@ class AdminDealerController extends Controller
         );
     }
 
+    /**
+     * Activate a dealer account (status = active).
+     */
+    public function activate($id): JsonResponse
+    {
+        $dealer = Dealer::findOrFail($id);
+        $dealer->update(['status' => 'active']);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Dealer activated successfully",
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()
+        );
+    }
+
+    /**
+     * Deactivate a dealer account (status = deactivated).
+     */
+    public function deactivate($id): JsonResponse
+    {
+        $dealer = Dealer::findOrFail($id);
+        $dealer->update(['status' => 'deactivated']);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Dealer deactivated successfully",
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()
+        );
+    }
+
     public function destroy($id): JsonResponse
     {
         $dealer = Dealer::findOrFail($id);

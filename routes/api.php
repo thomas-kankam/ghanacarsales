@@ -41,6 +41,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/dealers', [AdminDealerController::class, 'index']);
         Route::get('/dealers/{id}', [AdminDealerController::class, 'show']);
         Route::put('/dealers/{id}', [AdminDealerController::class, 'update']);
+        Route::post('/dealers/{id}/activate', [AdminDealerController::class, 'activate']);
+        Route::post('/dealers/{id}/deactivate', [AdminDealerController::class, 'deactivate']);
         Route::delete('/dealers/{id}', [AdminDealerController::class, 'destroy']);
         Route::get('/dealers/trashed/list', [AdminDealerController::class, 'trashed']);
         Route::post('/dealers/{id}/restore', [AdminDealerController::class, 'restore']);
@@ -51,6 +53,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/cars/{id}', [AdminCarController::class, 'show']);
         Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
         Route::post('/cars/{id}/reject', [AdminCarController::class, 'reject']);
+        Route::post('/cars/{id}/revert-approval', [AdminCarController::class, 'revertApproval']);
         Route::post('/cars/{id}/force-expire', [AdminCarController::class, 'forceExpire']);
         Route::delete('/cars/{id}', [AdminCarController::class, 'destroy']);
         Route::get('/cars/trashed/list', [AdminCarController::class, 'trashed']);
