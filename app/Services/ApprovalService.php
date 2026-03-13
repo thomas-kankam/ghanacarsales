@@ -56,7 +56,7 @@ class ApprovalService
     public function revertToPending(Approval $approval): void
     {
         $approval->update([
-            'admin_approval'    => null,
+            'admin_approval'    => false,
             'admin_approval_at' => null,
             'admin_slug'        => null,
             'status'            => 'pending',
