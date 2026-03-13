@@ -79,15 +79,17 @@ class PaystackService
         $secret = config('services.paystack.webhook_secret');
         if (empty($secret)) {
             if (config('app.env') === 'production') {
-                Log::channel('single')->warning('Paystack webhook: PAYSTACK_WEBHOOK_SECRET not set in production');
+                Log::channel('paystack')->warning('Paystack webhook: PAYSTACK_WEBHOOK_SECRET not set in production');
                 return false;
             }
             return true;
         }
         if (empty($signature)) {
+            Log::channel('paystack')->warning('Paystack webhook: signature is empty');
             return false;
         }
         $computed = hash_hmac('sha512', $payload, $secret);
+        Log::channel('paystack')->info('Paystack webhook: computed signature', ['computed' => $computed, 'signature' => $signature]);
         return hash_equals($computed, $signature);
     }
 

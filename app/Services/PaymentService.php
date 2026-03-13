@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\PaymentItem;
 use App\Models\Plan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentService
@@ -126,6 +127,7 @@ class PaymentService
         return DB::transaction(function () use ($payment, $referenceId) {
             $payment->refresh();
             if ($payment->status === 'paid') {
+                Log::channel('paystack')->info('Paystack webhook: payment already paid', ['payment' => $payment]);
                 return true;
             }
 
@@ -138,6 +140,7 @@ class PaymentService
             $payment->load('paymentItems.car');
             $dealer = $payment->dealer;
             if (!$dealer) {
+                Log::channel('paystack')->info('Paystack webhook: dealer not found', ['payment' => $payment]);
                 return true;
             }
 
@@ -146,6 +149,7 @@ class PaymentService
                 $car = $item->car;
                 if ($car) {
                     $car->update(['status' => 'pending_approval']);
+                    // Log::channel('paystack')->info('Paystack webhook: car updated to pending_approval', ['car' => $car]);
                     $approvalService->createForCar(
                         $car->car_slug,
                         $dealer,
@@ -154,6 +158,14 @@ class PaymentService
                         null,
                         $payment->payment_slug
                     );
+                    // Log::channel('paystack')->info('Paystack webhook: approval created', ['approval' => $approvalService->createForCar(
+                    //     $car->car_slug,
+                    //     $dealer,
+                    //     $payment->plan_slug,
+                    //     'pending',
+                    //     null,
+                    //     $payment->payment_slug
+                    // )]);
                 }
             }
 

@@ -164,13 +164,13 @@ class PaymentController extends Controller
     {
         $rawPayload = $request->getContent();
         $payload    = json_decode($rawPayload, true);
-        // Log::info('Paystack webhook', ['payload' => $payload]);
+        Log::channel('paystack')->info('Paystack webhook', ['payload' => $payload]);
         // Log::info('Paystack webhook', ['rawPayload' => $rawPayload]);
         // Log::info('Paystack webhook', ['signature' => $request->header('x-paystack-signature')]);
         // Log::info('Paystack webhook', ['reference' => $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null]);
-        Log::info('Paystack webhook', ['event' => $payload['event'] ?? '']);
-        Log::info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
-        Log::info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
+        Log::channel('paystack')->info('Paystack webhook', ['event' => $payload['event'] ?? '']);
+        Log::channel('paystack')->info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
+        Log::channel('paystack')->info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
 
         if (! $payload || ! is_array($payload)) {
             Log::channel('single')->warning('Paystack webhook: invalid JSON');

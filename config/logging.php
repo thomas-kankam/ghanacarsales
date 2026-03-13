@@ -134,6 +134,14 @@ return [
             'days'                 => 3,
             'replace_placeholders' => true,
         ],
+
+        'paystack'   => [
+            'driver'               => 'daily',
+            'path'                 => storage_path('logs/paystack.log'),
+            'level'                => 'info',
+            'days'                 => 3,
+            'replace_placeholders' => true,
+        ],
     ],
 
 ];
