@@ -97,9 +97,13 @@ class DealerCarController extends Controller
 
                 return $this->apiResponse(
                     in_error: false,
-                    message: "Car submitted for approval",
+                    message: "Car submitted for friend code approval",
                     status_code: self::API_CREATED,
-                    data: ['car' => CarTransformer::summary($car->load('dealer'))]
+                    data: [
+                        'car'         => CarTransformer::summary($car->load('dealer')),
+                        'payment'     => $this->paymentPayloadForFrontend($payment),
+                    ],
+                    reason: "Car submitted for friend code approval"
                 );
             }
 

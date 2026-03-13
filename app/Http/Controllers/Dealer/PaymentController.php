@@ -74,25 +74,10 @@ class PaymentController extends Controller
                 $data['plan_price']   = 0;
                 $data['plan_details'] = $data['plan_details'] ?? null;
 
-                $cars = Car::whereIn('car_slug', $data['car_slugs'])
-                    ->where('dealer_slug', $dealer->dealer_slug)
-                    ->whereIn('status', ['pending_payment', 'expired', 'draft'])
-                    ->lockForUpdate()
-                    ->get();
-
-                if ($cars->isEmpty()) {
-                    return $this->apiResponse(
-                        in_error: true,
-                        message: "No valid cars found",
-                        status_code: self::API_BAD_REQUEST,
-                        data: []
-                    );
-                }
-
                 // Create zero-amount payment + items for these cars
                 $payment = $this->paymentService->createPaymentForCars(
                     $dealer,
-                    $cars->all(),
+                    [$car],
                     $plan,
                     $data['phone_number'] ?? null,
                     $data['network'] ?? null,
@@ -101,31 +86,24 @@ class PaymentController extends Controller
                 $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
 
                 // Update car statuses/plan info and create approvals
-                foreach ($cars as $targetCar) {
-                    $targetCar->update([
-                        'status'       => 'pending_approval',
-                        'plan_slug'    => 'friend_code',
-                        'plan_price'   => 0,
-                        'plan_details' => $data['plan_details'] ?? null,
-                    ]);
-
-                    $this->approvalService->createForCar(
-                        $targetCar->car_slug,
+                $this->approvalService->createForCar(
+                    $car->car_slug,
                         $dealer,
                         'friend_code',
                         'pending',
                         $data['dealer_code'] ?? null,
                         $payment->payment_slug
                     );
-                }
 
-                $car->load('dealer');
-
-                return $this->apiResponse(
+               return $this->apiResponse(
                     in_error: false,
-                    message: "Car submitted for approval",
+                    message: "Car submitted for friend code approval",
                     status_code: self::API_CREATED,
-                    data: ['car' => CarTransformer::summary($car)]
+                    data: [
+                        'car'         => CarTransformer::summary($car->load('dealer')),
+                        'payment'     => $this->paymentPayloadForFrontend($payment),
+                    ],
+                    reason: "Car submitted for friend code approval"
                 );
             });
 
