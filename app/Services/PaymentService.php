@@ -36,7 +36,7 @@ class PaymentService
 
             $cars = Car::whereIn('car_slug', $carSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
-                ->whereIn('status', ['pending_payment', 'pending_approval'])
+                ->whereIn('status', ['pending_payment', 'pending_approval', 'draft'])
                 ->get();
 
             if ($cars->isEmpty()) {

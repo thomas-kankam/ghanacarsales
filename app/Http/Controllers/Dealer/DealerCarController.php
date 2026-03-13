@@ -135,7 +135,7 @@ class DealerCarController extends Controller
                 }
             }
             if (! $paymentUrl) {
-                $paymentUrl = config('app.frontend_url', 'https://ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
+                $paymentUrl = config('app.frontend_url', 'https://backend.ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
                 Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
             }
 

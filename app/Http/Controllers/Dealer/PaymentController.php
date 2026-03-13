@@ -7,17 +7,22 @@ use App\Models\Payment;
 use App\Models\Plan;
 use App\Services\PaymentService;
 use App\Services\PaystackService;
+use App\Services\CarService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Services\ApprovalService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
     public function __construct(
         private PaymentService $paymentService,
-        private PaystackService $paystackService
+        private PaystackService $paystackService,
+        private ApprovalService $approvalService,
+        private CarService $carService
     ) {}
 
     public function getSummary(Request $request): JsonResponse
@@ -39,6 +44,10 @@ class PaymentController extends Controller
             'car_slugs'    => 'required|array',
             'car_slugs.*'  => 'string|exists:cars,car_slug',
             'plan_slug'    => 'required|string|in:friend_code,1_month,3_months',
+            'dealer_code'  => 'nullable|string',
+            'status'       => 'nullable|string|in:pending_approval,pending_payment,draft',
+            'plan_details' => 'nullable|array',
+            'plan_price'   => 'nullable|numeric',
             'phone_number' => 'nullable|string',
             'network'      => 'nullable|string',
             'callback_url' => 'nullable|url',
@@ -56,12 +65,77 @@ class PaymentController extends Controller
             );
         }
 
-        $payment = $this->paymentService->createPayment(
+        if ($data['plan_slug'] === 'friend_code') {
+            // Move existing cars (draft/pending_payment/expired) into a free friend_code approval flow.
+            // We wrap the whole operation (payment + payment_items + approvals + car status updates) in a transaction.
+            $response = DB::transaction(function () use ($dealer, $data, $plan, $car) {
+                $data['status']       = 'pending_approval';
+                $data['plan_slug']    = 'friend_code';
+                $data['plan_price']   = 0;
+                $data['plan_details'] = $data['plan_details'] ?? null;
+
+                $cars = Car::whereIn('car_slug', $data['car_slugs'])
+                    ->where('dealer_slug', $dealer->dealer_slug)
+                    ->whereIn('status', ['pending_payment', 'expired', 'draft'])
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($cars->isEmpty()) {
+                    return $this->apiResponse(
+                        in_error: true,
+                        message: "No valid cars found",
+                        status_code: self::API_BAD_REQUEST,
+                        data: []
+                    );
+                }
+
+                // Create zero-amount payment + items for these cars
+                $payment = $this->paymentService->createPaymentForCars(
+                    $dealer,
+                    $cars->all(),
+                    $plan,
+                    $data['phone_number'] ?? null,
+                    $data['network'] ?? null,
+                    'friend_code'
+                );
+                $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
+
+                // Update car statuses/plan info and create approvals
+                foreach ($cars as $targetCar) {
+                    $targetCar->update([
+                        'status'       => 'pending_approval',
+                        'plan_slug'    => 'friend_code',
+                        'plan_price'   => 0,
+                        'plan_details' => $data['plan_details'] ?? null,
+                    ]);
+
+                    $this->approvalService->createForCar(
+                        $targetCar->car_slug,
+                        $dealer,
+                        'friend_code',
+                        'pending',
+                        $data['dealer_code'] ?? null,
+                        $payment->payment_slug
+                    );
+                }
+
+                $car->load('dealer');
+
+                return $this->apiResponse(
+                    in_error: false,
+                    message: "Car submitted for approval",
+                    status_code: self::API_CREATED,
+                    data: ['car' => CarTransformer::summary($car)]
+                );
+            });
+
+            return $response;
+        }
+
+        $payment = $this->paymentService->createPaymentForCars(
             $dealer,
-            $data['car_slugs'],
-            $data['plan_slug'],
-            $plan->plan_name,
-            (float) $plan->price,
+            [$car],
+            $plan,
             $data['phone_number'] ?? null,
             $data['network'] ?? null,
             $data['payment_method'] ?? 'mobile_money'
@@ -79,7 +153,7 @@ class PaymentController extends Controller
             }
         }
         if (! $paymentUrl) {
-            $paymentUrl = config('app.frontend_url', 'https://ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
+            $paymentUrl = config('app.frontend_url', 'https://backend.ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
             Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
@@ -93,7 +167,8 @@ class PaymentController extends Controller
                 'payment'     => $this->paymentPayloadForFrontend($payment),
                 'payment_url' => $paymentUrl,
                 'reference'   => $payment->reference_id,
-            ]
+            ],
+            reason: "Car created. Complete payment to submit for approval."
         );
     }
 
