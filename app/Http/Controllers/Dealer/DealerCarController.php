@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\CarUploadRequest;
 use App\Models\Car;
 use App\Models\Dealer;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\View;
 use App\Services\ApprovalService;
@@ -16,6 +17,7 @@ use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DealerCarController extends Controller
 {
@@ -119,8 +121,9 @@ class DealerCarController extends Controller
                 $plan,
                 $data['phone_number'] ?? null,
                 $data['network'] ?? null,
-                $data['payment_method'] ?? null
+                $data['payment_method'] ?? 'mobile_money'
             );
+            Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
 
             $paymentUrl = null;
             $callbackUrl = "https://backend.ghanacarsales.com/api/payment/callback" ?? null;
@@ -128,21 +131,40 @@ class DealerCarController extends Controller
                 $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
                 if (!empty($result['authorization_url'])) {
                     $paymentUrl = $result['authorization_url'] ?? null;
+                    Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
                 }
             }
+            if (! $paymentUrl) {
+                $paymentUrl = config('app.frontend_url', 'https://ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
+                Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
+            }
 
+            $car->load('dealer');
             return $this->apiResponse(
                 in_error: false,
                 message: "Car uploaded successfully",
                 status_code: self::API_CREATED,
                 data: [
                     'car'         => CarTransformer::summary($car->load('dealer')),
+                    'payment'     => $this->paymentPayloadForFrontend($payment),
                     'payment_url' => $paymentUrl,
                     'reference'   => $payment->reference_id,
                 ],
                 reason: "Car created. Complete payment to submit for approval."
             );
         });
+    }
+
+    protected function paymentPayloadForFrontend(Payment $payment): array
+    {
+        return [
+            'payment_slug' => $payment->payment_slug,
+            'reference_id' => $payment->reference_id,
+            'amount'       => (float) $payment->amount,
+            'plan_slug'    => $payment->plan_slug,
+            'plan_name'    => $payment->plan_name,
+            'status'       => $payment->status,
+        ];
     }
 
     public function saveDraft(CarUploadRequest $request): JsonResponse

@@ -44,8 +44,9 @@ class PaystackService
                     'car_slugs'    => $payment->cars->pluck('car_slug')->toArray(),
                     'plan_slug'    => $payment->plan_slug,
                     'reference_id' => $reference,
+                    'amount'       => $amountInCedis,
+                    'phone' => $payment->phone_number,
                 ],
-                'channels' => ['card', 'mobile_money'],
             ]);
 
         $body = $response->json();

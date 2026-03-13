@@ -64,20 +64,23 @@ class PaymentController extends Controller
             (float) $plan->price,
             $data['phone_number'] ?? null,
             $data['network'] ?? null,
-            'momo'
+            $data['payment_method'] ?? 'mobile_money'
         );
+        Log::channel('paystack')->info('PaymentController: payment created', ['payment' => $payment]);
 
         $paymentUrl = null;
         // Backend callback: Paystack redirects user here; we resolve payment then redirect to frontend success/failure
-        $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
+        $callbackUrl = "https://backend.ghanacarsales.com/api/payment/callback" ?? null;
         if (config('services.paystack.secret_key')) {
             $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
             if (! empty($result['authorization_url'])) {
                 $paymentUrl = $result['authorization_url'];
+                Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
             }
         }
         if (! $paymentUrl) {
             $paymentUrl = config('app.frontend_url', 'https://ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
+            Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
         $car->load('dealer');
