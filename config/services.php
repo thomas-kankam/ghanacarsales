@@ -38,4 +38,8 @@ return [
         'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
     ],
 
+    'mnotify' => [
+        'api_key' => env('MNOTIFY_API_KEY', 'yFasC3yZysO0BrCOLtc27I9vs'),
+        'from'    => env('MNOTIFY_FROM', 'GhCarSales'),
+    ],
 ];

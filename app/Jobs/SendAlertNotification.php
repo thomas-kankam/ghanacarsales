@@ -42,7 +42,7 @@ class SendAlertNotification implements ShouldQueue
 
         try {
             // Send SMS notification
-            $this->sendSms();
+            $this->sendSms($this->alert->mobile_number, "New car matching your alert: {$this->car->brand->name} {$this->car->model->name} - GHS {$this->car->price}");
 
             // Send email if available
             if ($this->alert->email) {
@@ -59,7 +59,7 @@ class SendAlertNotification implements ShouldQueue
         }
     }
 
-    protected function sendSms(): void
+    protected function sendSms(string $mobile_number, string $message): void
     {
         // TODO: Integrate with SMS provider
         $message = "New car matching your alert: {$this->car->brand->name} {$this->car->model->name} - GHS {$this->car->price}";

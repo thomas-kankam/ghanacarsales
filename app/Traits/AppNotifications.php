@@ -13,35 +13,46 @@ trait AppNotifications
 {
     use Helpers;
 
-    protected static function sendSms(string $phone_number, string $msg, string $from): bool
+    /**
+     * Send SMS via Mnotify.
+     *
+     * @return array|false Returns provider response data on success, false on failure.
+     */
+    protected static function sendSms(string $phone_number, string $msg): array|false
     {
-        $endpoint = "https://api.txtconnect.net/dev/api/sms/send";
 
+        $recipients = [$phone_number];
         $payload = [
-            "to"      => $phone_number,
-            "from"    => $from,
-            "unicode" => 0,
-            "sms"     => $msg,
+            'recipient'     => $recipients,
+            'sender'        => "GhCarSales",
+            'message'       => $msg,
+            'is_schedule'   => false,
+            'schedule_date' => '',
+            // 'sms_type'      => 'otp',
         ];
 
         try {
-            $response = Http::withHeaders([
-                "Authorization" => "Bearer 2p6iDItRUfCFxjVBXbm9cGQ5eAYln0NZPzEqsLKrJvWy8hgou3",
-                'Accept'        => 'application/json',
-                "Content-Type"  => "application/json",
-            ])->post($endpoint, $payload);
+            $response = Http::acceptJson()
+                ->timeout(15)
+                ->post("https://api.mnotify.com/api/sms/quick?key=yFasC3yZysO0BrCOLtc27I9vs", $payload);
 
-            Log::channel("sent_sms")->info("SMS API Response", [
-                'phone_number' => $phone_number,
-                'response'     => $response->json(),
+            $json = $response->json();
+
+            Log::channel('sent_sms')->info('SMS API Response', [
+                'recipients' => $recipients,
+                'status'     => $response->status(),
+                'response'   => $json,
             ]);
 
-            return $response->successful();
-        } catch (\Exception $e) {
-            Log::channel("sent_sms")->error("SMS API Exception", [
-                'phone_number' => $phone_number,
-                'error'        => $e->getMessage(),
-                'trace'        => $e->getTraceAsString(),
+            if ($response->successful() && ($json['status'] ?? null) === 'success') {
+                return $json['summary'] ?? null;
+            }
+
+            return false;
+        } catch (\Throwable $e) {
+            Log::channel('sent_sms')->error('Mnotify SMS: request failed', [
+                'recipients' => $recipients,
+                'message'    => $e->getMessage(),
             ]);
             return false;
         }
