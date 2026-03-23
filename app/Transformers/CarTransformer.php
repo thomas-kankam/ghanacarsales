@@ -53,7 +53,36 @@ class CarTransformer
             ],
             'images' => $car->images ?? [],
             'created_at' => optional($car->created_at)->toIso8601String(),
+            'approval' => null,
         ];
+
+        $approval = null;
+        if ($car->relationLoaded('latestApproval')) {
+            $approval = $car->latestApproval;
+        } elseif ($car->relationLoaded('approvals')) {
+            $approval = $car->approvals->sortByDesc('created_at')->first();
+        }
+
+        if ($approval) {
+            $payload['approval'] = [
+                'id' => $approval->id ?? null,
+                'approval_slug' => $approval->approval_slug ?? null,
+                'car_slug' => $approval->car_slug ?? null,
+                'dealer_slug' => $approval->dealer_slug ?? null,
+                'dealer_name' => $approval->dealer_name ?? null,
+                'dealer_code' => $approval->dealer_code ?? null,
+                'payment_slug' => $approval->payment_slug ?? null,
+                'status' => $approval->status ?? null,
+                'type' => $approval->type ?? null,
+                'reason' => $approval->reason ?? null,
+                'rejection_reason' => $approval->reason ?? null,
+                'created_at' => optional($approval->created_at)->toIso8601String(),
+                'updated_at' => optional($approval->updated_at)->toIso8601String(),
+                'admin_approval' => (bool) ($approval->admin_approval ?? false),
+                'admin_approval_at' => optional($approval->admin_approval_at)->toIso8601String(),
+                'admin_slug' => $approval->admin_slug ?? null,
+            ];
+        }
 
         if ($car->relationLoaded('paymentItems')) {
             $payload['payments'] = $car->paymentItems->map(function ($item) {

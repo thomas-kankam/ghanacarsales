@@ -22,7 +22,8 @@ class AdminCarController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Car::with(['dealer'])
+        // also attach the approval fields if it exists in Approval else display null
+        $query = Car::with(['dealer', 'latestApproval'])
         ->where('status', '!=', 'draft')
         ->whereNull('deleted_at')
         ->orderByDesc('created_at');
@@ -34,7 +35,7 @@ class AdminCarController extends Controller
         $cars = $query->paginate((int) $request->get('per_page', 20));
 
         $items = collect($cars->items())
-            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer'])))
+            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer', 'latestApproval'])))
             ->all();
 
         $payload = [
@@ -57,13 +58,13 @@ class AdminCarController extends Controller
 
     public function show($id): JsonResponse
     {
-        $car = Car::with(['paymentItems.payment', 'dealer'])->findOrFail($id);
+        $car = Car::with(['paymentItems.payment', 'dealer', 'latestApproval'])->findOrFail($id);
 
         return $this->apiResponse(
             in_error: false,
             message: "Car retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->load(['paymentItems.payment', 'dealer']))
+            data: CarTransformer::summary($car->load(['paymentItems.payment', 'dealer', 'latestApproval']))
         );
     }
 
@@ -92,7 +93,7 @@ class AdminCarController extends Controller
             in_error: false,
             message: "Car approved successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer']))
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer', 'latestApproval']))
         );
     }
 
@@ -112,7 +113,7 @@ class AdminCarController extends Controller
             message: "Car rejected successfully",
             status_code: self::API_SUCCESS,
             data: [
-                'car'               => CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer'])),
+                'car'               => CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer', 'latestApproval'])),
                 'rejection_reason'  => $approval?->reason,
             ]
         );
@@ -130,7 +131,8 @@ class AdminCarController extends Controller
         return $this->apiResponse(
             in_error: false,
             message: "Car expired successfully",
-            status_code: self::API_SUCCESS
+            status_code: self::API_SUCCESS,
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer', 'latestApproval']))
         );
     }
 
@@ -158,7 +160,7 @@ class AdminCarController extends Controller
             in_error: false,
             message: "Car reverted to pending approval successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer']))
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer', 'latestApproval']))
         );
     }
 
@@ -179,7 +181,7 @@ class AdminCarController extends Controller
         $cars = Car::onlyTrashed()->paginate((int) $request->get('per_page', 20));
 
         $items = collect($cars->items())
-            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer'])))
+            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer', 'latestApproval'])))
             ->all();
 
         $payload = [
@@ -209,7 +211,7 @@ class AdminCarController extends Controller
             in_error: false,
             message: "Car restored successfully",
             status_code: self::API_SUCCESS,
-            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer'])   )
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer', 'latestApproval']))
         );
     }
 
