@@ -81,6 +81,7 @@ class AdminAuthController extends Controller
         $data = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:admins,email,' . $admin->id],
+            'phone_number' => ['nullable', 'string', 'max:255', 'unique:admins,phone_number,' . $admin->id],
         ]);
 
         $admin->update($data);
