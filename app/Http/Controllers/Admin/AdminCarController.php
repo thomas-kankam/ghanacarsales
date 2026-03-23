@@ -23,7 +23,7 @@ class AdminCarController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Car::with(['dealer'])
-        ->where('status', 'pending_approval')
+        ->where('status', '!=', 'draft')
         ->whereNull('deleted_at')
         ->orderByDesc('created_at');
 
