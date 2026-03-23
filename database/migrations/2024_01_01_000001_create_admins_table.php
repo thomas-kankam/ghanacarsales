@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('phone_number')->unique();
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->index('email');
             $table->index('admin_slug');
             $table->index('is_active');
+            $table->index('phone_number');
         });
     }
 

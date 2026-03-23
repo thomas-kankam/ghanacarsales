@@ -9,6 +9,7 @@ class Admin extends Actor
         'email',
         'password',
         'is_active',
+        'phone_number',
     ];
 
     protected $hidden = [
@@ -20,5 +21,6 @@ class Admin extends Actor
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
         'is_active'         => 'boolean',
+        'phone_number'      => 'string',
     ];
 }
