@@ -170,8 +170,8 @@ class AdminAuthController extends Controller
     {
         $data = $request->validate([
             'admin_slug' => ['required', 'string'],
-            'token' => ['nullable', 'string', 'required_without:otp'],
-            'otp' => ['nullable', 'string', 'required_without:token'],
+            // 'token' => ['nullable', 'string', 'required_without:otp'],
+            'otp' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
