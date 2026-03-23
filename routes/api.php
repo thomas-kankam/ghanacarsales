@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminBillingController;
 use App\Http\Controllers\Admin\AdminCarController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDealerController;
 use App\Http\Controllers\Admin\AdminMetricsController;
 use App\Http\Controllers\Admin\AdminPlanController;
@@ -35,8 +36,14 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('admin')->group(function () {
     Route::post('/register', [AdminAuthController::class, 'register']);
     Route::post('/login', [AdminAuthController::class, 'login']);
+    Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
     Route::middleware(['auth:admin'])->group(function () {
+        // Admin account
+        Route::put('/profile', [AdminAuthController::class, 'profileUpdate']);
+        Route::post('/change-password', [AdminAuthController::class, 'changePassword']);
+
         // Dealers
         Route::get('/dealers', [AdminDealerController::class, 'index']);
         Route::get('/dealers/{id}', [AdminDealerController::class, 'show']);
@@ -73,6 +80,11 @@ Route::prefix('admin')->group(function () {
         // Metrics & health
         Route::get('/metrics', [AdminMetricsController::class, 'metrics']);
         Route::get('/health', [AdminMetricsController::class, 'health']);
+
+        // Dashboard
+        Route::get('/dashboard/top-dealers', [AdminDashboardController::class, 'topDealers']);
+        Route::get('/dashboard/pending-approvals', [AdminDashboardController::class, 'pendingApprovals']);
+        Route::get('/dashboard/latest-registrations', [AdminDashboardController::class, 'latestRegistrations']);
     });
 });
 
