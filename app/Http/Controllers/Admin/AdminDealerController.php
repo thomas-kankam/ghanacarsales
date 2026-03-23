@@ -10,7 +10,12 @@ class AdminDealerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Dealer::query();
+        $query = Dealer::query()
+            ->withCount([
+                'cars as listings_count' => function ($q) {
+                    $q->where('status', '!=', 'draft');
+                },
+            ]);
 
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
