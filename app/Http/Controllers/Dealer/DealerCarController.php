@@ -7,7 +7,6 @@ use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
 use App\Models\Plan;
-use App\Models\View;
 use App\Services\ApprovalService;
 use App\Services\CarService;
 use App\Services\PaymentService;
@@ -357,34 +356,82 @@ class DealerCarController extends Controller
         $dealer     = $request->user();
         $dealerSlug = $dealer->dealer_slug;
 
-        $carSlugs     = Car::where('dealer_slug', $dealerSlug)->pluck('car_slug');
-        $totalViewed  = View::whereIn('car_slug', $carSlugs)->count();
-        $expiringSoon = Car::where('dealer_slug', $dealerSlug)
-            ->where('status', 'published')
-            ->whereBetween('expiry_date', [now(), now()->addDays(3)])
-            ->count();
-        $totalActiveCars = Car::where('dealer_slug', $dealerSlug)
+        $activeCount = Car::where('dealer_slug', $dealerSlug)
             ->where('status', 'published')
             ->count();
 
-        $recentPendingApproval = Car::where('dealer_slug', $dealerSlug)
+        $pendingApprovalCount = Car::where('dealer_slug', $dealerSlug)
             ->where('status', 'pending_approval')
-            ->with(['paymentItems.payment', 'dealer'])
-            ->latest()
-            ->limit(6)
-            ->get();
-        $recentPendingApprovalData = $recentPendingApproval->map(fn($car) => CarTransformer::summary($car))->values()->all();
+            ->count();
+
+        $pendingPaymentCount = Car::where('dealer_slug', $dealerSlug)
+            ->where('status', 'pending_payment')
+            ->count();
+
+        $draftsCount = Car::where('dealer_slug', $dealerSlug)
+            ->where('status', 'draft')
+            ->count();
 
         return $this->apiResponse(
             in_error: false,
             message: "Dashboard stats retrieved successfully",
             status_code: self::API_SUCCESS,
             data: [
-                'total_viewed'                => $totalViewed,
-                'expiring_soon'               => $expiringSoon,
-                'total_active_cars'           => $totalActiveCars,
-                'recent_pending_approval_cars' => $recentPendingApprovalData,
+                'active_count'            => $activeCount,
+                'pending_approval_count'  => $pendingApprovalCount,
+                'pending_payment_count'   => $pendingPaymentCount,
+                'drafts_count'            => $draftsCount,
             ]
+        );
+    }
+
+    /**
+     * Dealer recent listings (latest 6, excluding draft).
+     */
+    public function recentListings(Request $request): JsonResponse
+    {
+        $dealer = $request->user();
+
+        $cars = Car::where('dealer_slug', $dealer->dealer_slug)
+            ->where('status', '!=', 'draft')
+            ->with(['dealer', 'paymentItems.payment', 'latestApproval'])
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        $items = $cars->map(fn($car) => CarTransformer::summary($car))->values()->all();
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Recent listings retrieved successfully",
+            status_code: self::API_SUCCESS,
+            data: $items
+        );
+    }
+
+    /**
+     * Dealer recent expiring-soon listings (latest 6 by nearest expiry date).
+     */
+    public function recentExpiringSoonListings(Request $request): JsonResponse
+    {
+        $dealer = $request->user();
+
+        $cars = Car::where('dealer_slug', $dealer->dealer_slug)
+            ->where('status', 'published')
+            ->whereNotNull('expiry_date')
+            ->whereBetween('expiry_date', [now(), now()->addDays(7)])
+            ->with(['dealer', 'paymentItems.payment', 'latestApproval'])
+            ->orderBy('expiry_date')
+            ->limit(6)
+            ->get();
+
+        $items = $cars->map(fn($car) => CarTransformer::summary($car))->values()->all();
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Expiring soon listings retrieved successfully",
+            status_code: self::API_SUCCESS,
+            data: $items
         );
     }
 

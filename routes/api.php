@@ -116,6 +116,8 @@ Route::prefix('dealer')->group(function () {
         Route::delete('/delete_car/{car}', [DealerCarController::class, 'deleteCar']);
 
         Route::get('/dashboard_stats', [DealerCarController::class, 'dashboardStats']);
+        Route::get('/recent_listings', [DealerCarController::class, 'recentListings']);
+        Route::get('/expiring_soon_listings', [DealerCarController::class, 'recentExpiringSoonListings']);
 
         // Draft workflow
         Route::get('/drafts', [DealerCarController::class, 'listDrafts']);
