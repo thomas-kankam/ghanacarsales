@@ -24,7 +24,7 @@ trait AppNotifications
         $recipients = [$phone_number];
         $payload = [
             'recipient'     => $recipients,
-            'sender'        => "GhCarSales",
+            'sender'        => "OmniCars",
             'message'       => $msg,
             'is_schedule'   => false,
             'schedule_date' => '',
