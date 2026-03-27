@@ -29,6 +29,7 @@ trait AppNotifications
             'is_schedule'   => false,
             'schedule_date' => '',
             // 'sms_type'      => 'otp',
+            // 'sms_type'      => 'otp',
         ];
 
         try {
