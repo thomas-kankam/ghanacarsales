@@ -22,13 +22,15 @@ class AdminAuthController extends Controller
         $admin = Admin::create($data);
 
         if ($admin) {
-            $otp = self::generateOtp(
-                type: 'password_reset',
-                actor_id: $admin->admin_slug,
-                channel: 'sms',
-                guard: 'admin'
-            );
-            self::sendSms($phone_number, 'OTP Login code: ' . $otp);
+            if ($phone_number) {
+                self::sendSms($phone_number, 'Admin account created successfully. Your login credentials are: Email: ' . $email . ' and Password: ' . $password);
+            }
+            // if ($email) {
+            //     self::sendEmail($email, email_class: "App\Mail\AdminPasswordResetMail", parameters: [
+            //         $email,
+            //         $password,
+            //     ]);
+            // }
             return self::apiResponse(
                 in_error: false,
                 message: "Action Successful",
