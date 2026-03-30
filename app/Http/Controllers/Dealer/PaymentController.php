@@ -122,7 +122,7 @@ class PaymentController extends Controller
 
         $paymentUrl = null;
         // Backend callback: Paystack redirects user here; we resolve payment then redirect to frontend success/failure
-        $callbackUrl = "https://backend.ghanacarsales.com/api/payment/callback" ?? null;
+        $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
         if (config('services.paystack.secret_key')) {
             $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
             if (! empty($result['authorization_url'])) {
@@ -131,7 +131,7 @@ class PaymentController extends Controller
             }
         }
         if (! $paymentUrl) {
-            $paymentUrl = config('app.frontend_url', 'https://backend.ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
+            $paymentUrl = config('app.frontend_url', 'https://backend.omnicarsgh.com') . '/payment/check?reference=' . $payment->reference_id;
             Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
@@ -172,23 +172,23 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend  = rtrim(config('app.frontend_url', 'https://backend.ghanacarsales.com'), '/');
+        $frontend  = rtrim(config('app.frontend_url', 'https://backend.omnicarsgh.com'), '/');
         $reference = $request->query('reference') ?? $request->query('trxref');
         if (! $reference) {
-            return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reason' => 'missing_reference']));
+            return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reason' => 'missing_reference']));
         }
 
         $payment = Payment::where('reference_id', $reference)->orWhere('reference', $reference)->first();
         if (! $payment) {
-            return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference, 'reason' => 'not_found']));
+            return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reference' => $reference, 'reason' => 'not_found']));
         }
 
         if ($payment->status === 'paid') {
-            return redirect()->away("{$frontend}/payment/success");
+            return redirect()->away("{$frontend}/app/payment/success");
             // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
         }
         if ($payment->status === 'failed') {
-            return redirect()->away("{$frontend}/payment/failure");
+            return redirect()->away("{$frontend}/app/payment/cancel");
             // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
         }
 
@@ -197,45 +197,45 @@ class PaymentController extends Controller
             $verified = $this->paystackService->verifyTransaction($payment->reference_id ?? $payment->reference);
             if ($verified && ($verified['paid'] ?? false)) {
                 $this->paymentService->processPaymentSuccess($payment, $payment->reference_id ?? $payment->reference);
-                return redirect()->away("{$frontend}/payment/success");
+                return redirect()->away("{$frontend}/app/payment/success");
                 // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
             }
             if ($verified && ($verified['status'] ?? '') === 'failed') {
                 $payment->update(['status' => 'failed']);
-                return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
+                return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reference' => $reference]));
                 // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
             }
         }
 
-        return redirect()->away("{$frontend}/payment/callback");
+        return redirect()->away("{$frontend}/app/payment/callback");
         // return redirect()->away("{$frontend}/payment/callback?" . http_build_query(['reference' => $reference]));
     }
 
     /**
      * Paystack webhook (server-to-server). Configure in Paystack Dashboard:
-     * https://dashboard.paystack.com/#/settings/developer → Webhook URL = https://backend.ghanacarsales.com/api/payment/webhook
+     * https://dashboard.paystack.com/#/settings/developer → Webhook URL = https://backend.omnicarsgh.com/api/payment/webhook
      * Production: PAYSTACK_WEBHOOK_SECRET must be set; requests with invalid/missing signature are rejected.
      */
     public function webhook(Request $request): JsonResponse
     {
         $rawPayload = $request->getContent();
         $payload    = json_decode($rawPayload, true);
-        Log::channel('paystack')->info('Paystack webhook', ['payload' => $payload]);
+        // Log::channel('paystack')->info('Paystack webhook', ['payload' => $payload]);
         // Log::info('Paystack webhook', ['rawPayload' => $rawPayload]);
         // Log::info('Paystack webhook', ['signature' => $request->header('x-paystack-signature')]);
         // Log::info('Paystack webhook', ['reference' => $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null]);
-        Log::channel('paystack')->info('Paystack webhook', ['event' => $payload['event'] ?? '']);
-        Log::channel('paystack')->info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
-        Log::channel('paystack')->info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
+        // Log::channel('paystack')->info('Paystack webhook', ['event' => $payload['event'] ?? '']);
+        // Log::channel('paystack')->info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
+        // Log::channel('paystack')->info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
 
         if (! $payload || ! is_array($payload)) {
-            Log::channel('single')->warning('Paystack webhook: invalid JSON');
+            // Log::channel('single')->warning('Paystack webhook: invalid JSON');
             return response()->json(['status' => 'error', 'message' => 'Invalid data'], 400);
         }
 
         $signature = $request->header('x-paystack-signature', '');
         if (! $this->paystackService->verifyWebhookSignature($rawPayload, $signature)) {
-            Log::channel('single')->warning('Paystack webhook: invalid or missing signature');
+            // Log::channel('single')->warning('Paystack webhook: invalid or missing signature');
             return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
         }
 

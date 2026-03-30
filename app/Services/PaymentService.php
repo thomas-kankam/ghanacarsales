@@ -127,7 +127,7 @@ class PaymentService
         return DB::transaction(function () use ($payment, $referenceId) {
             $payment->refresh();
             if ($payment->status === 'paid') {
-                Log::channel('paystack')->info('Paystack webhook: payment already paid', ['payment' => $payment]);
+                // Log::channel('paystack')->info('Paystack webhook: payment already paid', ['payment' => $payment]);
                 return true;
             }
 

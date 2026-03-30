@@ -46,16 +46,12 @@ use App\Http\Controllers\Dealer\PaymentController;
 
 Route::get("/", function () {
     return response()->json([
-        'name'        => config('app.name', 'GhanaCarSales'),
-        'description' => 'GhanaCarSales',
+        'name'        => config('app.name', 'Omni Cars Ghana'),
+        'description' => 'Omni Cars Ghana',
         'version'     => '1.0.0',
-        'author'      => 'GhanaCarSales',
-        'author_url'  => 'https://ghancarsales.com',
-        'author_email' => 'info@ghancarsales.com',
-        'author_phone' => '+233540000000',
-        'author_address' => 'Ghana',
-        'author_city' => 'Accra',
-        'author_state' => 'Greater Accra',
+        'author'      => 'Omni Cars Ghana',
+        'author_url'  => 'https://omnicarsgh.com',
+        'author_email' => 'info@omnicarsgh.com',
     ]);
 });
 
