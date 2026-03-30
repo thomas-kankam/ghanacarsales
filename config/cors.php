@@ -20,7 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     // 'allowed_origins' => ['*'],
-    'allowed_origins' => ['https://omnicarsgh.com/'],
+    'allowed_origins' => ['https://omnicarsgh.com/', 'https://dealer.omnicarsgh.com/', 'https://admin.omnicarsgh.com/'],
 
     'allowed_origins_patterns' => [],
 
