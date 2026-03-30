@@ -16,6 +16,22 @@ class ApprovalService
         ?string $dealerCode = null,
         ?string $paymentSlug = null
     ): Approval {
+        $existing = Approval::where('car_slug', $carSlug)
+            ->where('payment_slug', $paymentSlug)
+            ->where('type', $type)
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'status'      => $status,
+                'dealer_code' => $dealerCode,
+                'dealer_name' => $dealer->full_name ?? $dealer->business_name,
+            ]);
+
+            return $existing->fresh();
+        }
+
         return Approval::create([
             'approval_slug' => (string) Str::uuid(),
             'car_slug'      => $carSlug,
@@ -24,7 +40,7 @@ class ApprovalService
             'status'        => $status,
             'dealer_code'   => $dealerCode,
             'dealer_name'   => $dealer->full_name ?? $dealer->business_name,
-            'payment_slug' => $paymentSlug,
+            'payment_slug'  => $paymentSlug,
         ]);
     }
 

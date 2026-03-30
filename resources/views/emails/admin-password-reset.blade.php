@@ -18,7 +18,7 @@
                     style="max-width: 600px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
                     <!-- Header -->
                     <tr>
-                        <td align="center" bgcolor="#f8f8f8" style="padding: 30px 20px;">
+                        <td align="center" bgcolor="#141414" style="padding: 30px 20px;">
                             <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png"
                                 alt="Omni Cars Ghana" style="max-width: 140px; margin-bottom: 15px;">
                         </td>

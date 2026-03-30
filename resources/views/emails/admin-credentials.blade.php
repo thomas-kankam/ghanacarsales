@@ -18,9 +18,9 @@
                     style="max-width: 600px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
                     <!-- Header -->
                     <tr>
-                        <td align="center" bgcolor="#f8f8f8" style="padding: 30px 20px;">
-                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png"
-                                alt="Ghana Car Sales" style="max-width: 140px; margin-bottom: 15px;">
+                        <td align="center" bgcolor="#141414" style="padding: 30px 20px;">
+                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png" alt="Ghana Car Sales"
+                                style="max-width: 140px; margin-bottom: 15px;">
                         </td>
                     </tr>
 
@@ -40,7 +40,8 @@
                                             </span>,
                                         </p>
                                         <p style="font-size: 15px; color: #555; margin: 0;">
-                                            Thank you for signing up! Your login credentials are: Email: {{ $email }} and Password: {{ $password }}.
+                                            Thank you for signing up! Your login credentials are: Email:
+                                            {{ $email }} and Password: {{ $password }}.
                                         </p>
                                         <p style="font-size: 15px; color: #555; margin: 0;">
                                             Please login to your account using the credentials above.

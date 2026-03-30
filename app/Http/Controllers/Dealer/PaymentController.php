@@ -65,19 +65,59 @@ class PaymentController extends Controller
             );
         }
 
+        $requestedCarSlugs = array_values(array_unique($data['car_slugs']));
+        $selectedCars = Car::whereIn('car_slug', $requestedCarSlugs)
+            ->where('dealer_slug', $dealer->dealer_slug)
+            ->get();
+
+        if ($selectedCars->count() !== count($requestedCarSlugs)) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "Some selected cars are invalid",
+                status_code: self::API_BAD_REQUEST,
+                reason: "One or more cars do not belong to the authenticated dealer.",
+                data: []
+            );
+        }
+
+        $primaryCar = $selectedCars->firstWhere('car_slug', $car->car_slug) ?? $selectedCars->first();
+
         if ($data['plan_slug'] === 'friend_code') {
-            // Move existing cars (draft/pending_payment/expired) into a free friend_code approval flow.
-            // We wrap the whole operation (payment + payment_items + approvals + car status updates) in a transaction.
-            $response = DB::transaction(function () use ($dealer, $data, $plan, $car) {
+            if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Some selected cars cannot use this plan",
+                    status_code: self::API_BAD_REQUEST,
+                    reason: "Friend code can only be applied to draft, expired, or pending-payment cars.",
+                    data: []
+                );
+            }
+
+            $response = DB::transaction(function () use ($dealer, $data, $plan, $primaryCar, $requestedCarSlugs) {
                 $data['status']       = 'pending_approval';
                 $data['plan_slug']    = 'friend_code';
                 $data['plan_price']   = 0;
                 $data['plan_details'] = $data['plan_details'] ?? null;
 
-                // Create zero-amount payment + items for these cars
+                $cars = Car::whereIn('car_slug', $requestedCarSlugs)
+                    ->where('dealer_slug', $dealer->dealer_slug)
+                    ->whereIn('status', ['pending_payment', 'expired', 'draft'])
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($cars->count() !== count($requestedCarSlugs)) {
+                    return $this->apiResponse(
+                        in_error: true,
+                        message: "Some selected cars cannot use this plan",
+                        status_code: self::API_BAD_REQUEST,
+                        reason: "Friend code can only be applied to draft, expired, or pending-payment cars.",
+                        data: []
+                    );
+                }
+
                 $payment = $this->paymentService->createPaymentForCars(
                     $dealer,
-                    [$car],
+                    $cars->all(),
                     $plan,
                     $data['phone_number'] ?? null,
                     $data['network'] ?? null,
@@ -85,22 +125,31 @@ class PaymentController extends Controller
                 );
                 $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
 
-                // Update car statuses/plan info and create approvals
-                $this->approvalService->createForCar(
-                    $car->car_slug,
+                foreach ($cars as $targetCar) {
+                    $targetCar->update([
+                        'status'       => 'pending_approval',
+                        'plan_slug'    => 'friend_code',
+                        'plan_price'   => 0,
+                        'plan_details' => $data['plan_details'],
+                    ]);
+
+                    $this->approvalService->createForCar(
+                        $targetCar->car_slug,
                         $dealer,
                         'friend_code',
                         'pending',
                         $data['dealer_code'] ?? null,
                         $payment->payment_slug
                     );
+                }
 
-               return $this->apiResponse(
+                return $this->apiResponse(
                     in_error: false,
                     message: "Car submitted for friend code approval",
                     status_code: self::API_CREATED,
                     data: [
-                        'car'         => CarTransformer::summary($car->load('dealer')),
+                        'car'         => CarTransformer::summary($primaryCar->fresh()->load('dealer')),
+                        'cars'        => $cars->load('dealer')->map(fn ($item) => CarTransformer::summary($item))->values()->all(),
                         'payment'     => $this->paymentPayloadForFrontend($payment),
                     ],
                     reason: "Car submitted for friend code approval"
@@ -110,19 +159,49 @@ class PaymentController extends Controller
             return $response;
         }
 
-        $payment = $this->paymentService->createPaymentForCars(
-            $dealer,
-            [$car],
-            $plan,
-            $data['phone_number'] ?? null,
-            $data['network'] ?? null,
-            $data['payment_method'] ?? 'mobile_money'
-        );
+        if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "Some selected cars cannot be moved to payment",
+                status_code: self::API_BAD_REQUEST,
+                reason: "Paid plans can only be applied to draft, expired, or pending-payment cars.",
+                data: []
+            );
+        }
+
+        $payment = DB::transaction(function () use ($dealer, $data, $plan, $requestedCarSlugs) {
+            $cars = Car::whereIn('car_slug', $requestedCarSlugs)
+                ->where('dealer_slug', $dealer->dealer_slug)
+                ->whereIn('status', ['pending_payment', 'expired', 'draft'])
+                ->lockForUpdate()
+                ->get();
+
+            if ($cars->count() !== count($requestedCarSlugs)) {
+                throw new \InvalidArgumentException('One or more cars cannot be moved to pending payment.');
+            }
+
+            foreach ($cars as $targetCar) {
+                $targetCar->update([
+                    'status'       => 'pending_payment',
+                    'plan_slug'    => $plan->plan_slug,
+                    'plan_price'   => $plan->price,
+                    'plan_details' => $data['plan_details'] ?? $targetCar->plan_details,
+                ]);
+            }
+
+            return $this->paymentService->createPaymentForCars(
+                $dealer,
+                $cars->all(),
+                $plan,
+                $data['phone_number'] ?? null,
+                $data['network'] ?? null,
+                $data['payment_method'] ?? 'mobile_money'
+            );
+        });
         Log::channel('paystack')->info('PaymentController: payment created', ['payment' => $payment]);
 
         $paymentUrl = null;
-        // Backend callback: Paystack redirects user here; we resolve payment then redirect to frontend success/failure
-        $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
+        $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
         if (config('services.paystack.secret_key')) {
             $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
             if (! empty($result['authorization_url'])) {
@@ -131,17 +210,17 @@ class PaymentController extends Controller
             }
         }
         if (! $paymentUrl) {
-            $paymentUrl = config('app.frontend_url', 'https://backend.omnicarsgh.com') . '/payment/check?reference=' . $payment->reference_id;
+            $paymentUrl = rtrim(config('app.frontend_url', 'https://ghanacarsales.com'), '/') . '/payment/check?reference=' . $payment->reference_id;
             Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
-        $car->load('dealer');
+        $primaryCar->load('dealer');
         return $this->apiResponse(
             in_error: false,
             message: "Payment created successfully",
             status_code: self::API_CREATED,
             data: [
-                'car'         => CarTransformer::summary($car),
+                'car'         => CarTransformer::summary($primaryCar),
                 'payment'     => $this->paymentPayloadForFrontend($payment),
                 'payment_url' => $paymentUrl,
                 'reference'   => $payment->reference_id,
@@ -172,7 +251,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend  = rtrim('https://dealer.omnicarsgh.com', '/');
+        $frontend  = rtrim(config('app.frontend_url', 'https://ghanacarsales.com'), '/');
         $reference = $request->query('reference') ?? $request->query('trxref');
         if (! $reference) {
             return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reason' => 'missing_reference']));

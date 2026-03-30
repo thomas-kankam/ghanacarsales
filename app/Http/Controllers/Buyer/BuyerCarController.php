@@ -49,13 +49,13 @@ class BuyerCarController extends Controller
 
     public function show(Car $car): JsonResponse
     {
-        // if ($car->status !== 'published') {
-        //     abort(404);
-        // }
+        if ($car->status !== 'published') {
+            abort(404);
+        }
         View::create([
             'car_slug' => $car->car_slug,
         ]);
-        // $car->load('dealer');
+        $car->load('dealer');
         return $this->apiResponse(
             in_error: false,
             message: "Car retrieved successfully",
@@ -68,11 +68,11 @@ class BuyerCarController extends Controller
     public function getDealerCars($dealer_slug): JsonResponse
     {
         $cars = Car::where('dealer_slug', $dealer_slug)
-            // ->where('status', 'published')
+            ->where('status', 'published')
+            ->with('dealer')
             ->paginate(15);
 
         $items = $cars->getCollection()
-        // ->load('dealer')
             ->map(fn($car) => CarTransformer::summary($car))
             ->all();
 

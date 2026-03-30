@@ -265,6 +265,8 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
 
+        abort_if($car->dealer_slug !== $dealer->dealer_slug || $car->status !== 'draft', 403);
+
         return $this->apiResponse(
             in_error: false,
             message: "Draft retrieved successfully",

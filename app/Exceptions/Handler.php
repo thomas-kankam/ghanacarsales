@@ -32,8 +32,7 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->renderable(function (QueryException $e, Request $request) {
-            Log::info($e);
-            // Log::channel("query_exception")->error($e);
+            Log::error($e);
 
             return response()->json([
                 "data" => [
@@ -44,12 +43,11 @@ class Handler extends ExceptionHandler
                     "data"          => [],
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 500);
         });
 
         $this->renderable(function (TypeError $e, Request $request) {
-            Log::info($e);
-            // Log::channel("type_error")->error($e);
+            Log::error($e);
 
             return response()->json([
                 "data" => [
@@ -60,11 +58,11 @@ class Handler extends ExceptionHandler
                     "data"          => [],
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 422);
         });
 
         $this->renderable(function (NotFoundHttpException $e, Request $request) {
-            Log::info($e);
+            Log::warning($e->getMessage());
 
             return response()->json([
                 "data" => [
@@ -75,11 +73,11 @@ class Handler extends ExceptionHandler
                     "data"          => [],
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 404);
         });
 
         $this->renderable(function (ThrottleRequestsException $e, Request $request) {
-            Log::info($e);
+            Log::warning($e->getMessage());
             $key       = 'limiter:' . ($request->user()?->id ?? $request->ip());
             $remaining = RateLimiter::remaining($key, 60);
 
@@ -87,19 +85,19 @@ class Handler extends ExceptionHandler
 
             return response()->json([
                 "data" => [
-                    "status_code"   => "500",
+                    "status_code"   => "429",
                     "message"       => "Action Unsuccessful",
                     "in_error"      => true,
                     "reason"        => "Too many request from your ip/user. Try again in " . $remaining . " seconds",
                     "data"          => [],
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 429);
         });
 
         // validation error
         $this->renderable(function (ValidationException $e, Request $request) {
-            Log::info($e);
+            Log::warning($e->getMessage());
             return response()->json([
                 "data" => [
                     "status_code"   => "422",
@@ -109,12 +107,12 @@ class Handler extends ExceptionHandler
                     "errors"        => $e->errors(),
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 422);
         });
 
         // authentication error
         $this->renderable(function (AuthenticationException $e, Request $request) {
-            Log::info($e);
+            Log::warning($e->getMessage());
             return response()->json([
                 "data" => [
                     "status_code"   => "401",
@@ -125,11 +123,11 @@ class Handler extends ExceptionHandler
                     "data"          => [],
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 401);
         });
 
         $this->renderable(function (Exception $e, Request $request) {
-            Log::info($e);
+            Log::error($e);
             return response()->json([
                 "data" => [
                     "status_code"   => "422",
@@ -139,7 +137,7 @@ class Handler extends ExceptionHandler
                     "data"          => [],
                     "point_in_time" => now(),
                 ],
-            ], 200);
+            ], 500);
         });
     }
 }

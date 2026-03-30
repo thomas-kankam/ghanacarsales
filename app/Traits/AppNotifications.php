@@ -20,22 +20,31 @@ trait AppNotifications
      */
     protected static function sendSms(string $phone_number, string $msg): array|false
     {
+        $apiKey = (string) config('services.mnotify.api_key', '');
+        if ($apiKey === '') {
+            Log::channel('sent_sms')->warning('Mnotify SMS: missing api key');
+            return false;
+        }
+
+        $sender = trim((string) config('services.mnotify.from', 'OmniCars'));
+        if (mb_strlen($sender) > 11) {
+            $sender = mb_substr($sender, 0, 11);
+        }
 
         $recipients = [$phone_number];
         $payload = [
             'recipient'     => $recipients,
-            'sender'        => "OmniCars",
+            'sender'        => $sender,
             'message'       => $msg,
             'is_schedule'   => false,
             'schedule_date' => '',
-            // 'sms_type'      => 'otp',
             // 'sms_type'      => 'otp',
         ];
 
         try {
             $response = Http::acceptJson()
                 ->timeout(15)
-                ->post("https://api.mnotify.com/api/sms/quick?key=yFasC3yZysO0BrCOLtc27I9vs", $payload);
+                ->post("https://api.mnotify.com/api/sms/quick?key={$apiKey}", $payload);
 
             $json = $response->json();
 
@@ -46,7 +55,7 @@ trait AppNotifications
             ]);
 
             if ($response->successful() && ($json['status'] ?? null) === 'success') {
-                return $json['summary'] ?? null;
+                return $json['data'] ?? $json['summary'] ?? $json;
             }
 
             return false;

@@ -39,7 +39,7 @@ class PaymentService
                 ->whereIn('status', ['pending_payment', 'pending_approval', 'draft'])
                 ->get();
 
-            if ($cars->isEmpty()) {
+            if ($cars->isEmpty() || $cars->count() !== count(array_unique($carSlugs))) {
                 throw new \Exception("No valid cars found");
             }
 
@@ -55,7 +55,7 @@ class PaymentService
                 'status'        => 'pending',
                 'phone_number'  => $phoneNumber,
                 'network'       => $network,
-                'reference_id'  => 'GHCS' . time() . strtoupper(Str::random(6)),
+                'reference_id'  => $this->generateReference(),
             ]);
 
             foreach ($cars as $car) {
@@ -92,7 +92,7 @@ class PaymentService
                 'plan_slug'     => $plan->plan_slug,
                 'plan_price'    => $plan->price,
                 'amount'        => $totalAmount,
-                'reference_id'  => 'GHCS' . time() . strtoupper(Str::random(6)),
+                'reference_id'  => $this->generateReference(),
                 'payment_method'=> $paymentMethod,
                 'status'        => 'pending',
                 'phone_number'  => $phoneNumber,
@@ -200,5 +200,14 @@ class PaymentService
         $basePrice = 50;
         $dailyRate = $durationDays === 90 ? 0.5 : 1.0;
         return round($carCount * $basePrice * ($durationDays * $dailyRate), 2);
+    }
+
+    protected function generateReference(): string
+    {
+        do {
+            $reference = 'GHCS' . now()->format('YmdHis') . strtoupper(Str::random(6));
+        } while (Payment::where('reference_id', $reference)->exists());
+
+        return $reference;
     }
 }

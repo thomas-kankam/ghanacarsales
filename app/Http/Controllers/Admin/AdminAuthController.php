@@ -14,11 +14,21 @@ class AdminAuthController extends Controller
 {
     public function register(AdminRegisterRequest $request): JsonResponse
     {
+        if (!app()->environment(['local', 'development']) && Admin::query()->exists()) {
+            return self::apiResponse(
+                in_error: true,
+                message: "Action Unsuccessful",
+                status_code: self::API_FORBIDDEN,
+                data: [],
+                reason: "Admin self-registration is disabled."
+            );
+        }
+
         $data = $request->validated();
         $data['admin_slug'] = Str::uuid();
         $password = $data['password'];
         $email = $data['email'];
-        $phone_number = $data['phone_number'];
+        $phone_number = $data['phone_number'] ?? null;
         $admin = Admin::create($data);
 
         if ($admin) {
@@ -52,7 +62,7 @@ class AdminAuthController extends Controller
 
         $admin = Admin::where('email', $request->email)->first();
 
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
+        if (!$admin || !$admin->is_active || !Hash::check($request->password, $admin->password)) {
             return self::apiResponse(
                 in_error: true,
                 message: "Invalid credentials",
@@ -62,6 +72,7 @@ class AdminAuthController extends Controller
             );
         }
 
+        $admin->tokens()->delete();
         $token = $admin->createToken('Admin Token')->accessToken;
         // add token to as response data
         $admin->token = $token;
@@ -116,6 +127,7 @@ class AdminAuthController extends Controller
         }
 
         $admin->update(['password' => $data['new_password']]);
+        $admin->tokens()->delete();
 
         return self::apiResponse(
             in_error: false,
@@ -151,21 +163,14 @@ class AdminAuthController extends Controller
                 );
 
             // self::sendSms($admin->phone_number, 'OTP Login code: ' . $otp);
-            return self::apiResponse(
-                in_error: false,
-                message: "Action Successful",
-                status_code: self::API_SUCCESS,
-                data: $admin->toArray(),
-                reason: "If the email exists, an OTP has been sent to your email for password reset"
-            );
         }
 
         return self::apiResponse(
-            in_error: true,
-            message: "Action Unsuccessful",
-            status_code: self::API_NOT_FOUND,
+            in_error: false,
+            message: "Action Successful",
+            status_code: self::API_SUCCESS,
             data: [],
-            reason: "Admin not found"
+            reason: "If the email exists, an OTP has been sent to your email for password reset"
         );
     }
 
@@ -215,12 +220,13 @@ class AdminAuthController extends Controller
         $admin->password = $data['password'];
         $admin->setRememberToken(Str::random(60));
         $admin->save();
+        $admin->tokens()->delete();
 
         return self::apiResponse(
             in_error: false,
             message: "Action Successful",
             status_code: self::API_SUCCESS,
-            data: $admin->toArray(),
+            data: [],
             reason: "Password reset successfully. Please login with your new password"
         );
     }

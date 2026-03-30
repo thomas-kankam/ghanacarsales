@@ -14,7 +14,7 @@ class PaystackService
 
     public function __construct()
     {
-        $this->secretKey = config('services.paystack.secret_key', '');
+        $this->secretKey = (string) (config('services.paystack.secret_key') ?? '');
         $this->paymentUrl = rtrim(config('services.paystack.payment_url', 'https://api.paystack.co'), '/');
     }
 
@@ -90,7 +90,6 @@ class PaystackService
             return false;
         }
         $computed = hash_hmac('sha512', $payload, $secret);
-        Log::channel('paystack')->info('Paystack webhook: computed signature', ['computed' => $computed, 'signature' => $signature]);
         return hash_equals($computed, $signature);
     }
 

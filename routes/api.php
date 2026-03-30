@@ -97,10 +97,10 @@ Route::prefix('dealer')->group(function () {
     // Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp'])->middleware('throttle:otp');
     Route::get('/test_sms/{msisdn}', [DealerAuthController::class, 'testSms']);
     Route::get('/test_email/{email}', [DealerAuthController::class, 'testEmail']);
-    Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp']);
-    Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp']);
+    Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp'])->middleware('throttle:otp');
+    Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp'])->middleware('throttle:otp');
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);
-    Route::post('/login_otp', [DealerAuthController::class, 'OtpLogin']);
+    Route::post('/login_otp', [DealerAuthController::class, 'OtpLogin'])->middleware('throttle:otp');
     Route::post('/login', [DealerAuthController::class, 'verifyLoginOtp']);
 
     // Protected routes

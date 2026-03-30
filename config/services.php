@@ -32,14 +32,14 @@ return [
     ],
 
     'paystack' => [
-        'public_key'     => env('PAYSTACK_PUBLIC_KEY', 'pk_test_a92b460015192324c3073e5fbe9888ad6caaacca'),
-        'secret_key'     => env('PAYSTACK_SECRET_KEY', 'sk_test_a5679995ef57939e9410a291ac015ea679c4bb72'),
+        'public_key'     => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key'     => env('PAYSTACK_SECRET_KEY'),
         'payment_url'    => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
         'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
     ],
 
     'mnotify' => [
-        'api_key' => env('MNOTIFY_API_KEY', 'yFasC3yZysO0BrCOLtc27I9vs'),
-        'from'    => env('MNOTIFY_FROM', 'GhCarSales'),
+        'api_key' => env('MNOTIFY_API_KEY'),
+        'from'    => env('MNOTIFY_FROM', 'OmniCars'),
     ],
 ];

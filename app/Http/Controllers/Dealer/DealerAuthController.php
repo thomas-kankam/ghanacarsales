@@ -21,7 +21,9 @@ class DealerAuthController extends Controller
 {
     public function testSms($msisdn): JsonResponse
     {
-        $response = self::sendSms($msisdn, 'This is a test message from Ghana Car Sales');
+        abort_unless(app()->environment(['local', 'development']), 404);
+
+        $response = self::sendSms($msisdn, 'This is a test message from Omni Cars Ghana');
 
         return self::apiResponse(
             in_error: false,
@@ -34,6 +36,8 @@ class DealerAuthController extends Controller
 
     public function testEmail($email): JsonResponse
     {
+        abort_unless(app()->environment(['local', 'development']), 404);
+
         $otp = random_int(111111, 999999) . now();
         self::sendEmail(
             $email,
@@ -178,9 +182,20 @@ class DealerAuthController extends Controller
         // Determine the channel
         $channel = isset($data['email']) ? 'email' : 'sms';
 
-        $dealer = Dealer::where("phone_number", $identifier)
-            ->orWhere("email", $identifier)
+        $dealer = Dealer::query()
+            ->when(isset($data['phone_number']), fn ($q) => $q->where('phone_number', $data['phone_number']))
+            ->when(isset($data['email']), fn ($q) => $q->orWhere('email', $data['email']))
             ->first();
+
+        if (! $dealer) {
+            return self::apiResponse(
+                in_error: true,
+                message: "Action Unsuccessful",
+                status_code: self::API_NOT_FOUND,
+                data: [],
+                reason: "Dealer cannot be found"
+            );
+        }
 
         // Generate and send OTP through appropriate channel
         $otp = self::generateOtp(
@@ -237,8 +252,8 @@ class DealerAuthController extends Controller
         // Get data from request
         $data = $request->validated();
 
-        // Get the authenticated dealer
-        $dealer = auth('dealer')->user();
+        /** @var Dealer $dealer */
+        $dealer = $request->user();
 
         // Update dealer with additional registration data
         $dealer->update(array_merge($data, [
@@ -272,8 +287,9 @@ class DealerAuthController extends Controller
         //     ->when($phone_number, fn($q) => $q->orWhere('phone_number', $phone_number))
         //     ->first();
 
-        $dealer = Dealer::where("phone_number", $phone_number)
-            ->orWhere("email", $email)
+        $dealer = Dealer::query()
+            ->when($phone_number, fn ($q) => $q->where('phone_number', $phone_number))
+            ->when($email, fn ($q) => $q->orWhere('email', $email))
             ->first();
 
         $identifier = $email ?? $phone_number;
