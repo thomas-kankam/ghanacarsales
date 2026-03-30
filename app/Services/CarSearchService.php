@@ -14,7 +14,7 @@ class CarSearchService
     public function search(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         $query = Car::query()
-            // ->where('status', 'published')
+            ->where('status', 'published')
             ->where(function (Builder $q) {
                 $q->whereNull('expiry_date')->orWhere('expiry_date', '>', now());
             });

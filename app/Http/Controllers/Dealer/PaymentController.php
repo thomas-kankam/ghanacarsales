@@ -172,7 +172,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend  = rtrim(config('app.frontend_url', 'https://backend.omnicarsgh.com'), '/');
+        $frontend  = rtrim('https://dealer.omnicarsgh.com', '/');
         $reference = $request->query('reference') ?? $request->query('trxref');
         if (! $reference) {
             return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reason' => 'missing_reference']));

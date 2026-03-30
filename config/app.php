@@ -57,7 +57,7 @@ return [
 
     'url'             => env('APP_URL', 'http://localhost'),
 
-    'frontend_url'    => env('APP_URL', 'https://backend.omnicarsgh.com'),
+    'frontend_url'    => env('APP_URL', 'https://dealer.omnicarsgh.com'),
     // 'frontend_url' => env('APP_FRONTEND_URL', 'https://ghanacarsales.com'),
 
     'asset_url'       => env('ASSET_URL'),

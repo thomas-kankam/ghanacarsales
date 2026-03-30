@@ -126,7 +126,7 @@ class DealerCarController extends Controller
                 $data['network'] ?? null,
                 $data['payment_method'] ?? 'mobile_money'
             );
-            Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
+            // Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
 
             $paymentUrl = null;
             $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
@@ -134,13 +134,13 @@ class DealerCarController extends Controller
                 $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
                 if (!empty($result['authorization_url'])) {
                     $paymentUrl = $result['authorization_url'] ?? null;
-                    Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
+                    // Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
                 }
             }
-            if (! $paymentUrl) {
-                $paymentUrl = config('app.frontend_url', 'https://backend.omnicarsgh.com') . '/payment/check?reference=' . $payment->reference_id;
-                Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
-            }
+            // if (! $paymentUrl) {
+            //     $paymentUrl = config('app.frontend_url', 'https://dealer.omnicarsgh.com') . '/app/payment/check?reference=' . $payment->reference_id;
+            //     // Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
+            // }
 
             $car->load('dealer');
             return $this->apiResponse(
@@ -506,8 +506,8 @@ class DealerCarController extends Controller
                 'momo'
             );
 
-            $paymentUrl = url("/api/dealer/check_payment?reference_id={$payment->reference_id}");
-            $callbackUrl = $data['callback_url'] ?? $paymentUrl;
+            $paymentUrl = null;
+            $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
             if (config('services.paystack.secret_key')) {
                 $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
                 if (!empty($result['authorization_url'])) {
