@@ -19,7 +19,7 @@
                     <!-- Header -->
                     <tr>
                         <td align="center" bgcolor="#f8f8f8" style="padding: 30px 20px;">
-                            <img src="https://pngtree.com/freepng/-car-silhouette-simple-logo_3874451.html"
+                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png"
                                 alt="Ghana Car Sales" style="max-width: 140px; margin-bottom: 15px;">
                         </td>
                     </tr>
