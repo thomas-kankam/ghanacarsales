@@ -47,6 +47,8 @@ Route::prefix('admin')->group(function () {
         // Dealers
         Route::get('/dealers', [AdminDealerController::class, 'index']);
         Route::get('/dealers/{id}', [AdminDealerController::class, 'show']);
+        Route::post('/dealers/{dealer}/assign-code', [AdminDealerController::class, 'assignCode']);
+        Route::post('/dealers/{dealer}/revoke-code', [AdminDealerController::class, 'revokeCode']);
         Route::put('/dealers/{id}', [AdminDealerController::class, 'update']);
         Route::post('/dealers/{id}/activate', [AdminDealerController::class, 'activate']);
         Route::post('/dealers/{id}/deactivate', [AdminDealerController::class, 'deactivate']);
@@ -54,6 +56,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/dealers/trashed/list', [AdminDealerController::class, 'trashed']);
         Route::post('/dealers/{id}/restore', [AdminDealerController::class, 'restore']);
         Route::delete('/dealers/{id}/force', [AdminDealerController::class, 'forceDelete']);
+        Route::get('/dealer-codes', [AdminDealerController::class, 'dealerCodes']);
 
         // Cars
         Route::get('/cars', [AdminCarController::class, 'index']);

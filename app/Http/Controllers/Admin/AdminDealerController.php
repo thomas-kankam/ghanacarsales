@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AdminDealerController extends Controller
 {
@@ -146,5 +147,82 @@ class AdminDealerController extends Controller
             message: "Dealer permanently deleted",
             status_code: self::API_NO_CONTENT
         );
+    }
+
+    public function assignCode(Dealer $dealer): JsonResponse
+    {
+        $dealer->update([
+            'dealer_code'      => $this->generateDealerCode(),
+            'code_status'      => 'assigned',
+            'code_assigned_at' => now(),
+            'code_revoked_at'  => null,
+            'reason'           => null,
+        ]);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Dealer code assigned successfully",
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()
+        );
+    }
+
+    public function dealerCodes(Request $request): JsonResponse
+    {
+        $query = Dealer::query()
+            ->whereNotNull('dealer_code')
+            ->orderByDesc('code_assigned_at')
+            ->orderByDesc('updated_at');
+
+        if ($request->filled('code_status')) {
+            $query->where('code_status', $request->get('code_status'));
+        }
+
+        $dealerCodes = $query->paginate((int) $request->get('per_page', 20));
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Dealer codes retrieved successfully",
+            status_code: self::API_SUCCESS,
+            data: $dealerCodes
+        );
+    }
+
+    public function revokeCode(Request $request, Dealer $dealer): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        if (!$dealer->dealer_code) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "Dealer code not found",
+                status_code: self::API_BAD_REQUEST,
+                data: []
+            );
+        }
+
+        $dealer->update([
+            'code_status'     => 'revoked',
+            'code_revoked_at' => now(),
+            'reason'          => $data['reason'],
+        ]);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Dealer code revoked successfully",
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()
+        );
+    }
+
+    protected function generateDealerCode(): string
+    {
+        do {
+            $code = 'GHCS' . strtoupper(Str::random(8));
+        } while (Dealer::where('dealer_code', $code)->exists());
+
+        return $code;
     }
 }

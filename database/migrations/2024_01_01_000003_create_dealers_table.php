@@ -22,6 +22,10 @@ return new class extends Migration
             $table->string('landmark')->nullable();
             $table->string('business_name')->nullable();
             $table->string('dealer_code')->nullable();
+            $table->string('code_status')->nullable();
+            $table->timestamp('code_assigned_at')->nullable();
+            $table->timestamp('code_revoked_at')->nullable();
+            $table->text('reason')->nullable();
             $table->string('status')->nullable();
             $table->boolean('terms_accepted')->default(false);
             $table->timestamp('terms_accepted_at')->nullable();
@@ -39,6 +43,7 @@ return new class extends Migration
             $table->index('verified');
             $table->index('is_onboarded');
             $table->index('dealer_code');
+            $table->index('code_status');
         });
     }
 

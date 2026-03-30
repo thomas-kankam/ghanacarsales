@@ -18,6 +18,10 @@ class Dealer extends Actor
         'landmark',
         'business_name',
         'dealer_code',
+        'code_status',
+        'code_assigned_at',
+        'code_revoked_at',
+        'reason',
         'status',
         'terms_accepted',
         'terms_accepted_at',
@@ -30,6 +34,8 @@ class Dealer extends Actor
 
     protected $casts = [
         'verified_at'       => 'datetime',
+        'code_assigned_at'  => 'datetime',
+        'code_revoked_at'   => 'datetime',
         'terms_accepted'    => 'boolean',
         'terms_accepted_at' => 'datetime',
         'is_onboarded'      => 'boolean',
