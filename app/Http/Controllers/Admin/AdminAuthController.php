@@ -141,22 +141,22 @@ class AdminAuthController extends Controller
                 guard: 'admin'
             );
 
-            // self::sendEmail(
-            //     $admin->email,
-            //     email_class: "App\Mail\AdminPasswordResetMail",
-            //     parameters: [
-            //         $admin->email,
-            //         $otp,
-            //     ]
-            // );
+            self::sendEmail(
+                $admin->email,
+                email_class: "App\Mail\AdminPasswordResetMail",
+                parameters: [
+                        $admin->email,
+                        $otp,
+                    ]
+                );
 
-            self::sendSms($admin->phone_number, 'OTP Login code: ' . $otp);
+            // self::sendSms($admin->phone_number, 'OTP Login code: ' . $otp);
             return self::apiResponse(
                 in_error: false,
                 message: "Action Successful",
                 status_code: self::API_SUCCESS,
                 data: $admin->toArray(),
-                reason: "If the email exists, an OTP has been sent to your phone number for password reset"
+                reason: "If the email exists, an OTP has been sent to your email for password reset"
             );
         }
 
