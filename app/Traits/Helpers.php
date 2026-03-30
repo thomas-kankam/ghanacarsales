@@ -26,7 +26,7 @@ trait Helpers
             $file_path = "uploads/cars/" . $fileName;
 
             Storage::disk("public")->put($file_path, base64_decode($image_data));
-            return config("custom.urls.backend_url") . "/public" . "/storage/" . $file_path;
+            return config("custom.urls.backend_url")  . "/storage/" . $file_path;
         }
     }
 
