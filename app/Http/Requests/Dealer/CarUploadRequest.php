@@ -30,7 +30,7 @@ class CarUploadRequest extends FormRequest
             "images.*"            => ["string", "starts_with:data:,http://,https://"],
             'description'         => ['nullable', 'string'],
             "status"              => ['nullable', 'string', 'in:draft,pending_payment,pending_approval'],
-            'dealer_code'         => ['nullable', 'string'],
+            'dealer_code'         => ['nullable', 'string', 'exists:dealers,dealer_code'],
             'phone_number'        => ['nullable', 'string'],
             'network'             => ['nullable', 'string'],
             'plan_name'           => ['nullable', 'string'],

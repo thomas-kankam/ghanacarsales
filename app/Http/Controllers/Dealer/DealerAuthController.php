@@ -101,15 +101,15 @@ class DealerAuthController extends Controller
             //     [$dealer->full_name, $otp],
             //     EmailVerification::class
             // );
-            // self::sendEmail(
-            //     $dealer->email,
-            //     email_class: "App\Mail\EmailVerification",
-            //     parameters: [
-            //         $dealer->email,
-            //         $otp,
-            //     ]
-            // );
-            self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
+            self::sendEmail(
+                $dealer->email,
+                email_class: "App\Mail\EmailVerification",
+                parameters: [
+                    $dealer->email,
+                    $otp,
+                ]
+            );
+            // self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
         } else {
             self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
         }
@@ -206,15 +206,15 @@ class DealerAuthController extends Controller
             //     [$dealer->full_name, $otp],
             //     EmailVerification::class
             // );
-            // self::sendEmail(
-            //     $identifier,
-            //     email_class: "App\Mail\EmailVerification",
-            //     parameters: [
-            //         $identifier,
-            //         $otp,
-            //     ]
-            // );
-            self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
+            self::sendEmail(
+                $identifier,
+                email_class: "App\Mail\EmailVerification",
+                parameters: [
+                    $identifier,
+                    $otp,
+                ]
+            );
+            // self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
 
         } else {
             self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
@@ -260,7 +260,7 @@ class DealerAuthController extends Controller
         );
     }
 
-    public function OtpLogin(LoginRequest $request): JsonResponse
+    public function otpLogin(LoginRequest $request): JsonResponse
     {
         $data = $request->validated();
 
@@ -324,15 +324,15 @@ class DealerAuthController extends Controller
             //     [$dealer->full_name, $otp],
             //     LoginVerification::class
             // );
-            // self::sendEmail(
-            //     $dealer->email,
-            //     email_class: "App\Mail\LoginVerification",
-            //     parameters: [
-            //         $dealer->email,
-            //         $otp,
-            //     ]
-            // );
-            self::sendSms($phone_number, 'OTP Login code: ' . $otp);
+            self::sendEmail(
+                $dealer->email,
+                email_class: "App\Mail\LoginVerification",
+                parameters: [
+                    $dealer->email,
+                    $otp,
+                ]
+            );
+            // self::sendSms($phone_number, 'OTP Login code: ' . $otp);
         } else {
             self::sendSms(
                 $phone_number,

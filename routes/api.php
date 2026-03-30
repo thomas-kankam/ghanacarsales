@@ -95,8 +95,8 @@ Route::prefix('admin')->group(function () {
 Route::prefix('dealer')->group(function () {
     // Public routes
     // Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp'])->middleware('throttle:otp');
-    Route::get('/testSms/{msisdn}', [DealerAuthController::class, 'testSms']);
-    Route::get('/testEmail{email}', [DealerAuthController::class, 'testEmail']);
+    Route::get('/test_sms/{msisdn}', [DealerAuthController::class, 'testSms']);
+    Route::get('/test_email/{email}', [DealerAuthController::class, 'testEmail']);
     Route::post('/send_otp', [DealerAuthController::class, 'sendingOtp']);
     Route::post('/resend_otp', [DealerAuthController::class, 'reSendOtp']);
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);

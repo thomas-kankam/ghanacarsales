@@ -20,7 +20,7 @@
                     <tr>
                         <td align="center" bgcolor="#f8f8f8" style="padding: 30px 20px;">
                             <img src="https://pngtree.com/freepng/-car-silhouette-simple-logo_3874451.html"
-                                alt="Ghana Car Sales" style="max-width: 140px; margin-bottom: 15px;">
+                                alt="Omni Cars Ghana" style="max-width: 140px; margin-bottom: 15px;">
                         </td>
                     </tr>
 
@@ -85,7 +85,7 @@
                                 <tr>
                                     <td align="center">
                                         <p style="font-size: 14px; color: #888; text-align: center; margin: 0;">
-                                            If you did not request this verification, please ignore this email or
+                                            If you did not request this email verification, please ignore this email or
                                             contact support.
                                         </p>
                                     </td>
@@ -98,7 +98,7 @@
                                 <tr>
                                     <td align="center" style="padding-top: 20px;">
                                         <p style="margin: 0 0 5px; color: #aaa; font-size: 12px;">Best regards, <br> The
-                                            Ghana Car Sales Team</p>
+                                            Omni Cars Ghana Team</p>
                                         <p style="margin: 0; color: #000; font-size: 12px; font-weight: bold;">
                                             {{ config('app.name') }} · ©
                                             {{ date('Y') }}</p>

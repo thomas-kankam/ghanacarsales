@@ -25,12 +25,12 @@ class AdminAuthController extends Controller
             if ($phone_number) {
                 self::sendSms($phone_number, 'Admin account created successfully. Your login credentials are: Email: ' . $email . ' and Password: ' . $password);
             }
-            // if ($email) {
-            //     self::sendEmail($email, email_class: "App\Mail\AdminPasswordResetMail", parameters: [
-            //         $email,
-            //         $password,
-            //     ]);
-            // }
+            if ($email) {
+                self::sendEmail($email, email_class: "App\Mail\AdminCredentials", parameters: [
+                    $email,
+                    $password,
+                ]);
+            }
             return self::apiResponse(
                 in_error: false,
                 message: "Action Successful",

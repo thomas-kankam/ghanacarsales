@@ -129,7 +129,7 @@ class DealerCarController extends Controller
             Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
 
             $paymentUrl = null;
-            $callbackUrl = "https://backend.ghanacarsales.com/api/payment/callback" ?? null;
+            $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
             if (config('services.paystack.secret_key')) {
                 $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
                 if (!empty($result['authorization_url'])) {
@@ -138,7 +138,7 @@ class DealerCarController extends Controller
                 }
             }
             if (! $paymentUrl) {
-                $paymentUrl = config('app.frontend_url', 'https://backend.ghanacarsales.com') . '/payment/check?reference=' . $payment->reference_id;
+                $paymentUrl = config('app.frontend_url', 'https://backend.omnicarsgh.com') . '/payment/check?reference=' . $payment->reference_id;
                 Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
             }
 
