@@ -14,6 +14,7 @@ use App\Mail\EmailVerification;
 use App\Mail\LoginVerification;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -99,20 +100,25 @@ class DealerAuthController extends Controller
 
         // self::sendSms($identifier, 'Your otp code: ' . $otp);
 
+        if ($channel === 'email') {
             // SendEmailJob::dispatch(
             //     $dealer->email,
             //     [$dealer->full_name, $otp],
             //     EmailVerification::class
             // );
             self::sendEmail(
-                $data['email'],
+                $dealer->email,
                 email_class: "App\Mail\EmailVerification",
                 parameters: [
-                    $data['email'],
+                    $dealer->email,
                     $otp,
                 ]
             );
+            // self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
+        } else {
             self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
+        }
+
         // $message = "OTP sent to your {$channel} for verification (expires in 10 minutes)";
         $message = "OTP sent to your email and phone number for verification (expires in 10 minutes)";
 
@@ -210,24 +216,28 @@ class DealerAuthController extends Controller
         // );
         // self::sendSms($identifier, 'Your otp code: ' . $otp);
 
-        // if ($channel === 'email') {
+        if ($channel === 'email') {
             // SendEmailJob::dispatch(
             //     $dealer->email,
             //     [$dealer->full_name, $otp],
             //     EmailVerification::class
             // );
             self::sendEmail(
-                $data['email'],
+                $identifier,
                 email_class: "App\Mail\EmailVerification",
                 parameters: [
-                    $data['email'],
+                    $identifier,
                     $otp,
                 ]
             );
-            self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
+            // self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
 
-        // $message = "OTP resent to your {$channel} for verification (expires in 10 minutes)";
-        $message = "OTP resent to your email and phone number for verification (expires in 10 minutes)";
+        } else {
+            self::sendSms($data['phone_number'], 'Your otp code: ' . $otp);
+        }
+
+        $message = "OTP resent to your {$channel} for verification (expires in 10 minutes)";
+        // $message = "OTP resent to your email and phone number for verification (expires in 10 minutes)";
 
         return self::apiResponse(
             in_error: false,
@@ -325,7 +335,7 @@ class DealerAuthController extends Controller
         // -----------------------------------------
         // Send OTP
         // -----------------------------------------
-        // if ($channel === 'email') {
+        if ($channel === 'email') {
             // SendEmailJob::dispatch(
             //     $dealer->email,
             //     [$dealer->full_name, $otp],
@@ -339,13 +349,13 @@ class DealerAuthController extends Controller
                     $otp,
                 ]
             );
-            self::sendSms($phone_number, 'OTP Login code: ' . $otp);
-        // } else {
-        //     self::sendSms(
-        //         $phone_number,
-        //         'OTP Login code: ' . $otp
-        //     );
-        // }
+            // self::sendSms($phone_number, 'OTP Login code: ' . $otp);
+        } else {
+            self::sendSms(
+                $phone_number,
+                'OTP Login code: ' . $otp
+            );
+        }
 
         return self::apiResponse(
             in_error: false,
@@ -410,6 +420,43 @@ class DealerAuthController extends Controller
             reason: "Dealer profile updated successfully",
             status_code: self::API_SUCCESS,
             data: $dealer->fresh()
+        );
+    }
+
+    // reset password
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $dealer = Dealer::where("email", $data['email'])->firstOrFail();
+
+        $otp = self::generateOtp(
+            type: "password_reset",
+            actor_id: $dealer->dealer_slug,
+            channel: "email",
+            guard: "dealer"
+        );
+
+        self::sendEmail(
+            $dealer->email,
+            email_class: "App\Mail\DealerPasswordResetMail",
+            parameters: [
+                $dealer->email,
+                $otp,
+            ]
+        );
+
+        return self::apiResponse(
+            in_error: false,
+            message: "Action Successful",
+            reason: "Password reset successfully",
+            status_code: self::API_SUCCESS,
+            data: [
+                'email' => $dealer->email,
+                'otp' => $otp,
+            ]
         );
     }
 }
