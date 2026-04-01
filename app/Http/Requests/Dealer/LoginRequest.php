@@ -21,8 +21,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone_number' => ['required_without:email', 'nullable', 'string', 'min:12', 'max:12', 'starts_with:233'],
-            'email'        => ['required_without:phone_number', 'nullable', 'string', 'email'],
+            'phone_number' => ['required_without:email', 'nullable', 'string', 'exists:dealers,phone_number', 'min:12', 'max:12', 'starts_with:233'],
+            'email'        => ['required_without:phone_number', 'nullable', 'string', 'email', 'exists:dealers,email'],
         ];
     }
 }

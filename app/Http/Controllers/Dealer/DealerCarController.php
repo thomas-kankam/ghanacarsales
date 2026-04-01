@@ -129,12 +129,11 @@ class DealerCarController extends Controller
             // Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
 
             $paymentUrl = null;
-            $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
             if (config('services.paystack.secret_key')) {
-                $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
+                $result = $this->paystackService->initializeTransaction($payment, $dealer->email);
                 if (!empty($result['authorization_url'])) {
                     $paymentUrl = $result['authorization_url'] ?? null;
-                    // Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
+                    Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
                 }
             }
             // if (! $paymentUrl) {
@@ -489,7 +488,11 @@ class DealerCarController extends Controller
                     in_error: false,
                     message: "Car submitted for approval",
                     status_code: self::API_SUCCESS,
-                    data: ['car' => CarTransformer::summary($car->load('dealer'))]
+                    data: [
+                        'car'         => CarTransformer::summary($car->load('dealer')),
+                        'payment'     => $this->paymentPayloadForFrontend($payment),
+                    ],
+                    reason: "Car submitted for friend code approval"
                 );
             }
 
@@ -509,9 +512,8 @@ class DealerCarController extends Controller
             );
 
             $paymentUrl = null;
-            $callbackUrl = "https://backend.omnicarsgh.com/api/payment/callback" ?? null;
             if (config('services.paystack.secret_key')) {
-                $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
+                $result = $this->paystackService->initializeTransaction($payment, $dealer->email);
                 if (!empty($result['authorization_url'])) {
                     $paymentUrl = $result['authorization_url'];
                 }
@@ -523,9 +525,11 @@ class DealerCarController extends Controller
                 status_code: self::API_SUCCESS,
                 data: [
                     'car'         => CarTransformer::summary($car->load('dealer')),
+                    'payment'     => $this->paymentPayloadForFrontend($payment),
                     'payment_url' => $paymentUrl,
                     'reference'   => $payment->reference_id,
-                ]
+                ],
+                reason: "Car ready for payment. Complete payment to submit for approval."
             );
         });
     }

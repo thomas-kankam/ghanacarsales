@@ -102,6 +102,8 @@ Route::prefix('dealer')->group(function () {
     Route::post('/verify_token', [DealerAuthController::class, 'verifyToken']);
     Route::post('/login_otp', [DealerAuthController::class, 'OtpLogin'])->middleware('throttle:otp');
     Route::post('/login', [DealerAuthController::class, 'verifyLoginOtp']);
+    Route::post('/forgot_password', [DealerAuthController::class, 'forgotPassword']);
+    Route::post('/verify_reset_password_otp', [DealerAuthController::class, 'verifyResetPasswordOtp']);
 
     // Protected routes
     Route::middleware(['auth:dealer'])->group(function () {

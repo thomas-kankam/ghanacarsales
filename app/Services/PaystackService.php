@@ -23,7 +23,7 @@ class PaystackService
      */
     public function initializeTransaction(
         Payment $payment,
-        string $callbackUrl,
+        // string $callbackUrl,
         ?string $email = null
     ): array {
         $reference = $payment->reference_id ?? $payment->reference ?? ('GHCS' . time() . strtoupper(Str::random(8)));
@@ -36,7 +36,7 @@ class PaystackService
             ->post("{$this->paymentUrl}/transaction/initialize", [
                 'email'       => $email ?? $payment->dealer?->email ?? 'customer@example.com',
                 'amount'      => $amountInPesewas,
-                'callback_url' => $callbackUrl,
+                // 'callback_url' => $callbackUrl,
                 'reference'    => $reference,
                 'metadata'    => [
                     'payment_slug' => $payment->payment_slug,

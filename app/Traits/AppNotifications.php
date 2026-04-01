@@ -121,7 +121,7 @@ trait AppNotifications
         }
     }
 
-    public function verifyOtp(string $identifier, string $token, string $guard): array
+    public static function verifyOtp(string $identifier, string $token, string $guard): array
     {
         $otp = OtpVerification::where('actor_id', $identifier)
             ->where('token', $token)

@@ -210,7 +210,7 @@ class PaymentController extends Controller
             }
         }
         if (! $paymentUrl) {
-            $paymentUrl = rtrim(config('app.frontend_url', 'https://ghanacarsales.com'), '/') . '/payment/check?reference=' . $payment->reference_id;
+            $paymentUrl = rtrim(config('app.frontend_url', 'https://dealer.omnicarsgh.com'), '/') . '/payment/check?reference=' . $payment->reference_id;
             Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
@@ -251,7 +251,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend  = rtrim(config('app.frontend_url', 'https://ghanacarsales.com'), '/');
+        $frontend  = rtrim(config('app.frontend_url', 'https://dealer.omnicarsgh.com'), '/');
         $reference = $request->query('reference') ?? $request->query('trxref');
         if (! $reference) {
             return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reason' => 'missing_reference']));

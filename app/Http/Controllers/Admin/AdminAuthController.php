@@ -169,7 +169,7 @@ class AdminAuthController extends Controller
             in_error: false,
             message: "Action Successful",
             status_code: self::API_SUCCESS,
-            data: [],
+            data: $admin->fresh()->toArray(),
             reason: "If the email exists, an OTP has been sent to your email for password reset"
         );
     }
@@ -178,8 +178,7 @@ class AdminAuthController extends Controller
     {
         $data = $request->validate([
             'admin_slug' => ['required', 'string'],
-            // 'token' => ['nullable', 'string', 'required_without:otp'],
-            'otp' => ['required', 'string'],
+            'token' => ['required', 'string', 'exists:otp_verifications,token'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
@@ -196,7 +195,7 @@ class AdminAuthController extends Controller
 
         $verificationResult = self::verifyOtp(
             identifier: $admin->admin_slug,
-            token: $data['token'] ?? $data['otp'],
+            token: $data['token'],
             guard: 'admin'
         );
 
