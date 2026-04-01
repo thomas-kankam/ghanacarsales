@@ -210,7 +210,7 @@ class PaymentController extends Controller
             }
         }
         if (! $paymentUrl) {
-            $paymentUrl = rtrim(config('app.frontend_url', 'https://dealer.omnicarsgh.com'), '/') . '/payment/check?reference=' . $payment->reference_id;
+            $paymentUrl = $this->frontendBaseUrl() . '/payment/check?reference=' . $payment->reference_id;
             Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
@@ -251,7 +251,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        $frontend  = rtrim(config('app.frontend_url', 'https://dealer.omnicarsgh.com'), '/');
+        $frontend  = $this->frontendBaseUrl();
         $reference = $request->query('reference') ?? $request->query('trxref');
         if (! $reference) {
             return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reason' => 'missing_reference']));
@@ -288,6 +288,17 @@ class PaymentController extends Controller
 
         return redirect()->away("{$frontend}/app/payment/callback");
         // return redirect()->away("{$frontend}/payment/callback?" . http_build_query(['reference' => $reference]));
+    }
+
+    protected function frontendBaseUrl(): string
+    {
+        $frontend = trim((string) config('app.frontend_url', ''));
+
+        if ($frontend !== '' && preg_match('#^https?://#i', $frontend)) {
+            return rtrim($frontend, '/');
+        }
+
+        return 'https://dealer.omnicarsgh.com';
     }
 
     /**
