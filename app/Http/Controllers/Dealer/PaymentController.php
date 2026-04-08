@@ -159,7 +159,7 @@ class PaymentController extends Controller
             return $response;
         }
 
-        Log::info('PaymentController: selected cars', ['selectedCars' => $selectedCars]);
+        // Log::info('PaymentController: selected cars', ['selectedCars' => $selectedCars]);
 
         if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
             return $this->apiResponse(
@@ -178,7 +178,7 @@ class PaymentController extends Controller
                 ->lockForUpdate()
                 ->get();
 
-            Log::info('PaymentController: cars', ['cars' => $cars]);
+            // Log::info('PaymentController: cars', ['cars' => $cars]);
 
             if ($cars->count() !== count($requestedCarSlugs)) {
                 throw new \InvalidArgumentException('One or more cars cannot be moved to pending payment.');
@@ -193,7 +193,7 @@ class PaymentController extends Controller
                 ]);
             }
 
-            Log::info('PaymentController: cars updated', ['cars' => $cars]);
+            // Log::info('PaymentController: cars updated', ['cars' => $cars]);
 
             return $this->paymentService->createPaymentForCars(
                 $dealer,
@@ -204,7 +204,7 @@ class PaymentController extends Controller
                 $data['payment_method'] ?? 'mobile_money'
             );
         });
-        Log::channel('paystack')->info('PaymentController: payment created', ['payment' => $payment]);
+        // Log::channel('paystack')->info('PaymentController: payment created', ['payment' => $payment]);
 
         $paymentUrl = null;
             // $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
@@ -217,7 +217,7 @@ class PaymentController extends Controller
         }
         if (! $paymentUrl) {
             $paymentUrl = $this->frontendBaseUrl() . '/payment/check?reference=' . $payment->reference_id;
-            Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
+            // Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
         $primaryCar->load('dealer');
