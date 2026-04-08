@@ -15,6 +15,29 @@ class AdminBrandController extends Controller
     public function index(Request $request): JsonResponse
     {
         $brands = Brand::with('models')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim((string) $request->get('search'));
+
+                $query->where(function ($innerQuery) use ($search) {
+                    $innerQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhereHas('models', function ($modelQuery) use ($search) {
+                            $modelQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('slug', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($request->filled('name'), function ($query) use ($request) {
+                $query->where('name', 'like', '%' . trim((string) $request->get('name')) . '%');
+            })
+            ->when($request->filled('model'), function ($query) use ($request) {
+                $model = trim((string) $request->get('model'));
+
+                $query->whereHas('models', function ($modelQuery) use ($model) {
+                    $modelQuery->where('name', 'like', "%{$model}%")
+                        ->orWhere('slug', 'like', "%{$model}%");
+                });
+            })
             ->orderBy('name')
             ->paginate((int) $request->get('per_page', 20));
 
