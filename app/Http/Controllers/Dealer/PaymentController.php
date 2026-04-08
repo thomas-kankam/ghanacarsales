@@ -44,7 +44,7 @@ class PaymentController extends Controller
             'car_slugs'    => 'required|array',
             'car_slugs.*'  => 'string|exists:cars,car_slug',
             'plan_slug'    => 'required|string|in:friend_code,1_month,3_months',
-            'dealer_code'  => 'nullable|string',
+            'dealer_code'  => 'nullable|string|exists:dealers,dealer_code',
             'status'       => 'nullable|string|in:pending_approval,pending_payment,draft',
             'plan_details' => 'nullable|array',
             'plan_price'   => 'nullable|numeric',
@@ -159,6 +159,8 @@ class PaymentController extends Controller
             return $response;
         }
 
+        Log::info('PaymentController: selected cars', ['selectedCars' => $selectedCars]);
+
         if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
             return $this->apiResponse(
                 in_error: true,
@@ -176,6 +178,8 @@ class PaymentController extends Controller
                 ->lockForUpdate()
                 ->get();
 
+            Log::info('PaymentController: cars', ['cars' => $cars]);
+
             if ($cars->count() !== count($requestedCarSlugs)) {
                 throw new \InvalidArgumentException('One or more cars cannot be moved to pending payment.');
             }
@@ -189,6 +193,8 @@ class PaymentController extends Controller
                 ]);
             }
 
+            Log::info('PaymentController: cars updated', ['cars' => $cars]);
+
             return $this->paymentService->createPaymentForCars(
                 $dealer,
                 $cars->all(),
@@ -201,9 +207,9 @@ class PaymentController extends Controller
         Log::channel('paystack')->info('PaymentController: payment created', ['payment' => $payment]);
 
         $paymentUrl = null;
-        $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
+            // $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
         if (config('services.paystack.secret_key')) {
-            $result = $this->paystackService->initializeTransaction($payment, $callbackUrl, $dealer->email);
+            $result = $this->paystackService->initializeTransaction($payment, $dealer->email);
             if (! empty($result['authorization_url'])) {
                 $paymentUrl = $result['authorization_url'];
                 Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
