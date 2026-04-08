@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('slug')->unique();
-            $table->json('image')->nullable();
+            $table->text('image')->nullable();
             $table->timestamps();
         });
     }

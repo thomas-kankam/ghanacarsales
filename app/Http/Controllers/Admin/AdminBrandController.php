@@ -8,7 +8,6 @@ use App\Models\CarModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AdminBrandController extends Controller
@@ -55,14 +54,14 @@ class AdminBrandController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:brands,name'],
             'models' => ['nullable', 'array'],
             'models.*' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'string'],
+            'image' => ['nullable', 'string', 'starts_with:data:,http://,https://'],
         ]);
 
         $brand = DB::transaction(function () use ($data) {
             $brand = Brand::create([
                 'name' => $data['name'],
                 'slug' => Str::slug($data['name']),
-                'image' => $this->storeBrandImage($data['image'] ?? null),
+                'image' => self::base64ImageDecode($data['image'] ?? null),
             ]);
 
             $this->syncModels($brand, $data['models'] ?? []);
@@ -86,7 +85,7 @@ class AdminBrandController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:255', 'unique:brands,name,' . $brand->id],
             'models' => ['sometimes', 'array'],
             'models.*' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'string'],
+            'image' => ['nullable', 'string', 'starts_with:data:,http://,https://'],
         ]);
 
         $brand = DB::transaction(function () use ($brand, $data) {
@@ -96,8 +95,8 @@ class AdminBrandController extends Controller
             }
 
             if (array_key_exists('image', $data) && $data['image']) {
-                $this->deleteBrandImage($brand->image);
-                $brand->image = $this->storeBrandImage($data['image']);
+                self::deleteImage($brand->image);
+                $brand->image = self::base64ImageDecode($data['image']);
             }
 
             $brand->save();
@@ -122,7 +121,7 @@ class AdminBrandController extends Controller
         $brand = Brand::with('models')->findOrFail($id);
 
         DB::transaction(function () use ($brand) {
-            $this->deleteBrandImage($brand->image);
+            self::deleteImage($brand->image);
             $brand->delete();
         });
 
@@ -150,50 +149,6 @@ class AdminBrandController extends Controller
                 'name' => $modelName,
                 'slug' => Str::slug($modelName),
             ]);
-        }
-    }
-
-    protected function storeBrandImage(?string $base64Image): ?string
-    {
-        if (!$base64Image) {
-            return null;
-        }
-
-        if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
-            return null;
-        }
-
-        $extension = strtolower($matches[1]);
-        $imageData = base64_decode(substr($base64Image, strpos($base64Image, ',') + 1), true);
-
-        if ($imageData === false) {
-            return null;
-        }
-
-        $fileName = 'brand_' . Str::random(20) . '.' . $extension;
-        $filePath = 'uploads/brands/' . $fileName;
-
-        Storage::disk('public')->put($filePath, $imageData);
-
-        return rtrim(config('app.url'), '/') . Storage::url($filePath);
-    }
-
-    protected function deleteBrandImage(?string $imagePath): void
-    {
-        if (!$imagePath) {
-            return;
-        }
-
-        $path = parse_url($imagePath, PHP_URL_PATH);
-        if (!$path) {
-            return;
-        }
-
-        $path = str_replace('/storage/', '', $path);
-        $path = ltrim($path, '/');
-
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
         }
     }
 
