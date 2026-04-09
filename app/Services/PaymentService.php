@@ -201,17 +201,17 @@ class PaymentService
             );
 
             foreach ($admins as $admin) {
-                if (!empty($admin->email)) {
+                // if (!empty($admin->email)) {
                     self::sendEmail(
                         $admin->email,
                         email_class: "App\Mail\AdminPendingApproval",
                         parameters: [$admin->email, $body]
                     );
-                }
-
-                if (!empty($admin->phone_number)) {
                     $this->sendAdminSmsNotification($admin->phone_number, $body);
-                }
+                // }
+
+                // if (!empty($admin->phone_number)) {
+                // }
             }
         } catch (\Throwable $e) {
             Log::warning('Failed to notify admins for pending approval payment.', [
