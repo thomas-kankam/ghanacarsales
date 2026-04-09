@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Admin;
 use App\Models\Approval;
+use App\Models\Car;
 use App\Models\Dealer;
 use App\Traits\AppNotifications;
 use Illuminate\Support\Str;
@@ -11,6 +12,35 @@ use Illuminate\Support\Str;
 class ApprovalService
 {
     use AppNotifications;
+
+    /**
+     * Friend-code flow: dealer_code must belong to a different dealer, and must not already be consumed.
+     *
+     * @return string|null Human-readable error reason for API responses, or null when valid.
+     */
+    public function friendCodeDealerCodeError(Dealer $submitter, string $dealerCode): ?string
+    {
+        $dealerCode = trim($dealerCode);
+        if ($dealerCode === '') {
+            return 'dealer_code is required for friend code flow.';
+        }
+
+        $assignee = Dealer::where('dealer_code', $dealerCode)->first();
+        if (! $assignee) {
+            return 'Invalid dealer code.';
+        }
+
+        if ($assignee->dealer_slug === $submitter->dealer_slug) {
+            return 'You cannot use your own dealer code. Use a code assigned to another dealer.';
+        }
+
+        if (Approval::where('dealer_code', $dealerCode)->exists()) {
+            return 'This dealer code has already been used.';
+        }
+
+        return null;
+    }
+
     public function createForCar(
         string $carSlug,
         Dealer $dealer,
@@ -46,15 +76,25 @@ class ApprovalService
             'payment_slug'  => $paymentSlug,
         ]);
 
-        $message = "A new car listing has been submitted for approval. Dealer: " . $dealer->full_name ?? $dealer->business_name . " Car: " . $approval->car->model . " " . $approval->car->brand;
+        $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? 'Dealer';
+        $carModel = Car::where('car_slug', $carSlug)->first();
+        $carLabel = $carModel
+            ? trim(($carModel->brand ?? '') . ' ' . ($carModel->model ?? '')) ?: $carSlug
+            : $carSlug;
+        $message = "A new car listing has been submitted for approval. Dealer: {$dealerLabel}. Car: {$carLabel}.";
+
         $admins = Admin::query()->where('is_active', true)->get(['name', 'email', 'phone_number']);
         foreach ($admins as $admin) {
-            self::sendEmail(
-                $admin->email,
-                email_class: "App\Mail\AdminPendingApproval",
-                parameters: [$admin->email ?? $admin->name, $message]
-            );
-            self::sendSms($admin->phone_number, $message);
+            if (! empty($admin->email)) {
+                self::sendEmail(
+                    $admin->email,
+                    email_class: "App\Mail\AdminPendingApproval",
+                    parameters: [$admin->email, $message]
+                );
+            }
+            if (! empty($admin->phone_number)) {
+                self::sendSms($admin->phone_number, $message);
+            }
         }
 
         return $approval;

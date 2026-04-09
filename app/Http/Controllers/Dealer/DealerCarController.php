@@ -3,8 +3,6 @@ namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\CarUploadRequest;
-use App\Models\Admin;
-use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
@@ -81,13 +79,12 @@ class DealerCarController extends Controller
                     );
                 }
 
-                // check if dealer code is already used and it's the same dealer_slug
-                if (Approval::where('dealer_code', $data['dealer_code'])->where('dealer_slug', $dealer->dealer_slug)->exists()) {
+                if ($reason = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
                     return $this->apiResponse(
                         in_error: true,
-                        message: "Dealer code already used for this dealer",
+                        message: 'Invalid dealer code',
                         status_code: self::API_BAD_REQUEST,
-                        reason: "This dealer_code has already been used for this dealer and cannot be reused.",
+                        reason: $reason,
                         data: []
                     );
                 }
@@ -321,59 +318,6 @@ class DealerCarController extends Controller
         );
     }
 
-    // public function publishAllDrafts(): JsonResponse
-    // {
-    //     $dealer_slug = auth()->user()->dealer_slug;
-
-    //     // Find the dealer first
-    //     $dealer = Dealer::where('dealer_slug', $dealer_slug)->first();
-
-    //     if (! $dealer) {
-    //         return $this->apiResponse(
-    //             in_error: true,
-    //             message: "Dealer not found",
-    //             status_code: self::API_NOT_FOUND,
-    //             data: []
-    //         );
-    //     }
-
-    //     // Get all draft cars for this dealer
-    //     $draftCars = Car::where('dealer_slug', $dealer_slug)
-    //         ->where('status', 'draft')
-    //         ->get();
-
-    //     if ($draftCars->isEmpty()) {
-    //         return $this->apiResponse(
-    //             in_error: true,
-    //             message: "No draft cars found for this dealer",
-    //             status_code: self::API_NOT_FOUND,
-    //             data: []
-    //         );
-    //     }
-
-    //     // Update all draft cars to pending_approval and create approval for each so admin can approve
-    //     foreach ($draftCars as $car) {
-    //         $car->update(['status' => 'pending_approval']);
-    //         $this->approvalService->createForCar(
-    //             $car->car_slug,
-    //             $dealer,
-    //             'listing_review',
-    //             'pending',
-    //             null,
-    //             null
-    //         );
-    //     }
-
-    //     // Transform the updated cars for response
-    //     $updatedCars = $draftCars->map(fn($car) => CarTransformer::summary($car))->toArray();
-
-    //     return $this->apiResponse(
-    //         in_error: false,
-    //         message: "All draft cars published successfully",
-    //         status_code: self::API_SUCCESS,
-    //         data: $updatedCars,
-    //     );
-    // }
 
     public function dashboardStats(Request $request): JsonResponse
     {
@@ -473,7 +417,9 @@ class DealerCarController extends Controller
             'plan_slug'    => 'required|string|in:friend_code,1_month,3_months',
             'phone_number' => 'nullable|string',
             'network'      => 'nullable|string',
-            'dealer_code'  => 'nullable|string',
+            'dealer_code'  => 'nullable|string|exists:dealers,dealer_code',
+            'region'       => 'nullable|string|max:120',
+            'location'     => 'nullable|string|max:255',
             'callback_url' => 'nullable|url',
         ]);
 
@@ -482,33 +428,38 @@ class DealerCarController extends Controller
             return $this->apiResponse(in_error: true, message: "Invalid plan", status_code: self::API_BAD_REQUEST, data: []);
         }
 
-        return DB::transaction(function () use ($dealer, $car, $plan, $data) {
-            if ($data['plan_slug'] === 'friend_code') {
-                if (empty($data['dealer_code'])) {
-                    return $this->apiResponse(
-                        in_error: true,
-                        message: "Dealer code is required",
-                        status_code: self::API_BAD_REQUEST,
-                        reason: "dealer_code is required for friend code flow.",
-                        data: []
-                    );
-                }
+        if ($data['plan_slug'] === 'friend_code') {
+            if (empty($data['dealer_code'])) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Dealer code is required",
+                    status_code: self::API_BAD_REQUEST,
+                    reason: "dealer_code is required for friend code flow.",
+                    data: []
+                );
+            }
 
-                if (Approval::where('dealer_code', $data['dealer_code'])->where('dealer_slug', $dealer->dealer_slug)->exists()) {
-                    return $this->apiResponse(
-                        in_error: true,
-                        message: "Dealer code already used for this dealer",
-                        status_code: self::API_BAD_REQUEST,
-                        reason: "This dealer_code has already been used for this dealer and cannot be reused.",
-                        data: []
-                    );
-                }
+            if ($err = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: 'Invalid dealer code',
+                    status_code: self::API_BAD_REQUEST,
+                    reason: $err,
+                    data: []
+                );
+            }
+        }
+
+        return DB::transaction(function () use ($dealer, $car, $plan, $data, $region, $location) {
+            if ($data['plan_slug'] === 'friend_code') {
 
                 $car->update([
                     'status'       => 'pending_approval',
                     'plan_slug'    => 'friend_code',
                     'plan_price'   => 0,
                     'plan_details' => $car->plan_details ?? null,
+                    'region'       => $data['region'],
+                    'location'     => $data['location'],
                 ]);
                 $payment = $this->paymentService->createPaymentForCars(
                     $dealer,
@@ -544,6 +495,8 @@ class DealerCarController extends Controller
                 'plan_slug'    => $plan->plan_slug,
                 'plan_price'   => $plan->price,
                 'plan_details' => $car->plan_details ?? null,
+                'region'       => $data['region'],
+                'location'     => $data['location'],
             ]);
             $payment = $this->paymentService->createPaymentForCars(
                 $dealer,

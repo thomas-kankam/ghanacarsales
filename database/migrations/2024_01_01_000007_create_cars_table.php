@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('dealer_slug')->nullable();
             $table->string('model')->nullable();
             $table->string('brand')->nullable();
+            $table->string('region');
+            $table->string('location');
             $table->year('year_of_manufacture')->nullable();
             $table->integer('mileage')->nullable();
             $table->string('mileage_unit')->nullable();

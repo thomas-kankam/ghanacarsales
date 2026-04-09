@@ -15,6 +15,8 @@ class Car extends Model
         'dealer_slug',
         'brand',
         'model',
+        'region',
+        'location',
         'year_of_manufacture',
         'mileage',
         'mileage_unit',

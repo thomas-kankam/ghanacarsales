@@ -15,6 +15,8 @@ class CarUploadRequest extends FormRequest
         return [
             'brand'               => ['nullable'],
             'model'               => ['nullable'],
+            'region'              => ['required', 'string', 'max:120'],
+            'location'            => ['required', 'string', 'max:255'],
             'year_of_manufacture' => ['nullable', 'integer', 'max:' . (date('Y') + 1)],
             'mileage'             => ['nullable', 'integer', 'min:0'],
             'mileage_unit'        => ['nullable', 'string'],

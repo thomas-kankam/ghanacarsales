@@ -16,6 +16,8 @@ class CarTransformer
             'title'    => trim("{$brandName} {$modelName} {$car->year_of_manufacture}"),
             'brand' => $car->brand,
             'model' => $car->model,
+            'region' => $car->region,
+            'location' => $car->location,
             'status' => $car->status,
             'price' => $car->price !== null ? (float) $car->price : null,
             'year_of_manufacture' => $car->year_of_manufacture,

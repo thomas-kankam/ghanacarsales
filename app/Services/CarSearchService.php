@@ -86,8 +86,12 @@ class CarSearchService
             $query->where('colour', $filters['colour']);
         }
 
-        if (isset($filters['location'])) {
-            $query->where('location', $filters['location']);
+        if (isset($filters['region'])) {
+            $query->where('region', $filters['region']);
+        }
+
+        if (isset($filters['location']) && $filters['location'] !== '') {
+            $query->where('location', 'like', '%' . $filters['location'] . '%');
         }
     }
 

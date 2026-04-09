@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Dealer;
 use App\Http\Controllers\Controller;
 use App\Mail\AdminPendingApproval;
 use App\Models\Admin;
-use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Payment;
 use App\Models\Plan;
@@ -106,13 +105,12 @@ class PaymentController extends Controller
                 );
             }
 
-            // check if dealer code is already used and it's the same dealer_slug
-            if (Approval::where('dealer_code', $data['dealer_code'])->where('dealer_slug', $dealer->dealer_slug)->exists()) {
+            if ($reason = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
                 return $this->apiResponse(
                     in_error: true,
-                    message: "Dealer code already used for this dealer",
+                    message: "Invalid dealer code",
                     status_code: self::API_BAD_REQUEST,
-                    reason: "This dealer_code has already been used for this dealer and cannot be reused.",
+                    reason: $reason,
                     data: []
                 );
             }
@@ -311,35 +309,6 @@ class PaymentController extends Controller
         }
     }
 
-    // protected function sendAdminSmsNotification(string $phoneNumber, string $message): void
-    // {
-    //     $apiKey = (string) config('services.mnotify.api_key');
-    //     if ($apiKey === '') {
-    //         return;
-    //     }
-
-    //     $sender = trim((string) config('services.mnotify.from', 'OmniCars'));
-    //     if (mb_strlen($sender) > 11) {
-    //         $sender = mb_substr($sender, 0, 11);
-    //     }
-
-    //     try {
-    //         Http::acceptJson()
-    //             ->timeout(15)
-    //             ->post("https://api.mnotify.com/api/sms/quick?key={$apiKey}", [
-    //                 'recipient'     => [$phoneNumber],
-    //                 'sender'        => $sender,
-    //                 'message'       => $message,
-    //                 'is_schedule'   => false,
-    //                 'schedule_date' => '',
-    //             ]);
-    //     } catch (\Throwable $e) {
-    //         Log::warning('Failed to send admin SMS notification.', [
-    //             'phone_number' => $phoneNumber,
-    //             'message' => $e->getMessage(),
-    //         ]);
-    //     }
-    // }
 
     /**
      * Safe payload for frontend (no sensitive data).
@@ -422,13 +391,7 @@ class PaymentController extends Controller
     {
         $rawPayload = $request->getContent();
         $payload    = json_decode($rawPayload, true);
-        // Log::channel('paystack')->info('Paystack webhook', ['payload' => $payload]);
-        // Log::info('Paystack webhook', ['rawPayload' => $rawPayload]);
-        // Log::info('Paystack webhook', ['signature' => $request->header('x-paystack-signature')]);
-        // Log::info('Paystack webhook', ['reference' => $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null]);
-        // Log::channel('paystack')->info('Paystack webhook', ['event' => $payload['event'] ?? '']);
-        // Log::channel('paystack')->info('Paystack webhook', ['status' => $payload['data']['status'] ?? $payload['status'] ?? null]);
-        // Log::channel('paystack')->info('Paystack webhook', ['payment' => Payment::where('reference_id', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->orWhere('reference', $payload['data']['reference'] ?? $payload['reference'] ?? $payload['data']['transaction_id'] ?? null)->first()]);
+       
 
         if (! $payload || ! is_array($payload)) {
             // Log::channel('single')->warning('Paystack webhook: invalid JSON');
