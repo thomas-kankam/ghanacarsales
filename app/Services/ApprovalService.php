@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Approval;
 use App\Models\Dealer;
+use App\Traits\AppNotifications;
 use Illuminate\Support\Str;
 
 class ApprovalService
 {
+    use AppNotifications;
     public function createForCar(
         string $carSlug,
         Dealer $dealer,
@@ -32,7 +35,7 @@ class ApprovalService
             return $existing->fresh();
         }
 
-        return Approval::create([
+        $approval = Approval::create([
             'approval_slug' => (string) Str::uuid(),
             'car_slug'      => $carSlug,
             'dealer_slug'   => $dealer->dealer_slug,
@@ -42,6 +45,19 @@ class ApprovalService
             'dealer_name'   => $dealer->full_name ?? $dealer->business_name,
             'payment_slug'  => $paymentSlug,
         ]);
+
+        $message = "A new car listing has been submitted for approval. Dealer: " . $dealer->full_name ?? $dealer->business_name . " Car: " . $approval->car->model . " " . $approval->car->brand;
+        $admins = Admin::query()->where('is_active', true)->get(['name', 'email', 'phone_number']);
+        foreach ($admins as $admin) {
+            self::sendEmail(
+                $admin->email,
+                email_class: "App\Mail\AdminPendingApproval",
+                parameters: [$admin->email ?? $admin->name, $message]
+            );
+            self::sendSms($admin->phone_number, $message);
+        }
+
+        return $approval;
     }
 
     public function approve(Approval $approval, ?string $adminSlug = null): void

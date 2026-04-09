@@ -19,8 +19,8 @@
                     <!-- Header -->
                     <tr>
                         <td align="center" bgcolor="#141414" style="padding: 30px 20px;">
-                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png"
-                                alt="Omni Cars Ghana" style="max-width: 140px; margin-bottom: 15px;">
+                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png" alt="OmniCarsGH"
+                                style="max-width: 140px; margin-bottom: 15px;">
                         </td>
                     </tr>
 
@@ -98,7 +98,7 @@
                                 <tr>
                                     <td align="center" style="padding-top: 20px;">
                                         <p style="margin: 0 0 5px; color: #aaa; font-size: 12px;">Best regards, <br> The
-                                            Omni Cars Ghana Team</p>
+                                            OmniCarsGH Team</p>
                                         <p style="margin: 0; color: #000; font-size: 12px; font-weight: bold;">
                                             {{ config('app.name') }} · ©
                                             {{ date('Y') }}</p>

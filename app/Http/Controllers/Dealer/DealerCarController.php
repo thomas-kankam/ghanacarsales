@@ -3,11 +3,12 @@ namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\CarUploadRequest;
+use App\Models\Admin;
+use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
 use App\Models\Plan;
-use App\Models\Approval;
 use App\Services\ApprovalService;
 use App\Services\CarService;
 use App\Services\PaymentService;
@@ -80,12 +81,13 @@ class DealerCarController extends Controller
                     );
                 }
 
-                if (Approval::where('dealer_code', $data['dealer_code'])->exists()) {
+                // check if dealer code is already used and it's the same dealer_slug
+                if (Approval::where('dealer_code', $data['dealer_code'])->where('dealer_slug', $dealer->dealer_slug)->exists()) {
                     return $this->apiResponse(
                         in_error: true,
-                        message: "Dealer code already used",
+                        message: "Dealer code already used for this dealer",
                         status_code: self::API_BAD_REQUEST,
-                        reason: "This dealer_code has already been used and cannot be reused.",
+                        reason: "This dealer_code has already been used for this dealer and cannot be reused.",
                         data: []
                     );
                 }
@@ -145,7 +147,7 @@ class DealerCarController extends Controller
                 $plan,
                 $data['phone_number'] ?? null,
                 $data['network'] ?? null,
-                $data['payment_method'] ?? 'mobile_money'
+                $data['payment_method'] ?? 'momo'
             );
             // Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
 
@@ -319,59 +321,59 @@ class DealerCarController extends Controller
         );
     }
 
-    public function publishAllDrafts(): JsonResponse
-    {
-        $dealer_slug = auth()->user()->dealer_slug;
+    // public function publishAllDrafts(): JsonResponse
+    // {
+    //     $dealer_slug = auth()->user()->dealer_slug;
 
-        // Find the dealer first
-        $dealer = Dealer::where('dealer_slug', $dealer_slug)->first();
+    //     // Find the dealer first
+    //     $dealer = Dealer::where('dealer_slug', $dealer_slug)->first();
 
-        if (! $dealer) {
-            return $this->apiResponse(
-                in_error: true,
-                message: "Dealer not found",
-                status_code: self::API_NOT_FOUND,
-                data: []
-            );
-        }
+    //     if (! $dealer) {
+    //         return $this->apiResponse(
+    //             in_error: true,
+    //             message: "Dealer not found",
+    //             status_code: self::API_NOT_FOUND,
+    //             data: []
+    //         );
+    //     }
 
-        // Get all draft cars for this dealer
-        $draftCars = Car::where('dealer_slug', $dealer_slug)
-            ->where('status', 'draft')
-            ->get();
+    //     // Get all draft cars for this dealer
+    //     $draftCars = Car::where('dealer_slug', $dealer_slug)
+    //         ->where('status', 'draft')
+    //         ->get();
 
-        if ($draftCars->isEmpty()) {
-            return $this->apiResponse(
-                in_error: true,
-                message: "No draft cars found for this dealer",
-                status_code: self::API_NOT_FOUND,
-                data: []
-            );
-        }
+    //     if ($draftCars->isEmpty()) {
+    //         return $this->apiResponse(
+    //             in_error: true,
+    //             message: "No draft cars found for this dealer",
+    //             status_code: self::API_NOT_FOUND,
+    //             data: []
+    //         );
+    //     }
 
-        // Update all draft cars to pending_approval and create approval for each so admin can approve
-        foreach ($draftCars as $car) {
-            $car->update(['status' => 'pending_approval']);
-            $this->approvalService->createForCar(
-                $car->car_slug,
-                $dealer,
-                'listing_review',
-                'pending',
-                null,
-                null
-            );
-        }
+    //     // Update all draft cars to pending_approval and create approval for each so admin can approve
+    //     foreach ($draftCars as $car) {
+    //         $car->update(['status' => 'pending_approval']);
+    //         $this->approvalService->createForCar(
+    //             $car->car_slug,
+    //             $dealer,
+    //             'listing_review',
+    //             'pending',
+    //             null,
+    //             null
+    //         );
+    //     }
 
-        // Transform the updated cars for response
-        $updatedCars = $draftCars->map(fn($car) => CarTransformer::summary($car))->toArray();
+    //     // Transform the updated cars for response
+    //     $updatedCars = $draftCars->map(fn($car) => CarTransformer::summary($car))->toArray();
 
-        return $this->apiResponse(
-            in_error: false,
-            message: "All draft cars published successfully",
-            status_code: self::API_SUCCESS,
-            data: $updatedCars,
-        );
-    }
+    //     return $this->apiResponse(
+    //         in_error: false,
+    //         message: "All draft cars published successfully",
+    //         status_code: self::API_SUCCESS,
+    //         data: $updatedCars,
+    //     );
+    // }
 
     public function dashboardStats(Request $request): JsonResponse
     {
@@ -492,12 +494,12 @@ class DealerCarController extends Controller
                     );
                 }
 
-                if (Approval::where('dealer_code', $data['dealer_code'])->exists()) {
+                if (Approval::where('dealer_code', $data['dealer_code'])->where('dealer_slug', $dealer->dealer_slug)->exists()) {
                     return $this->apiResponse(
                         in_error: true,
-                        message: "Dealer code already used",
+                        message: "Dealer code already used for this dealer",
                         status_code: self::API_BAD_REQUEST,
-                        reason: "This dealer_code has already been used and cannot be reused.",
+                        reason: "This dealer_code has already been used for this dealer and cannot be reused.",
                         data: []
                     );
                 }

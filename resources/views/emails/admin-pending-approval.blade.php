@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>New payment pending approval - Omni Cars Ghana</title>
+    <title>New car listing pending approval - OmniCarsGH</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 
@@ -19,7 +19,7 @@
                     <!-- Header -->
                     <tr>
                         <td align="center" bgcolor="#141414" style="padding: 30px 20px;">
-                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png" alt="Omni Cars Ghana"
+                            <img src="https://omnicarsgh.com/Images/OmniLogoWhite.png" alt="OmniCarsGH"
                                 style="max-width: 140px; margin-bottom: 15px;">
                         </td>
                     </tr>
@@ -37,9 +37,9 @@
                                             <span
                                                 style="display: inline-block; background-color: #f4fff0; padding: 6px 10px; border-radius: 6px; color: #62a93b; font-weight: 600; font-size: 16px; border: 1px solid #bcffb3;">
                                                 {{ $adminEmail }}
-                                            </span>,
+                                            </span>
                                         </p>
-                                        <p style="font-size: 15px; color: #555; margin: 0;">{{ $body }}</p>
+                                        <p style="font-size: 15px; color: #555; margin: 0;">{{ $message }}</p>
                                     </td>
                                 </tr>
                             </table>
@@ -49,7 +49,8 @@
                                 <tr>
                                     <td align="center">
                                         <p style="font-size: 14px; color: #888; text-align: center; margin: 0;">
-                                            If you have any questions or need assistance, please contact the support team.
+                                            If you have any questions or need assistance, please contact the support
+                                            team.
                                         </p>
                                     </td>
                                 </tr>

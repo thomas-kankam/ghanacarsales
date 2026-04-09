@@ -2,20 +2,24 @@
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AdminPendingApproval;
+use App\Models\Admin;
+use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Payment;
 use App\Models\Plan;
-use App\Models\Approval;
+use App\Services\ApprovalService;
+use App\Services\CarService;
 use App\Services\PaymentService;
 use App\Services\PaystackService;
-use App\Services\CarService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Services\ApprovalService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
 {
@@ -39,7 +43,7 @@ class PaymentController extends Controller
         );
     }
 
-    public function createPayment(Request $request, Car $car): JsonResponse
+    public function createPayment(Request $request, Car $_car): JsonResponse
     {
         $data = $request->validate([
             'car_slugs'    => 'required|array',
@@ -81,8 +85,6 @@ class PaymentController extends Controller
             );
         }
 
-        $primaryCar = $selectedCars->firstWhere('car_slug', $car->car_slug) ?? $selectedCars->first();
-
         if ($data['plan_slug'] === 'friend_code') {
             if (count($requestedCarSlugs) !== 1) {
                 return $this->apiResponse(
@@ -104,12 +106,13 @@ class PaymentController extends Controller
                 );
             }
 
-            if (Approval::where('dealer_code', $data['dealer_code'])->exists()) {
+            // check if dealer code is already used and it's the same dealer_slug
+            if (Approval::where('dealer_code', $data['dealer_code'])->where('dealer_slug', $dealer->dealer_slug)->exists()) {
                 return $this->apiResponse(
                     in_error: true,
-                    message: "Dealer code already used",
+                    message: "Dealer code already used for this dealer",
                     status_code: self::API_BAD_REQUEST,
-                    reason: "This dealer_code has already been used and cannot be reused.",
+                    reason: "This dealer_code has already been used for this dealer and cannot be reused.",
                     data: []
                 );
             }
@@ -124,7 +127,7 @@ class PaymentController extends Controller
                 );
             }
 
-            $response = DB::transaction(function () use ($dealer, $data, $plan, $primaryCar, $requestedCarSlugs) {
+            $response = DB::transaction(function () use ($dealer, $data, $plan, $requestedCarSlugs) {
                 $data['status']       = 'pending_approval';
                 $data['plan_slug']    = 'friend_code';
                 $data['plan_price']   = 0;
@@ -179,7 +182,6 @@ class PaymentController extends Controller
                     message: "Car submitted for friend code approval",
                     status_code: self::API_CREATED,
                     data: [
-                        'car'         => CarTransformer::summary($primaryCar->fresh()->load('dealer')),
                         'cars'        => $cars->load('dealer')->map(fn ($item) => CarTransformer::summary($item))->values()->all(),
                         'payment'     => $this->paymentPayloadForFrontend($payment),
                     ],
@@ -251,13 +253,17 @@ class PaymentController extends Controller
             // Log::channel('paystack')->info('PaymentController: payment URL', ['payment_url' => $paymentUrl]);
         }
 
-        $primaryCar->load('dealer');
+        $cars = $payment->paymentItems()->with('car.dealer')->get()
+            ->pluck('car')
+            ->filter()
+            ->values();
+
         return $this->apiResponse(
             in_error: false,
             message: "Payment created successfully",
             status_code: self::API_CREATED,
             data: [
-                'car'         => CarTransformer::summary($primaryCar),
+                'cars'        => $cars->map(fn ($item) => CarTransformer::summary($item))->all(),
                 'payment'     => $this->paymentPayloadForFrontend($payment),
                 'payment_url' => $paymentUrl,
                 'reference'   => $payment->reference_id,
@@ -265,6 +271,75 @@ class PaymentController extends Controller
             reason: "Car created. Complete payment to submit for approval."
         );
     }
+
+    protected function notifyAdminsPendingApproval(Payment $payment): void
+    {
+        try {
+            $admins = Admin::query()->where('is_active', true)->get(['email', 'phone_number']);
+            if ($admins->isEmpty()) {
+                return;
+            }
+
+            $carCount = $payment->paymentItems()->count();
+            $body = sprintf(
+                "A payment has been completed and listing(s) are now pending approval.\n\nReference: %s\nDealer: %s\nCars: %d\nPlan: %s\nAmount: %s",
+                $payment->reference_id ?? $payment->reference ?? 'N/A',
+                $payment->dealer_slug,
+                $carCount,
+                $payment->plan_name ?? $payment->plan_slug ?? 'N/A',
+                (string) $payment->amount
+            );
+
+            foreach ($admins as $admin) {
+                // if (!empty($admin->email)) {
+                    self::sendEmail(
+                        $admin->email,
+                        email_class: "App\Mail\AdminPendingApproval",
+                        parameters: [$admin->name, $body]
+                    );
+                // }
+
+                // if (!empty($admin->phone_number)) {
+                    self::sendSms($admin->phone_number, $body);
+                // }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to notify admins for pending approval payment.', [
+                'payment_slug' => $payment->payment_slug,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    // protected function sendAdminSmsNotification(string $phoneNumber, string $message): void
+    // {
+    //     $apiKey = (string) config('services.mnotify.api_key');
+    //     if ($apiKey === '') {
+    //         return;
+    //     }
+
+    //     $sender = trim((string) config('services.mnotify.from', 'OmniCars'));
+    //     if (mb_strlen($sender) > 11) {
+    //         $sender = mb_substr($sender, 0, 11);
+    //     }
+
+    //     try {
+    //         Http::acceptJson()
+    //             ->timeout(15)
+    //             ->post("https://api.mnotify.com/api/sms/quick?key={$apiKey}", [
+    //                 'recipient'     => [$phoneNumber],
+    //                 'sender'        => $sender,
+    //                 'message'       => $message,
+    //                 'is_schedule'   => false,
+    //                 'schedule_date' => '',
+    //             ]);
+    //     } catch (\Throwable $e) {
+    //         Log::warning('Failed to send admin SMS notification.', [
+    //             'phone_number' => $phoneNumber,
+    //             'message' => $e->getMessage(),
+    //         ]);
+    //     }
+    // }
 
     /**
      * Safe payload for frontend (no sensitive data).
