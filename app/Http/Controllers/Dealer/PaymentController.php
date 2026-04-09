@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Car;
 use App\Models\Payment;
 use App\Models\Plan;
+use App\Models\Approval;
 use App\Services\PaymentService;
 use App\Services\PaystackService;
 use App\Services\CarService;
@@ -83,6 +84,36 @@ class PaymentController extends Controller
         $primaryCar = $selectedCars->firstWhere('car_slug', $car->car_slug) ?? $selectedCars->first();
 
         if ($data['plan_slug'] === 'friend_code') {
+            if (count($requestedCarSlugs) !== 1) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Friend code supports one car at a time",
+                    status_code: self::API_BAD_REQUEST,
+                    reason: "Use a separate dealer_code per car.",
+                    data: []
+                );
+            }
+
+            if (empty($data['dealer_code'])) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Dealer code is required",
+                    status_code: self::API_BAD_REQUEST,
+                    reason: "dealer_code is required for friend code flow.",
+                    data: []
+                );
+            }
+
+            if (Approval::where('dealer_code', $data['dealer_code'])->exists()) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Dealer code already used",
+                    status_code: self::API_BAD_REQUEST,
+                    reason: "This dealer_code has already been used and cannot be reused.",
+                    data: []
+                );
+            }
+
             if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
                 return $this->apiResponse(
                     in_error: true,

@@ -2,17 +2,24 @@
 
 namespace App\Services;
 
+use App\Mail\AdminPendingApproval;
+use App\Models\Admin;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
 use App\Models\PaymentItem;
 use App\Models\Plan;
+use App\Traits\AppNotifications;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PaymentService
 {
+    use AppNotifications;
+
     public function createPayment(
         Dealer $dealer,
         array $carSlugs,
@@ -169,8 +176,76 @@ class PaymentService
                 }
             }
 
+            $this->notifyAdminsPendingApproval($payment);
+
             return true;
         });
+    }
+
+    protected function notifyAdminsPendingApproval(Payment $payment): void
+    {
+        try {
+            $admins = Admin::query()->where('is_active', true)->get(['name', 'email', 'phone_number']);
+            if ($admins->isEmpty()) {
+                return;
+            }
+
+            $carCount = $payment->paymentItems()->count();
+            $body = sprintf(
+                "A payment has been completed and listing(s) are now pending approval.\n\nReference: %s\nDealer: %s\nCars: %d\nPlan: %s\nAmount: %s",
+                $payment->reference_id ?? $payment->reference ?? 'N/A',
+                $payment->dealer_slug,
+                $carCount,
+                $payment->plan_name ?? $payment->plan_slug ?? 'N/A',
+                (string) $payment->amount
+            );
+
+            foreach ($admins as $admin) {
+                if (!empty($admin->email)) {
+                    self::sendEmail(
+                        $admin->email,
+                        email_class: "App\Mail\AdminPendingApproval",
+                        parameters: [$admin->email, $body]
+                    );
+                }
+
+                if (!empty($admin->phone_number)) {
+                    $this->sendAdminSmsNotification($admin->phone_number, $body);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to notify admins for pending approval payment.', [
+                'payment_slug' => $payment->payment_slug,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    protected function sendAdminSmsNotification(string $phoneNumber, string $message): void
+    {
+        $apiKey = (string) config('services.mnotify.api_key');
+        $sender = (string) config('services.mnotify.sender_name', 'GhanaCars');
+        $sender = substr($sender, 0, 11);
+
+        if ($apiKey === '') {
+            return;
+        }
+
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+            ])->post('https://api.mnotify.com/api/sms/quick', [
+                'key' => $apiKey,
+                'recipient' => [$phoneNumber],
+                'sender' => $sender,
+                'message' => $message,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to send admin SMS notification.', [
+                'phone_number' => $phoneNumber,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     protected function carService(): CarService

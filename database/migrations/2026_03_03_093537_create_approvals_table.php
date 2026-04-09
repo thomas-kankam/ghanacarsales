@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('approval_slug', 36)->unique()->nullable();
             $table->string('car_slug')->nullable();
             $table->string('dealer_slug')->nullable();
-            $table->string('dealer_code')->nullable();
+            $table->string('dealer_code')->nullable()->unique();
             $table->boolean('admin_approval')->default(false);
             $table->string('admin_slug')->nullable();
             $table->timestamp('admin_approval_at')->nullable();
@@ -29,7 +29,6 @@ return new class extends Migration
 
             $table->index('car_slug');
             $table->index('dealer_slug');
-            $table->index('dealer_code');
             $table->index('approval_slug');
             $table->index('status');
             $table->index('type');

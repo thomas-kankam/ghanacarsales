@@ -7,6 +7,7 @@ use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
 use App\Models\Plan;
+use App\Models\Approval;
 use App\Services\ApprovalService;
 use App\Services\CarService;
 use App\Services\PaymentService;
@@ -69,6 +70,26 @@ class DealerCarController extends Controller
         */
 
             if ($planSlug === 'friend_code') {
+                if (empty($data['dealer_code'])) {
+                    return $this->apiResponse(
+                        in_error: true,
+                        message: "Dealer code is required",
+                        status_code: self::API_BAD_REQUEST,
+                        reason: "dealer_code is required for friend code flow.",
+                        data: []
+                    );
+                }
+
+                if (Approval::where('dealer_code', $data['dealer_code'])->exists()) {
+                    return $this->apiResponse(
+                        in_error: true,
+                        message: "Dealer code already used",
+                        status_code: self::API_BAD_REQUEST,
+                        reason: "This dealer_code has already been used and cannot be reused.",
+                        data: []
+                    );
+                }
+
                 $data['status']       = 'pending_approval';
                 $data['plan_slug']    = 'friend_code';
                 $data['plan_price']   = 0;
@@ -461,6 +482,26 @@ class DealerCarController extends Controller
 
         return DB::transaction(function () use ($dealer, $car, $plan, $data) {
             if ($data['plan_slug'] === 'friend_code') {
+                if (empty($data['dealer_code'])) {
+                    return $this->apiResponse(
+                        in_error: true,
+                        message: "Dealer code is required",
+                        status_code: self::API_BAD_REQUEST,
+                        reason: "dealer_code is required for friend code flow.",
+                        data: []
+                    );
+                }
+
+                if (Approval::where('dealer_code', $data['dealer_code'])->exists()) {
+                    return $this->apiResponse(
+                        in_error: true,
+                        message: "Dealer code already used",
+                        status_code: self::API_BAD_REQUEST,
+                        reason: "This dealer_code has already been used and cannot be reused.",
+                        data: []
+                    );
+                }
+
                 $car->update([
                     'status'       => 'pending_approval',
                     'plan_slug'    => 'friend_code',
