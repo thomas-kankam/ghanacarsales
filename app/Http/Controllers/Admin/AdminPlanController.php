@@ -6,7 +6,6 @@ use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class AdminPlanController extends Controller
 {
@@ -28,13 +27,13 @@ class AdminPlanController extends Controller
     {
         $data = $request->validate([
             'plan_name'     => ['required', 'string', 'max:255'],
-            'plan_slug'     => ['nullable', 'string', 'max:255', Rule::unique('plans', 'plan_slug')],
             'price'         => ['required', 'numeric', 'min:0'],
             'duration_days' => ['required', 'integer', 'min:1'],
             'features'      => ['nullable', 'array'],
         ]);
 
-        $data['plan_slug'] = $data['plan_slug'] ?? $this->generateUniqueSlug($data['plan_name']);
+        // Always derive slug from plan_name (e.g. "10 Months" => "10_months").
+        $data['plan_slug'] = $this->generateUniqueSlug($data['plan_name']);
 
         $plan = Plan::create($data);
 
@@ -52,14 +51,13 @@ class AdminPlanController extends Controller
 
         $data = $request->validate([
             'plan_name'     => ['nullable', 'string', 'max:255'],
-            'plan_slug'     => ['nullable', 'string', 'max:255', Rule::unique('plans', 'plan_slug')->ignore($plan->id)],
             'price'         => ['nullable', 'numeric', 'min:0'],
             'duration_days' => ['nullable', 'integer', 'min:1'],
             'features'      => ['nullable', 'array'],
         ]);
 
-        if (isset($data['plan_name']) && empty($data['plan_slug'])) {
-            $data['plan_slug'] = $this->generateUniqueSlug($data['plan_name']);
+        if (isset($data['plan_name'])) {
+            $data['plan_slug'] = $this->generateUniqueSlug($data['plan_name'], $plan->id);
         }
 
         $plan->update($data);
@@ -84,14 +82,18 @@ class AdminPlanController extends Controller
         );
     }
 
-    private function generateUniqueSlug(string $name): string
+    private function generateUniqueSlug(string $name, ?int $ignorePlanId = null): string
     {
-        $baseSlug = Str::slug($name);
+        $baseSlug = Str::slug($name, '_');
         $slug     = $baseSlug;
         $counter  = 1;
 
-        while (Plan::where('plan_slug', $slug)->exists()) {
-            $slug = "{$baseSlug}-{$counter}";
+        while (
+            Plan::where('plan_slug', $slug)
+                ->when($ignorePlanId, fn ($q) => $q->where('id', '!=', $ignorePlanId))
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}_{$counter}";
             $counter++;
         }
 
