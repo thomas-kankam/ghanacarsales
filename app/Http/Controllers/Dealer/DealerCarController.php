@@ -450,7 +450,7 @@ class DealerCarController extends Controller
             }
         }
 
-        return DB::transaction(function () use ($dealer, $car, $plan, $data, $region, $location) {
+        return DB::transaction(function () use ($dealer, $car, $plan, $data) {
             if ($data['plan_slug'] === 'friend_code') {
 
                 $car->update([
