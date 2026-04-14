@@ -6,6 +6,7 @@ use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AdminPlanController extends Controller
 {
@@ -33,7 +34,8 @@ class AdminPlanController extends Controller
         ]);
 
         // Always derive slug from plan_name (e.g. "10 Months" => "10_months").
-        $data['plan_slug'] = $this->generateUniqueSlug($data['plan_name']);
+        $data['plan_slug'] = Str::slug($data['plan_name'], '_');
+        $this->assertPlanSlugIsAvailable($data['plan_slug']);
 
         $plan = Plan::create($data);
 
@@ -57,7 +59,8 @@ class AdminPlanController extends Controller
         ]);
 
         if (isset($data['plan_name'])) {
-            $data['plan_slug'] = $this->generateUniqueSlug($data['plan_name'], $plan->id);
+            $data['plan_slug'] = Str::slug($data['plan_name'], '_');
+            $this->assertPlanSlugIsAvailable($data['plan_slug'], $plan->id);
         }
 
         $plan->update($data);
@@ -82,21 +85,18 @@ class AdminPlanController extends Controller
         );
     }
 
-    private function generateUniqueSlug(string $name, ?int $ignorePlanId = null): string
+    private function assertPlanSlugIsAvailable(string $slug, ?int $ignorePlanId = null): void
     {
-        $baseSlug = Str::slug($name, '_');
-        $slug     = $baseSlug;
-        $counter  = 1;
+        $query = Plan::query()->where('plan_slug', $slug);
 
-        while (
-            Plan::where('plan_slug', $slug)
-                ->when($ignorePlanId, fn ($q) => $q->where('id', '!=', $ignorePlanId))
-                ->exists()
-        ) {
-            $slug = "{$baseSlug}_{$counter}";
-            $counter++;
+        if ($ignorePlanId !== null) {
+            $query->where('id', '!=', $ignorePlanId);
         }
 
-        return $slug;
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'plan_name' => ['A plan with this name already exists.'],
+            ]);
+        }
     }
 }
