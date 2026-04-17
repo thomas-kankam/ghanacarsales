@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -31,13 +32,22 @@ class AdminPlanController extends Controller
             'price'         => ['required', 'numeric', 'min:0'],
             'duration_days' => ['required', 'integer', 'min:1'],
             'features'      => ['nullable', 'array'],
+            'is_recommend'  => ['sometimes', 'boolean'],
         ]);
 
         // Always derive slug from plan_name (e.g. "10 Months" => "10_months").
         $data['plan_slug'] = Str::slug($data['plan_name'], '_');
         $this->assertPlanSlugIsAvailable($data['plan_slug']);
 
-        $plan = Plan::create($data);
+        $plan = DB::transaction(function () use ($data) {
+            $plan = Plan::create($data);
+
+            if ($plan->is_recommend) {
+                $this->clearRecommendedExcept($plan->id);
+            }
+
+            return $plan->fresh();
+        });
 
         return $this->apiResponse(
             in_error: false,
@@ -56,6 +66,7 @@ class AdminPlanController extends Controller
             'price'         => ['nullable', 'numeric', 'min:0'],
             'duration_days' => ['nullable', 'integer', 'min:1'],
             'features'      => ['nullable', 'array'],
+            'is_recommend'  => ['sometimes', 'boolean'],
         ]);
 
         if (isset($data['plan_name'])) {
@@ -63,7 +74,13 @@ class AdminPlanController extends Controller
             $this->assertPlanSlugIsAvailable($data['plan_slug'], $plan->id);
         }
 
-        $plan->update($data);
+        DB::transaction(function () use ($plan, $data) {
+            $plan->update($data);
+
+            if (array_key_exists('is_recommend', $data) && $data['is_recommend']) {
+                $this->clearRecommendedExcept($plan->id);
+            }
+        });
 
         return $this->apiResponse(
             in_error: false,
@@ -83,6 +100,13 @@ class AdminPlanController extends Controller
             message: "Plan deleted successfully",
             status_code: self::API_SUCCESS
         );
+    }
+
+    private function clearRecommendedExcept(int $planId): void
+    {
+        Plan::query()
+            ->where('id', '!=', $planId)
+            ->update(['is_recommend' => false]);
     }
 
     private function assertPlanSlugIsAvailable(string $slug, ?int $ignorePlanId = null): void

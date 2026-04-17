@@ -12,12 +12,14 @@ class Plan extends Model
         'plan_name',
         'plan_slug',
         'price',
+        'is_recommend',
         'duration_days',
         'features',
     ];
 
     protected $casts = [
-        'price'    => 'decimal:2',
-        'features' => 'array',
+        'price'         => 'decimal:2',
+        'is_recommend'  => 'boolean',
+        'features'      => 'array',
     ];
 }
