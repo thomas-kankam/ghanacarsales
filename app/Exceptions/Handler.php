@@ -110,16 +110,17 @@ class Handler extends ExceptionHandler
             ], 422);
         });
 
-        // authentication error
+        // authentication error (missing / invalid / expired API token)
         $this->renderable(function (AuthenticationException $e, Request $request) {
             Log::warning($e->getMessage());
             return response()->json([
                 "data" => [
                     "status_code"   => "401",
-                    "message"       => "AuthenticationException Error",
+                    "message"       => "Unauthenticated",
                     "in_error"      => true,
-                    "reason"        => "The given data was invalid",
-                    "errors"        => $e->getMessage(),
+                    "reason"        => "Your session has expired or the token is invalid. Please sign in again.",
+                    "code"          => "UNAUTHENTICATED",
+                    "errors"        => [],
                     "data"          => [],
                     "point_in_time" => now(),
                 ],

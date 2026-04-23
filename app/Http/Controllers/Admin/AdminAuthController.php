@@ -73,9 +73,7 @@ class AdminAuthController extends Controller
         }
 
         $admin->tokens()->delete();
-        $token = $admin->createToken('Admin Token')->accessToken;
-        // add token to as response data
-        $admin->token = $token;
+        $admin = self::apiToken($admin->fresh(), 'Admin Token');
 
         return self::apiResponse(
             in_error: false,

@@ -8,10 +8,22 @@ use Illuminate\Support\Str;
 
 trait Helpers
 {
-    protected static function apiToken(Actor $actor): Actor
+    protected static function apiToken(Actor $actor, string $tokenName = 'Laravel Password Grant Client'): Actor
     {
-        $accessToken  = $actor->createToken('Laravel Password Grant Client')->accessToken;
-        $actor->token = $accessToken;
+        $tokenResult = $actor->createToken($tokenName);
+
+        $actor->token = $tokenResult->accessToken;
+
+        $expiresAt = $tokenResult->token->expires_at;
+        // Omit expiry in API when TTL is long-lived so clients treat the token as non-expiring.
+        $longLivedThreshold = now()->copy()->addYears(50);
+        if ($expiresAt !== null && $expiresAt->lessThanOrEqualTo($longLivedThreshold)) {
+            $actor->token_expires_at = $expiresAt->toIso8601String();
+            $actor->expires_in       = max(0, $expiresAt->getTimestamp() - now()->getTimestamp());
+        } else {
+            $actor->token_expires_at = null;
+            $actor->expires_in       = null;
+        }
 
         return $actor;
     }
