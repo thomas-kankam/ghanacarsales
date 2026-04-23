@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Car;
+use App\Traits\AppNotifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Mail;
 
 class SendExpiryReminder implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, AppNotifications;
 
     public function handle(): void
     {
@@ -42,12 +43,19 @@ class SendExpiryReminder implements ShouldQueue
         if ($dealer->phone_number) {
             Log::info("SMS to {$dealer->phone_number}: {$message}");
             // TODO: Integrate SMS gateway (e.g. Twilio)
+            self::sendSms($dealer->phone_number, $message);
+
         }
         if ($dealer->email) {
-            Mail::raw($message, function ($m) use ($dealer) {
-                $m->to($dealer->email)
-                    ->subject('Car Listing Expiring Soon - Ghana Car Sales');
-            });
+            // Mail::raw($message, function ($m) use ($dealer) {
+            //     $m->to($dealer->email)
+            //         ->subject('Car Listing Expiring Soon - Ghana Car Sales');
+            // });
+
+            self::sendEmail($dealer->email, email_class: "App\Mail\ExpiryReminderEmail", parameters: [
+                $dealer->email,
+                $message,
+            ]);
         }
     }
 }

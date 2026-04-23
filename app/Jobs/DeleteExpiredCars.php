@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class DeleteExpiredCars implements ShouldQueue
 {
@@ -17,6 +18,6 @@ class DeleteExpiredCars implements ShouldQueue
     {
         $carService = app(CarService::class);
         $count = $carService->deleteExpiredCars();
-        \Log::info("Deleted {$count} expired cars");
+        Log::info("Deleted {$count} expired cars");
     }
 }
