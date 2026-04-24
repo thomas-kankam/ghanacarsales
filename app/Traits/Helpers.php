@@ -28,8 +28,18 @@ trait Helpers
         return $actor;
     }
 
-    protected static function base64ImageDecode(string $base64_image)
+    protected static function base64ImageDecode(?string $base64_image): ?string
     {
+        if ($base64_image === null || trim($base64_image) === '') {
+            return null;
+        }
+
+        $base64_image = trim($base64_image);
+
+        if (str_starts_with($base64_image, 'http://') || str_starts_with($base64_image, 'https://')) {
+            return $base64_image;
+        }
+
         if (preg_match('/^data:image\/(\w+);base64,/', $base64_image, $matches)) {
             $image_extension = $matches[1];
             $image_data      = substr($base64_image, strpos($base64_image, ',') + 1);
@@ -40,6 +50,8 @@ trait Helpers
             Storage::disk("public")->put($file_path, base64_decode($image_data));
             return config("custom.urls.backend_url")  . "/storage/" . $file_path;
         }
+
+        return null;
     }
 
     protected static function deleteImage(?string $image_path): bool

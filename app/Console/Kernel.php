@@ -2,8 +2,11 @@
 
 namespace App\Console;
 
+use App\Jobs\SendExpiryReminder;
+use App\Services\CarService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,14 +15,23 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Mark expired cars daily
-        $schedule->job(new \App\Jobs\ExpireCars)->daily();
+        // Run inline so cron does not depend on a queue worker or Redis (avoids Connection refused on shared hosts).
+        $schedule->call(fn () => app(CarService::class)->markExpiredCars())
+            ->name('expire-cars')
+            ->daily();
 
-        // Delete expired cars (5 days after expiry) daily
-        $schedule->job(new \App\Jobs\DeleteExpiredCars)->daily();
+        $schedule->call(function () {
+            $count = app(CarService::class)->deleteExpiredCars();
+            Log::info("Deleted {$count} expired cars");
+        })
+            ->name('delete-expired-cars')
+            ->daily();
 
-        // Send expiry reminders (3 days before expiry) daily
-        $schedule->job(new \App\Jobs\SendExpiryReminder)->daily();
+        $schedule->call(static function (): void {
+            (new SendExpiryReminder)->handle();
+        })
+            ->name('send-expiry-reminders')
+            ->daily();
     }
 
     /**

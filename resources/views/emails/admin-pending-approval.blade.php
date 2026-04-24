@@ -39,7 +39,7 @@
                                                 {{ $adminEmail }}
                                             </span>
                                         </p>
-                                        <p style="font-size: 15px; color: #555; margin: 0;">{{ $message }}</p>
+                                        <p style="font-size: 15px; color: #555; margin: 0;">{{ $intro }}</p>
                                     </td>
                                 </tr>
                             </table>

@@ -13,7 +13,7 @@ class SubscribePlanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'plan_slug'     => ['required', 'exists:subscription_plans,slug'],
+            'plan_slug'     => ['required', 'string', 'exists:plans,plan_slug'],
             'phone_number'  => ['required', 'string', 'max:20'],
             'payment_method'=> ['nullable', 'string', 'in:momo'],
             'network'       => ['nullable', 'string', 'max:50'],

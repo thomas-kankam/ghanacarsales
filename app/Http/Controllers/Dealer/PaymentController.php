@@ -273,7 +273,7 @@ class PaymentController extends Controller
     protected function notifyAdminsPendingApproval(Payment $payment): void
     {
         try {
-            $admins = Admin::query()->where('is_active', true)->get(['email', 'phone_number']);
+            $admins = Admin::query()->where('is_active', true)->get(['email', 'phone_number', 'name']);
             if ($admins->isEmpty()) {
                 return;
             }
@@ -293,7 +293,7 @@ class PaymentController extends Controller
                     self::sendEmail(
                         $admin->email,
                         email_class: "App\Mail\AdminPendingApproval",
-                        parameters: [$admin->name, $body]
+                        parameters: [$admin->email, $body]
                     );
                 // }
 
