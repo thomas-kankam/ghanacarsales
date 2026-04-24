@@ -13,6 +13,56 @@ class ApprovalService
 {
     use AppNotifications;
 
+    protected function carLabel(?Car $car, string $fallbackSlug): string
+    {
+        if (! $car) {
+            return $fallbackSlug;
+        }
+
+        return trim(($car->brand ?? '') . ' ' . ($car->model ?? '')) ?: $fallbackSlug;
+    }
+
+    protected function notifyDealer(Dealer $dealer, string $subject, string $body): void
+    {
+        if (! empty($dealer->email)) {
+            self::sendEmail(
+                $dealer->email,
+                email_class: "App\Mail\DealerCarNotification",
+                parameters: [$dealer->email, $subject, $body]
+            );
+        }
+
+        if (! empty($dealer->phone_number)) {
+            self::sendSms($dealer->phone_number, $body);
+        }
+    }
+
+    protected function notifyActiveAdmins(string $body): void
+    {
+        $admins = Admin::query()->where('is_active', true)->get(['email', 'phone_number']);
+        foreach ($admins as $admin) {
+            if (! empty($admin->email)) {
+                self::sendEmail(
+                    $admin->email,
+                    email_class: "App\Mail\AdminPendingApproval",
+                    parameters: [$admin->email, $body]
+                );
+            }
+            if (! empty($admin->phone_number)) {
+                self::sendSms($admin->phone_number, $body);
+            }
+        }
+    }
+
+    public function notifyAdminsCarUploaded(Dealer $dealer, Car $car): void
+    {
+        $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? $dealer->dealer_slug;
+        $carLabel = $this->carLabel($car, $car->car_slug);
+        $message = "Seller uploaded a car listing. Dealer: {$dealerLabel}. Car: {$carLabel}.";
+
+        $this->notifyActiveAdmins($message);
+    }
+
     /**
      * Friend-code flow: dealer_code must belong to a different dealer, and must not already be consumed.
      *
@@ -78,24 +128,16 @@ class ApprovalService
 
         $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? 'Dealer';
         $carModel = Car::where('car_slug', $carSlug)->first();
-        $carLabel = $carModel
-            ? trim(($carModel->brand ?? '') . ' ' . ($carModel->model ?? '')) ?: $carSlug
-            : $carSlug;
+        $carLabel = $this->carLabel($carModel, $carSlug);
         $message = "A new car listing has been submitted for approval. Dealer: {$dealerLabel}. Car: {$carLabel}.";
 
-        $admins = Admin::query()->where('is_active', true)->get(['name', 'email', 'phone_number']);
-        foreach ($admins as $admin) {
-            if (! empty($admin->email)) {
-                self::sendEmail(
-                    $admin->email,
-                    email_class: "App\Mail\AdminPendingApproval",
-                    parameters: [$admin->email, $message]
-                );
-            }
-            if (! empty($admin->phone_number)) {
-                self::sendSms($admin->phone_number, $message);
-            }
-        }
+        $this->notifyActiveAdmins($message);
+
+        $this->notifyDealer(
+            $dealer,
+            'Car Submitted for Approval',
+            "Your car listing ({$carLabel}) has been submitted for admin approval."
+        );
 
         return $approval;
     }
@@ -108,6 +150,17 @@ class ApprovalService
             'admin_slug'        => $adminSlug,
             'status'            => 'approved',
         ]);
+
+        $car = $approval->car;
+        $dealer = $approval->dealer;
+        if ($dealer) {
+            $carLabel = $this->carLabel($car, $approval->car_slug);
+            $this->notifyDealer(
+                $dealer,
+                'Car Approved',
+                "Good news! Your car listing ({$carLabel}) has been approved and is now active."
+            );
+        }
     }
 
     public function reject(Approval $approval, ?string $reason = null, ?string $adminSlug = null): void
@@ -119,6 +172,33 @@ class ApprovalService
             'status'            => 'rejected',
             'reason'            => $reason,
         ]);
+
+        $car = $approval->car;
+        $dealer = $approval->dealer;
+        if ($dealer) {
+            $carLabel = $this->carLabel($car, $approval->car_slug);
+            $suffix = $reason ? " Reason: {$reason}" : '';
+            $this->notifyDealer(
+                $dealer,
+                'Car Rejected',
+                "Your car listing ({$carLabel}) was rejected by admin.{$suffix}"
+            );
+        }
+    }
+
+    public function notifyDealerForceExpired(Car $car): void
+    {
+        $dealer = $car->dealer;
+        if (! $dealer) {
+            return;
+        }
+
+        $carLabel = $this->carLabel($car, $car->car_slug);
+        $this->notifyDealer(
+            $dealer,
+            'Car Force Expired',
+            "Your car listing ({$carLabel}) has been force-expired by admin."
+        );
     }
 
     /**

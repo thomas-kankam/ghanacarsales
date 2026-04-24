@@ -94,6 +94,7 @@ class DealerCarController extends Controller
                 $data['plan_price']   = 0;
                 $data['plan_details'] = $data['plan_details'] ?? null;
                 $car                  = $this->carService->createCar($dealer, $data);
+                $this->approvalService->notifyAdminsCarUploaded($dealer, $car);
 
                 $payment = $this->paymentService->createPaymentForCars(
                     $dealer,
@@ -137,6 +138,7 @@ class DealerCarController extends Controller
             $data['plan_price']   = $plan->price;
             $data['plan_details'] = $data['plan_details'] ?? null;
             $car                  = $this->carService->createCar($dealer, $data);
+            $this->approvalService->notifyAdminsCarUploaded($dealer, $car);
 
             $payment = $this->paymentService->createPaymentForCars(
                 $dealer,

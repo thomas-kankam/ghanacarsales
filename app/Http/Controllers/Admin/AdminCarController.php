@@ -128,6 +128,8 @@ class AdminCarController extends Controller
             'expiry_date' => now(),
         ]);
 
+        $this->approvalService->notifyDealerForceExpired($car->fresh('dealer'));
+
         return $this->apiResponse(
             in_error: false,
             message: "Car expired successfully",
