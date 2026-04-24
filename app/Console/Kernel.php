@@ -34,14 +34,6 @@ class Kernel extends ConsoleKernel
         })
             ->name('send-expiry-reminders')
             ->daily();
-
-        // send a test sms to 0556906969 to see if cron is working
-        $schedule->call(static function (): void {
-            self::sendSms('0556906969', 'This is a test SMS from OmniCarsGH');
-        })
-            ->name('send-test-sms')
-            ->daily()
-            ->withoutOverlapping();
     }
 
     /**
