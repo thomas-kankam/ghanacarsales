@@ -4,12 +4,14 @@ namespace App\Console;
 
 use App\Jobs\SendExpiryReminder;
 use App\Services\CarService;
+use App\Traits\AppNotifications;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
+    use AppNotifications;
     /**
      * Define the application's command schedule.
      */
@@ -32,6 +34,14 @@ class Kernel extends ConsoleKernel
         })
             ->name('send-expiry-reminders')
             ->daily();
+
+        // send a test sms to 0556906969 to see if cron is working
+        $schedule->call(static function (): void {
+            self::sendSms('0556906969', 'This is a test SMS from OmniCarsGH');
+        })
+            ->name('send-test-sms')
+            ->daily()
+            ->withoutOverlapping();
     }
 
     /**
