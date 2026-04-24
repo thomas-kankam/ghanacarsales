@@ -23,6 +23,11 @@ class SendExpiryReminder implements ShouldQueue
             ->whereBetween('expiry_date', [$threeDaysFromNow->copy()->startOfDay(), $threeDaysFromNow->copy()->endOfDay()])
             ->with('dealer')
             ->get();
+        Log::info("Found {$cars->count()} cars to send expiry reminder");
+        foreach ($cars as $car) {
+            $dealerName = $car->dealer?->full_name ?? $car->dealer?->business_name ?? 'Unknown dealer';
+            Log::info("Car to send expiry reminder: {$car->car_slug} - {$dealerName}");
+        }
 
         foreach ($cars as $car) {
             try {

@@ -19,19 +19,23 @@ class Kernel extends ConsoleKernel
     {
         // Run inline so cron does not depend on a queue worker or Redis (avoids Connection refused on shared hosts).
         $schedule->call(fn () => app(CarService::class)->markExpiredCars())
+            ->withoutOverlapping()
             ->name('expire-cars')
             ->daily();
+
 
         $schedule->call(function () {
             $count = app(CarService::class)->deleteExpiredCars();
             Log::info("Deleted {$count} expired cars");
         })
+            ->withoutOverlapping()
             ->name('delete-expired-cars')
             ->daily();
 
         $schedule->call(static function (): void {
             (new SendExpiryReminder)->handle();
         })
+            ->withoutOverlapping()
             ->name('send-expiry-reminders')
             ->daily();
 
@@ -39,6 +43,7 @@ class Kernel extends ConsoleKernel
         $schedule->call(static function (): void {
             Log::info("Current date and time: " . now()->format('Y-m-d H:i:s'));
         })
+            ->withoutOverlapping()
             ->name('print-current-date-and-time')
             ->everyMinute();
     }

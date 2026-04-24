@@ -5,6 +5,7 @@ use App\Models\Car;
 use App\Models\Dealer;
 use App\Traits\Helpers;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -79,6 +80,7 @@ class CarService
     {
         $expiredCars = Car::where('status', 'expired')
             ->where('expiry_date', '<', now()->subDays(5))
+            ->with('dealer')
             ->get();
 
         $count = 0;
@@ -94,7 +96,11 @@ class CarService
             $car->forceDelete();
             $count++;
         }
-
+        Log::info("Deleted {$count} expired cars");
+        foreach ($expiredCars as $car) {
+            $dealerName = $car->dealer?->full_name ?? $car->dealer?->business_name ?? 'Unknown dealer';
+            Log::info("Deleted car: {$car->car_slug} - {$dealerName}");
+        }
         return $count;
     }
 
@@ -103,8 +109,21 @@ class CarService
      */
     public function markExpiredCars(): int
     {
-        return Car::where('status', 'published')
+        $cars = Car::where('status', 'published')
             ->where('expiry_date', '<', now())
-            ->update(['status' => 'expired']);
+            ->with('dealer')
+            ->get();
+
+        foreach ($cars as $car) {
+            $car->update(['status' => 'expired']);
+        }
+
+        $count = $cars->count();
+        Log::info("Marked {$count} expired cars");
+        foreach ($cars as $car) {
+            $dealerName = $car->dealer?->full_name ?? $car->dealer?->business_name ?? 'Unknown dealer';
+            Log::info("Expired car: {$car->car_slug} - {$dealerName}");
+        }
+        return $count;
     }
 }
