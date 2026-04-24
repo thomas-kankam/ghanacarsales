@@ -33,11 +33,7 @@
                                 <tr>
                                     <td style="padding: 20px 25px;">
                                         <p style="font-size: 16px; color: #333333; margin-bottom: 12px;">
-                                            Dear {{ $dealerEmail }},
-                                            <span
-                                                style="display: inline-block; background-color: #f4fff0; padding: 6px 10px; border-radius: 6px; color: #62a93b; font-weight: 600; font-size: 16px; border: 1px solid #bcffb3;">
-                                                {{ $dealerEmail }}
-                                            </span>
+                                            Dear Seller,
                                         </p>
                                         <p style="font-size: 15px; color: #555; margin: 0;">{{ $body }}</p>
                                     </td>
