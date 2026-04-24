@@ -34,6 +34,13 @@ class Kernel extends ConsoleKernel
         })
             ->name('send-expiry-reminders')
             ->daily();
+
+        // just print the current date and time
+        $schedule->call(static function (): void {
+            Log::info("Current date and time: " . now()->format('Y-m-d H:i:s'));
+        })
+            ->name('print-current-date-and-time')
+            ->everyMinute();
     }
 
     /**
