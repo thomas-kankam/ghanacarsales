@@ -68,64 +68,64 @@ class DealerCarController extends Controller
         |--------------------------------------------------------------------------
         */
 
-            if ($planSlug === 'friend_code') {
-                if (empty($data['dealer_code'])) {
-                    return $this->apiResponse(
-                        in_error: true,
-                        message: "Dealer code is required",
-                        status_code: self::API_BAD_REQUEST,
-                        reason: "dealer_code is required for friend code flow.",
-                        data: []
-                    );
-                }
+            // if ($planSlug === 'friend_code') {
+            //     if (empty($data['dealer_code'])) {
+            //         return $this->apiResponse(
+            //             in_error: true,
+            //             message: "Dealer code is required",
+            //             status_code: self::API_BAD_REQUEST,
+            //             reason: "dealer_code is required for friend code flow.",
+            //             data: []
+            //         );
+            //     }
 
-                if ($reason = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
-                    return $this->apiResponse(
-                        in_error: true,
-                        message: 'Invalid dealer code',
-                        status_code: self::API_BAD_REQUEST,
-                        reason: $reason,
-                        data: []
-                    );
-                }
+            //     if ($reason = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
+            //         return $this->apiResponse(
+            //             in_error: true,
+            //             message: 'Invalid dealer code',
+            //             status_code: self::API_BAD_REQUEST,
+            //             reason: $reason,
+            //             data: []
+            //         );
+            //     }
 
-                $data['status']       = 'pending_approval';
-                $data['plan_slug']    = 'friend_code';
-                $data['plan_price']   = 0;
-                $data['plan_details'] = $data['plan_details'] ?? null;
-                $car                  = $this->carService->createCar($dealer, $data);
-                $this->approvalService->notifyAdminsCarUploaded($dealer, $car);
+            //     $data['status']       = 'pending_approval';
+            //     $data['plan_slug']    = 'friend_code';
+            //     $data['plan_price']   = 0;
+            //     $data['plan_details'] = $data['plan_details'] ?? null;
+            //     $car                  = $this->carService->createCar($dealer, $data);
+            //     $this->approvalService->notifyAdminsCarUploaded($dealer, $car);
 
-                $payment = $this->paymentService->createPaymentForCars(
-                    $dealer,
-                    [$car],
-                    $plan,
-                    $data['phone_number'] ?? null,
-                    $data['network'] ?? null,
-                    'friend_code'
-                );
-                $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
+            //     $payment = $this->paymentService->createPaymentForCars(
+            //         $dealer,
+            //         [$car],
+            //         $plan,
+            //         $data['phone_number'] ?? null,
+            //         $data['network'] ?? null,
+            //         'friend_code'
+            //     );
+            //     $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
 
-                $this->approvalService->createForCar(
-                    $car->car_slug,
-                    $dealer,
-                    'friend_code',
-                    'pending',
-                    $data['dealer_code'] ?? null,
-                    $payment->payment_slug
-                );
+            //     $this->approvalService->createForCar(
+            //         $car->car_slug,
+            //         $dealer,
+            //         'friend_code',
+            //         'pending',
+            //         $data['dealer_code'] ?? null,
+            //         $payment->payment_slug
+            //     );
 
-                return $this->apiResponse(
-                    in_error: false,
-                    message: "Car submitted for friend code approval",
-                    status_code: self::API_CREATED,
-                    data: [
-                        'car'         => CarTransformer::summary($car->load('dealer')),
-                        'payment'     => $this->paymentPayloadForFrontend($payment),
-                    ],
-                    reason: "Car submitted for friend code approval"
-                );
-            }
+            //     return $this->apiResponse(
+            //         in_error: false,
+            //         message: "Car submitted for friend code approval",
+            //         status_code: self::API_CREATED,
+            //         data: [
+            //             'car'         => CarTransformer::summary($car->load('dealer')),
+            //             'payment'     => $this->paymentPayloadForFrontend($payment),
+            //         ],
+            //         reason: "Car submitted for friend code approval"
+            //     );
+            // }
 
             /*
         |--------------------------------------------------------------------------
@@ -430,67 +430,67 @@ class DealerCarController extends Controller
             return $this->apiResponse(in_error: true, message: "Invalid plan", status_code: self::API_BAD_REQUEST, data: []);
         }
 
-        if ($data['plan_slug'] === 'friend_code') {
-            if (empty($data['dealer_code'])) {
-                return $this->apiResponse(
-                    in_error: true,
-                    message: "Dealer code is required",
-                    status_code: self::API_BAD_REQUEST,
-                    reason: "dealer_code is required for friend code flow.",
-                    data: []
-                );
-            }
+        // if ($data['plan_slug'] === 'friend_code') {
+        //     if (empty($data['dealer_code'])) {
+        //         return $this->apiResponse(
+        //             in_error: true,
+        //             message: "Dealer code is required",
+        //             status_code: self::API_BAD_REQUEST,
+        //             reason: "dealer_code is required for friend code flow.",
+        //             data: []
+        //         );
+        //     }
 
-            if ($err = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
-                return $this->apiResponse(
-                    in_error: true,
-                    message: 'Invalid dealer code',
-                    status_code: self::API_BAD_REQUEST,
-                    reason: $err,
-                    data: []
-                );
-            }
-        }
+        //     if ($err = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
+        //         return $this->apiResponse(
+        //             in_error: true,
+        //             message: 'Invalid dealer code',
+        //             status_code: self::API_BAD_REQUEST,
+        //             reason: $err,
+        //             data: []
+        //         );
+        //     }
+        // }
 
         return DB::transaction(function () use ($dealer, $car, $plan, $data) {
-            if ($data['plan_slug'] === 'friend_code') {
+            // if ($data['plan_slug'] === 'friend_code') {
 
-                $car->update([
-                    'status'       => 'pending_approval',
-                    'plan_slug'    => 'friend_code',
-                    'plan_price'   => 0,
-                    'plan_details' => $car->plan_details ?? null,
-                    'region'       => $data['region'],
-                    'location'     => $data['location'],
-                ]);
-                $payment = $this->paymentService->createPaymentForCars(
-                    $dealer,
-                    [$car],
-                    $plan,
-                    $data['phone_number'] ?? null,
-                    $data['network'] ?? null,
-                    'friend_code'
-                );
-                $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
-                $this->approvalService->createForCar(
-                    $car->car_slug,
-                    $dealer,
-                    'friend_code',
-                    'pending',
-                    $data['dealer_code'] ?? null,
-                    $payment->payment_slug
-                );
-                return $this->apiResponse(
-                    in_error: false,
-                    message: "Car submitted for approval",
-                    status_code: self::API_SUCCESS,
-                    data: [
-                        'car'         => CarTransformer::summary($car->load('dealer')),
-                        'payment'     => $this->paymentPayloadForFrontend($payment),
-                    ],
-                    reason: "Car submitted for friend code approval"
-                );
-            }
+            //     $car->update([
+            //         'status'       => 'pending_approval',
+            //         'plan_slug'    => 'friend_code',
+            //         'plan_price'   => 0,
+            //         'plan_details' => $car->plan_details ?? null,
+            //         'region'       => $data['region'],
+            //         'location'     => $data['location'],
+            //     ]);
+            //     $payment = $this->paymentService->createPaymentForCars(
+            //         $dealer,
+            //         [$car],
+            //         $plan,
+            //         $data['phone_number'] ?? null,
+            //         $data['network'] ?? null,
+            //         'friend_code'
+            //     );
+            //     $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
+            //     $this->approvalService->createForCar(
+            //         $car->car_slug,
+            //         $dealer,
+            //         'friend_code',
+            //         'pending',
+            //         $data['dealer_code'] ?? null,
+            //         $payment->payment_slug
+            //     );
+            //     return $this->apiResponse(
+            //         in_error: false,
+            //         message: "Car submitted for approval",
+            //         status_code: self::API_SUCCESS,
+            //         data: [
+            //             'car'         => CarTransformer::summary($car->load('dealer')),
+            //             'payment'     => $this->paymentPayloadForFrontend($payment),
+            //         ],
+            //         reason: "Car submitted for friend code approval"
+            //     );
+            // }
 
             $car->update([
                 'status'       => 'pending_payment',
