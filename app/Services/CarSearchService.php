@@ -74,7 +74,10 @@ class CarSearchService
             $query->where('registered', $filters['registered']);
         }
 
-        if (isset($filters['fuel_type'])) {
+        // it comes as an array
+        if (isset($filters['fuel_type']) && is_array($filters['fuel_type'])) {
+            $query->whereIn('fuel_type', $filters['fuel_type']);
+        } elseif (isset($filters['fuel_type'])) {
             $query->where('fuel_type', $filters['fuel_type']);
         }
 
