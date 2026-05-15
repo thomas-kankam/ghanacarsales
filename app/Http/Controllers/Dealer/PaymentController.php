@@ -47,7 +47,7 @@ class PaymentController extends Controller
         $data = $request->validate([
             'car_slugs'    => 'required|array',
             'car_slugs.*'  => 'string|exists:cars,car_slug',
-            'plan_slug'    => 'required|string|in:friend_code,1_month,3_months',
+            'plan_slug'    => 'required|string',
             'dealer_code'  => 'nullable|string|exists:dealers,dealer_code',
             'status'       => 'nullable|string|in:pending_approval,pending_payment,draft',
             'plan_details' => 'nullable|array',
