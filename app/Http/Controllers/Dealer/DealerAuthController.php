@@ -257,14 +257,21 @@ use Illuminate\Support\Str;
 
             /** @var Dealer $dealer */
             $dealer = $request->user();
+            $wasOnboarded = (bool) $dealer->is_onboarded;
 
             // Update dealer with additional registration data
             $dealer->update(array_merge($data, [
                 'terms_accepted'    => true,
                 'terms_accepted_at' => now(),
                 'is_onboarded'      => true,
-                'status'      => 'active',
+                'status'            => 'active',
             ]));
+
+            $dealer = $dealer->fresh();
+
+            if (! $wasOnboarded) {
+                $this->sendDealerOnboardingNotifications($dealer);
+            }
 
             $userWithToken = self::apiToken($dealer);
             $user_data     = $userWithToken->toArray();
@@ -276,6 +283,27 @@ use Illuminate\Support\Str;
                 data: $user_data,
                 reason: "Dealer registered successfully."
             );
+        }
+
+        private function sendDealerOnboardingNotifications(Dealer $dealer): void
+        {
+            $dealerName = $dealer->full_name ?? $dealer->business_name ?? 'Dealer';
+            $message = "Welcome to OmniCarsGH, {$dealerName}. Your dealer account has been onboarded successfully and is now active.";
+
+            if (! empty($dealer->email)) {
+                self::sendEmail(
+                    $dealer->email,
+                    email_class: "App\Mail\DealerOnboardedNotification",
+                    parameters: [
+                        $dealerName,
+                        $message,
+                    ]
+                );
+            }
+
+            if (! empty($dealer->phone_number)) {
+                self::sendSms($dealer->phone_number, $message);
+            }
         }
 
         public function otpLogin(LoginRequest $request): JsonResponse

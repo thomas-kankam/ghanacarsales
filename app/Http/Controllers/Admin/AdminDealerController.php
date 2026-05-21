@@ -11,6 +11,29 @@ class AdminDealerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $allowedSorts = [
+            'created_at',
+            'updated_at',
+            'full_name',
+            'business_name',
+            'status',
+            'verified_at',
+            'terms_accepted_at',
+            'city',
+            'region',
+            'is_onboarded',
+        ];
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        if (! in_array($sortBy, $allowedSorts, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortOrder = strtolower((string) $request->get('sort_order', 'desc'));
+        if (! in_array($sortOrder, ['asc', 'desc'], true)) {
+            $sortOrder = 'desc';
+        }
+
         $query = Dealer::query()
             ->withCount([
                 'cars as listings_count' => function ($q) {
@@ -26,7 +49,13 @@ class AdminDealerController extends Controller
             $query->where('is_onboarded', filter_var($request->get('is_onboarded'), FILTER_VALIDATE_BOOL));
         }
 
-        $dealers = $query->paginate((int) $request->get('per_page', 20));
+        $query->orderBy($sortBy, $sortOrder);
+
+        if ($sortBy !== 'updated_at') {
+            $query->orderBy('updated_at', $sortOrder);
+        }
+
+        $dealers = $query->paginate((int) $request->get('per_page', 20))->withQueryString();
 
         return $this->apiResponse(
             in_error: false,
@@ -169,16 +198,41 @@ class AdminDealerController extends Controller
 
     public function dealerCodes(Request $request): JsonResponse
     {
+        $allowedSorts = [
+            'code_assigned_at',
+            'updated_at',
+            'created_at',
+            'dealer_code',
+            'code_status',
+            'business_name',
+            'full_name',
+        ];
+
+        $sortBy = $request->get('sort_by', 'code_assigned_at');
+        if (! in_array($sortBy, $allowedSorts, true)) {
+            $sortBy = 'code_assigned_at';
+        }
+
+        $sortOrder = strtolower((string) $request->get('sort_order', 'desc'));
+        if (! in_array($sortOrder, ['asc', 'desc'], true)) {
+            $sortOrder = 'desc';
+        }
+
         $query = Dealer::query()
             ->whereNotNull('dealer_code')
-            ->orderByDesc('code_assigned_at')
-            ->orderByDesc('updated_at');
+            ->orderBy($sortBy, $sortOrder);
+
+        if ($sortBy !== 'updated_at') {
+            $query->orderBy('updated_at', $sortOrder);
+        }
 
         if ($request->filled('code_status')) {
             $query->where('code_status', $request->get('code_status'));
         }
 
-        $dealerCodes = $query->paginate((int) $request->get('per_page', 20));
+        $dealerCodes = filter_var($request->get('all', false), FILTER_VALIDATE_BOOLEAN)
+            ? $query->get()
+            : $query->paginate((int) $request->get('per_page', 20))->withQueryString();
 
         return $this->apiResponse(
             in_error: false,
