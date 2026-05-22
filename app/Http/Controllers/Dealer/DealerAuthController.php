@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dealer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\DealerRegisterRequest;
 use App\Http\Requests\Dealer\DealerResendotpRequest;
+use App\Http\Requests\Dealer\LoginRequest;
 use App\Http\Requests\Dealer\OtpVerifyRequest;
 use App\Http\Requests\Dealer\RegisterDealerRequest;
 use App\Models\Dealer;
