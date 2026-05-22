@@ -2,13 +2,19 @@
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dealer\DealerProfileUpdateRequest;
 use App\Http\Requests\Dealer\DealerRegisterRequest;
 use App\Http\Requests\Dealer\DealerResendotpRequest;
 use App\Http\Requests\Dealer\LoginRequest;
 use App\Http\Requests\Dealer\OtpVerifyRequest;
 use App\Http\Requests\Dealer\RegisterDealerRequest;
+use App\Http\Requests\Dealer\VerifyLoginOtpRequest;
+use App\Http\Requests\Dealer\VerifyResetPasswordOtpRequest;
+use App\Mail\DealerOnboardedNotification;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DealerAuthController extends Controller
@@ -283,18 +289,18 @@ class DealerAuthController extends Controller
         $message = "New dealer registered: {$dealerName} with contact {$dealer->phone_number} at " . now()->toDateTimeString();
 
         self::sendEmail(
-            "fui . fiadjoe@gmail . com",
-            email_class: "App\Mail\DealerOnboardedNotification ",
+            'fui.fiadjoe@gmail.com',
+            email_class: DealerOnboardedNotification::class,
             parameters: [
                 $dealerName,
                 $message,
             ]
         );
 
-        self::sendSms("233242201875", $message);
+        self::sendSms('233242201875', $message);
     }
 
-    public function otpLogin(LoginRequest $request): JsonResponse
+    public function OtpLogin(LoginRequest $request): JsonResponse
     {
         $data = $request->validated();
 
@@ -315,12 +321,12 @@ class DealerAuthController extends Controller
         $channel    = $email ? 'email' : 'sms';
 
         if (! $dealer) {
-            Log::info("Dealer notfoundforidentifier: { $identifier}");
+            Log::info("Dealer not found for identifier: {$identifier}");
 
             return self::apiResponse(
                 in_error: true,
                 message: "Action Unsuccessful",
-                reason: "Dealer cannotbefound",
+                reason: "Dealer cannot be found",
                 status_code: self::API_NOT_FOUND,
                 data: []
             );
@@ -361,7 +367,7 @@ class DealerAuthController extends Controller
             // );
             self::sendEmail(
                 $dealer->email,
-                email_class: "App\Mail\LoginVerification ",
+                email_class: "App\Mail\LoginVerification",
                 parameters: [
                     $dealer->email,
                     $otp,
@@ -379,11 +385,8 @@ class DealerAuthController extends Controller
             in_error: false,
             message: "Action Successful",
             status_code: self::API_SUCCESS,
-            data: $dealer?->toArray(),
-            // reason: "OTP senttoyouremail and phone numberforlogin(expires in10minutes) {
-            "
-            reason: "OTP senttoyour {$channel}for login(expires in10minutes) {
-                "
+            data: $dealer->toArray(),
+            reason: "OTP sent to your {$channel} for login (expires in 10 minutes)"
         );
     }
 
@@ -416,11 +419,11 @@ class DealerAuthController extends Controller
             message: "Login successful",
             status_code: self::API_SUCCESS,
             data: $user_data,
-            reason: "OTP verifiedsuccessfully"
+            reason: "OTP verified successfully"
         );
     }
 
-    public function logout()
+    public function logout(): JsonResponse
     {
         // Revoke user's API token
         request()->user()->token()->revoke();
@@ -428,7 +431,7 @@ class DealerAuthController extends Controller
         return self::apiResponse(in_error: false, message: "Action Successful", reason: "Logout successful", status_code: self::API_SUCCESS, data: []);
     }
 
-    public function updateProfile(DealerProfileUpdateRequest $request)
+    public function updateProfile(DealerProfileUpdateRequest $request): JsonResponse
     {
         $dealer = $request->user();
 
@@ -437,7 +440,7 @@ class DealerAuthController extends Controller
         return self::apiResponse(
             in_error: false,
             message: "Action Successful",
-            reason: "Dealer profileupdatedsuccessfully",
+            reason: "Dealer profile updated successfully",
             status_code: self::API_SUCCESS,
             data: $dealer->fresh()
         );
@@ -458,10 +461,10 @@ class DealerAuthController extends Controller
                 message: "Action Unsuccessful",
                 status_code: self::API_NOT_FOUND,
                 data: [],
-                reason: "Dealer notfound"
+                reason: "Dealer not found"
             );
         }
-        $channel = $data['email'] ? 'email' : 'sms';
+        $channel = ! empty($data['email']) ? 'email' : 'sms';
 
         $otp = self::generateOtp(
             type: "password_reset",
@@ -472,7 +475,7 @@ class DealerAuthController extends Controller
 
         self::sendEmail(
             $dealer->email,
-            email_class: "App\Mail\DealerPasswordResetMail ",
+            email_class: "App\Mail\EmailVerification",
             parameters: [
                 $dealer->email,
                 $otp,
@@ -484,10 +487,15 @@ class DealerAuthController extends Controller
             'OTP Reset code: ' . $otp
         );
 
-        $message = "OTP senttoyouremail and phone numberforpasswordreset(expires in10minutes) {
-                    . Please checkyouremail and phone numberfortheOTP . ";
+        $message = 'OTP sent to your email and phone number for password reset (expires in 10 minutes). Please check your email and phone for the OTP.';
 
-        return self::apiResponse(in_error: false, message: "Action Successful", reason: $message, status_code: self::API_SUCCESS, data: $dealer->fresh()->toArray());
+        return self::apiResponse(
+            in_error: false,
+            message: "Action Successful",
+            reason: $message,
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()->toArray()
+        );
     }
 
     public function verifyResetPasswordOtp(VerifyResetPasswordOtpRequest $request): JsonResponse
@@ -508,14 +516,12 @@ class DealerAuthController extends Controller
         $dealer->update([
             'password' => $data['new_password'],
         ]);
-        return self::apiResponse(in_error: false, message: "Action Successful", reason: "Password resetsuccessfully . Please loginwithyournewpassword", status_code: self::API_SUCCESS, data: $dealer->fresh()->toArray());
+        return self::apiResponse(
+            in_error: false,
+            message: "Action Successful",
+            reason: "Password reset successfully. Please login with your new password",
+            status_code: self::API_SUCCESS,
+            data: $dealer->fresh()->toArray()
+        );
     }
-}
-{
-
-}
-
-}
-
-}
 }
