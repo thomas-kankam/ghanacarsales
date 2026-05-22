@@ -11,6 +11,7 @@ use App\Http\Requests\Dealer\RegisterDealerRequest;
 use App\Http\Requests\Dealer\VerifyLoginOtpRequest;
 use App\Http\Requests\Dealer\VerifyResetPasswordOtpRequest;
 use App\Mail\DealerOnboardedNotification;
+use App\Models\Admin;
 use App\Models\Dealer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -288,16 +289,24 @@ class DealerAuthController extends Controller
         // send message to admin ""fui.fiadjoe@gmail.com" about new dealer registration
         $message = "New dealer registered: {$dealerName} with contact {$dealer->phone_number} at " . now()->toDateTimeString();
 
-        self::sendEmail(
-            'fui.fiadjoe@gmail.com',
-            email_class: DealerOnboardedNotification::class,
-            parameters: [
-                $dealerName,
-                $message,
-            ]
-        );
+        // send to all the admins
+        $admins = Admin::all();
+        foreach ($admins as $admin) {
+            self::sendEmail(
+                $admin->email,
+                email_class: DealerOnboardedNotification::class,
+                parameters: [
+                    $dealerName,
+                    $message,
+                ]
+            );
 
-        self::sendSms('233242201875', $message);
+            self::sendSms(
+                $admin->phone_number,
+                $message
+            );
+        }
+
     }
 
     public function OtpLogin(LoginRequest $request): JsonResponse
