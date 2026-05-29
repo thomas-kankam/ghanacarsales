@@ -73,8 +73,10 @@ class AdminBillingController extends Controller
             'total_paid' => Payment::where('status', 'paid')->count(),
             'total_failed' => Payment::where('status', 'failed')->count(),
             'total_pending' => Payment::where('status', 'pending')->count(),
-            'total_cancelled' => Payment::where('status', 'cancelled')->count(),
-            'total_refunded' => Payment::where('status', 'refunded')->count(),
+            'total_amount' => Payment::sum('amount'),
+            'total_paid_amount' => Payment::where('status', 'paid')->sum('amount'),
+            'total_failed_amount' => Payment::where('status', 'failed')->sum('amount'),
+            'total_pending_amount' => Payment::where('status', 'pending')->sum('amount')
         ];
 
         return $this->apiResponse(
@@ -102,4 +104,3 @@ class AdminBillingController extends Controller
     //     );
     // }
 }
-
