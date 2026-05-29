@@ -3,7 +3,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
-// use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -64,6 +63,25 @@ class AdminBillingController extends Controller
             message: "Payments retrieved successfully",
             status_code: self::API_SUCCESS,
             data: $payload
+        );
+    }
+
+    public function paymentStats(): JsonResponse
+    {
+        $stats = [
+            'total_payments' => Payment::count(),
+            'total_paid' => Payment::where('status', 'paid')->count(),
+            'total_failed' => Payment::where('status', 'failed')->count(),
+            'total_pending' => Payment::where('status', 'pending')->count(),
+            'total_cancelled' => Payment::where('status', 'cancelled')->count(),
+            'total_refunded' => Payment::where('status', 'refunded')->count(),
+        ];
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Payment stats retrieved successfully",
+            status_code: self::API_SUCCESS,
+            data: $stats
         );
     }
 
