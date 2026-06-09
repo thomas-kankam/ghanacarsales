@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Dealer;
+use App\Models\Payment;
 use App\Traits\AppNotifications;
 use Illuminate\Support\Str;
 
@@ -37,7 +38,7 @@ class ApprovalService
         }
     }
 
-    protected function notifyActiveAdmins(string $body): void
+    protected function notifyActiveAdmins(string $body, string $emailSubject = 'New car listing pending approval - OmniCarsGH'): void
     {
         $admins = Admin::query()->where('is_active', true)->get(['email', 'phone_number']);
         foreach ($admins as $admin) {
@@ -45,7 +46,7 @@ class ApprovalService
                 self::sendEmail(
                     $admin->email,
                     email_class: "App\Mail\AdminPendingApproval",
-                    parameters: [$admin->email, $body]
+                    parameters: [$admin->email, $body, $emailSubject]
                 );
             }
             if (! empty($admin->phone_number)) {
@@ -54,13 +55,95 @@ class ApprovalService
         }
     }
 
-    public function notifyAdminsCarUploaded(Dealer $dealer, Car $car): void
+    protected function paymentSummaryLines(?Payment $payment): string
+    {
+        if (! $payment) {
+            return '';
+        }
+
+        return sprintf(
+            "\nPlan: %s\nAmount: GHS %s\nReference: %s",
+            $payment->plan_name ?? $payment->plan_slug ?? 'N/A',
+            number_format((float) $payment->amount, 2),
+            $payment->reference_id ?? $payment->reference ?? 'N/A'
+        );
+    }
+
+    public function notifyPendingPayment(Dealer $dealer, Car $car, ?Payment $payment = null): void
     {
         $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? $dealer->dealer_slug;
         $carLabel = $this->carLabel($car, $car->car_slug);
-        $message = "Seller uploaded a car listing. Dealer: {$dealerLabel}. Car: {$carLabel}.";
+        $paymentDetails = $this->paymentSummaryLines($payment);
 
-        $this->notifyActiveAdmins($message);
+        $this->notifyDealer(
+            $dealer,
+            'Pending Payment',
+            "Your car listing ({$carLabel}) is pending payment. Please complete payment to submit your listing for approval.{$paymentDetails}"
+        );
+
+        $adminMessage = "New car listing pending payment.\nDealer: {$dealerLabel}\nCar: {$carLabel}.{$paymentDetails}";
+        $this->notifyActiveAdmins($adminMessage, 'New car listing pending payment - OmniCarsGH');
+    }
+
+    public function notifyPendingPaymentForPayment(Payment $payment): void
+    {
+        $payment->loadMissing(['paymentItems.car', 'dealer']);
+        $dealer = $payment->dealer;
+        if (! $dealer) {
+            return;
+        }
+
+        $listingLabels = $payment->paymentItems
+            ->map(fn ($item) => $item->car ? $this->carLabel($item->car, $item->car_slug) : null)
+            ->filter()
+            ->values()
+            ->all();
+        $listingsText = $listingLabels !== [] ? implode(', ', $listingLabels) : 'N/A';
+        $paymentDetails = $this->paymentSummaryLines($payment);
+        $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? $dealer->dealer_slug;
+
+        $this->notifyDealer(
+            $dealer,
+            'Pending Payment',
+            "Your listing(s) ({$listingsText}) are pending payment. Please complete payment to submit for approval.{$paymentDetails}"
+        );
+
+        $adminMessage = "New car listing(s) pending payment.\nDealer: {$dealerLabel}\nListings: {$listingsText}.{$paymentDetails}";
+        $this->notifyActiveAdmins($adminMessage, 'New car listing pending payment - OmniCarsGH');
+    }
+
+    public function notifyPaymentSuccessful(Payment $payment): void
+    {
+        $payment->loadMissing(['paymentItems.car', 'dealer']);
+        $dealer = $payment->dealer;
+        if (! $dealer) {
+            return;
+        }
+
+        $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? $dealer->dealer_slug;
+        $listingLabels = $payment->paymentItems
+            ->map(fn ($item) => $item->car ? $this->carLabel($item->car, $item->car_slug) : null)
+            ->filter()
+            ->values()
+            ->all();
+        $listingsText = $listingLabels !== [] ? implode(', ', $listingLabels) : 'N/A';
+
+        $paymentDetails = sprintf(
+            "Reference: %s\nPlan: %s\nAmount: GHS %s\nListings: %s",
+            $payment->reference_id ?? $payment->reference ?? 'N/A',
+            $payment->plan_name ?? $payment->plan_slug ?? 'N/A',
+            number_format((float) $payment->amount, 2),
+            $listingsText
+        );
+
+        $this->notifyDealer(
+            $dealer,
+            'Payment Made Successfully',
+            "Your payment was successful.\n\n{$paymentDetails}\n\nYour listing(s) have been submitted for admin approval."
+        );
+
+        $adminMessage = "Payment received. Listing(s) are now pending approval.\nDealer: {$dealerLabel}\n{$paymentDetails}";
+        $this->notifyActiveAdmins($adminMessage);
     }
 
     /**
@@ -97,7 +180,8 @@ class ApprovalService
         string $type,
         string $status = 'pending',
         ?string $dealerCode = null,
-        ?string $paymentSlug = null
+        ?string $paymentSlug = null,
+        bool $sendNotifications = true
     ): Approval {
         $existing = Approval::where('car_slug', $carSlug)
             ->where('payment_slug', $paymentSlug)
@@ -126,18 +210,20 @@ class ApprovalService
             'payment_slug'  => $paymentSlug,
         ]);
 
-        $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? 'Dealer';
-        $carModel = Car::where('car_slug', $carSlug)->first();
-        $carLabel = $this->carLabel($carModel, $carSlug);
-        $message = "A new car listing has been submitted for approval. Dealer: {$dealerLabel}. Car: {$carLabel}.";
+        if ($sendNotifications) {
+            $dealerLabel = $dealer->full_name ?? $dealer->business_name ?? 'Dealer';
+            $carModel = Car::where('car_slug', $carSlug)->first();
+            $carLabel = $this->carLabel($carModel, $carSlug);
+            $message = "A new car listing has been submitted for approval.\nDealer: {$dealerLabel}\nCar: {$carLabel}.";
 
-        $this->notifyActiveAdmins($message);
+            $this->notifyActiveAdmins($message);
 
-        $this->notifyDealer(
-            $dealer,
-            'Car Submitted for Approval',
-            "Your car listing ({$carLabel}) has been submitted for admin approval."
-        );
+            $this->notifyDealer(
+                $dealer,
+                'Car Submitted for Approval',
+                "Your car listing ({$carLabel}) has been submitted for admin approval."
+            );
+        }
 
         return $approval;
     }

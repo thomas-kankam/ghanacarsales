@@ -137,9 +137,7 @@ class DealerCarController extends Controller
             $data['plan_slug']    = $plan->plan_slug;
             $data['plan_price']   = $plan->price;
             $data['plan_details'] = $data['plan_details'] ?? null;
-            $car                  = $this->carService->createCar($dealer, $data);
-            $this->approvalService->notifyAdminsCarUploaded($dealer, $car);
-
+            $car     = $this->carService->createCar($dealer, $data);
             $payment = $this->paymentService->createPaymentForCars(
                 $dealer,
                 [$car],
@@ -148,6 +146,7 @@ class DealerCarController extends Controller
                 $data['network'] ?? null,
                 $data['payment_method'] ?? 'momo'
             );
+            $this->approvalService->notifyPendingPayment($dealer, $car, $payment);
             // Log::channel('paystack')->info('DealerCarController: payment created', ['payment' => $payment]);
 
             $paymentUrl = null;
@@ -508,6 +507,7 @@ class DealerCarController extends Controller
                 $data['network'] ?? null,
                 'momo'
             );
+            $this->approvalService->notifyPendingPayment($dealer, $car, $payment);
 
             $paymentUrl = null;
             if (config('services.paystack.secret_key')) {

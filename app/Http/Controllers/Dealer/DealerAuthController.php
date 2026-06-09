@@ -13,6 +13,7 @@ use App\Http\Requests\Dealer\VerifyResetPasswordOtpRequest;
 use App\Mail\DealerOnboardedNotification;
 use App\Models\Admin;
 use App\Models\Dealer;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -287,8 +288,7 @@ class DealerAuthController extends Controller
     {
         $dealerName = $dealer->full_name ?? $dealer->business_name ?? 'Dealer';
         // send message to admin ""fui.fiadjoe@gmail.com" about new dealer registration
-        $message = "New dealer registered: {$dealerName} with contact {$dealer->phone_number} at " . now()->toDateTimeString();
-
+        $message = "New dealer registered: {$dealerName} with contact {$dealer->phone_number} on " . Carbon::now()->format('jS F Y \a\t g:i A');
         // send to all the admins
         $admins = Admin::all();
         foreach ($admins as $admin) {

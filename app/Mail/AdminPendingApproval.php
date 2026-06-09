@@ -16,13 +16,14 @@ class AdminPendingApproval extends Mailable
      */
     public function __construct(
         public string $adminEmail,
-        public string $intro
+        public string $intro,
+        public string $emailSubject = 'New car listing pending approval - OmniCarsGH',
     ) {
     }
 
     public function build()
     {
-        return $this->subject('New car listing pending approval - OmniCarsGH')
+        return $this->subject($this->emailSubject)
             ->view('emails.admin-pending-approval', [
                 'adminEmail' => $this->adminEmail,
                 'intro' => $this->intro,

@@ -152,6 +152,8 @@ class PaymentService
             }
 
             $approvalService = app(ApprovalService::class);
+            $approvalService->notifyPaymentSuccessful($payment);
+
             foreach ($payment->paymentItems as $item) {
                 $car = $item->car;
                 if ($car) {
@@ -163,7 +165,8 @@ class PaymentService
                         $payment->plan_slug,
                         'pending',
                         null,
-                        $payment->payment_slug
+                        $payment->payment_slug,
+                        sendNotifications: false
                     );
                     // Log::channel('paystack')->info('Paystack webhook: approval created', ['approval' => $approvalService->createForCar(
                     //     $car->car_slug,

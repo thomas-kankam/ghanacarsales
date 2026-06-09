@@ -237,6 +237,8 @@ class PaymentController extends Controller
         });
         // Log::channel('paystack')->info('PaymentController: payment created', ['payment' => $payment]);
 
+        $this->approvalService->notifyPendingPaymentForPayment($payment);
+
         $paymentUrl = null;
             // $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
         if (config('services.paystack.secret_key')) {
