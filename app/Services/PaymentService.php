@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Mail\AdminPendingApproval;
-use App\Models\Admin;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
@@ -11,9 +9,7 @@ use App\Models\PaymentItem;
 use App\Models\Plan;
 use App\Traits\AppNotifications;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PaymentService
@@ -58,7 +54,7 @@ class PaymentService
                 'plan_slug'     => $planSlug,
                 'plan_price'    => $planPrice,
                 'amount'        => $amount,
-                'payment_method'=> $paymentMethod,
+                'payment_method' => $paymentMethod,
                 'status'        => 'pending',
                 'phone_number'  => $phoneNumber,
                 'network'       => $network,
@@ -100,7 +96,7 @@ class PaymentService
                 'plan_price'    => $plan->price,
                 'amount'        => $totalAmount,
                 'reference_id'  => $this->generateReference(),
-                'payment_method'=> $paymentMethod,
+                'payment_method' => $paymentMethod,
                 'status'        => 'pending',
                 'phone_number'  => $phoneNumber,
                 'network'       => $network,
@@ -118,6 +114,51 @@ class PaymentService
 
             return $payment;
         });
+    }
+
+    /**
+     * Mark payment failed and restore linked cars so the dealer can retry without re-entering data.
+     */
+    public function processPaymentFailure(Payment $payment): bool
+    {
+        return DB::transaction(function () use ($payment) {
+            $payment->refresh();
+
+            if ($payment->status === 'paid') {
+                return true;
+            }
+
+            if ($payment->status !== 'failed') {
+                $payment->update(['status' => 'failed']);
+            }
+
+            $payment->load('paymentItems.car');
+
+            foreach ($payment->paymentItems as $item) {
+                $car = $item->car;
+                if (! $car || ! in_array($car->status, ['pending_payment', 'pending_approval'], true)) {
+                    continue;
+                }
+
+                $car->update(['status' => $this->carStatusAfterPaymentFailure($car)]);
+            }
+
+            return true;
+        });
+    }
+
+    protected function carStatusAfterPaymentFailure(Car $car): string
+    {
+        if ($car->start_date !== null) {
+            return (
+                $car->expiry_date &&
+                strtotime($car->expiry_date) < time()
+            )
+                ? 'expired'
+                : 'published';
+        }
+
+        return 'draft';
     }
 
     public function processPayment(Payment $payment, ?string $reference_id): bool
@@ -168,88 +209,11 @@ class PaymentService
                         $payment->payment_slug,
                         sendNotifications: false
                     );
-                    // Log::channel('paystack')->info('Paystack webhook: approval created', ['approval' => $approvalService->createForCar(
-                    //     $car->car_slug,
-                    //     $dealer,
-                    //     $payment->plan_slug,
-                    //     'pending',
-                    //     null,
-                    //     $payment->payment_slug
-                    // )]);
                 }
             }
-
-            // $this->notifyAdminsPendingApproval($payment);
-
             return true;
         });
     }
-
-    // protected function notifyAdminsPendingApproval(Payment $payment): void
-    // {
-    //     try {
-    //         $admins = Admin::query()->where('is_active', true)->get(['name', 'email', 'phone_number']);
-    //         if ($admins->isEmpty()) {
-    //             return;
-    //         }
-
-    //         $carCount = $payment->paymentItems()->count();
-    //         $body = sprintf(
-    //             "A payment has been completed and listing(s) are now pending approval.\n\nReference: %s\nDealer: %s\nCars: %d\nPlan: %s\nAmount: %s",
-    //             $payment->reference_id ?? $payment->reference ?? 'N/A',
-    //             $payment->dealer_slug,
-    //             $carCount,
-    //             $payment->plan_name ?? $payment->plan_slug ?? 'N/A',
-    //             (string) $payment->amount
-    //         );
-
-    //         foreach ($admins as $admin) {
-    //             // if (!empty($admin->email)) {
-    //                 self::sendEmail(
-    //                     $admin->email,
-    //                     email_class: "App\Mail\AdminPendingApproval",
-    //                     parameters: [$admin->email, $body]
-    //                 );
-    //                 self::sendSms($admin->phone_number, $body);
-    //             // }
-
-    //             // if (!empty($admin->phone_number)) {
-    //             // }
-    //         }
-    //     } catch (\Throwable $e) {
-    //         Log::warning('Failed to notify admins for pending approval payment.', [
-    //             'payment_slug' => $payment->payment_slug,
-    //             'message' => $e->getMessage(),
-    //         ]);
-    //     }
-    // }
-
-    // protected function sendAdminSmsNotification(string $phoneNumber, string $message): void
-    // {
-    //     $apiKey = (string) config('services.mnotify.api_key');
-    //     $sender = (string) config('services.mnotify.sender_name', 'GhanaCars');
-    //     $sender = substr($sender, 0, 11);
-
-    //     if ($apiKey === '') {
-    //         return;
-    //     }
-
-    //     try {
-    //         Http::withHeaders([
-    //             'Accept' => 'application/json',
-    //         ])->post('https://api.mnotify.com/api/sms/quick', [
-    //             'key' => $apiKey,
-    //             'recipient' => [$phoneNumber],
-    //             'sender' => $sender,
-    //             'message' => $message,
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         Log::warning('Failed to send admin SMS notification.', [
-    //             'phone_number' => $phoneNumber,
-    //             'message' => $e->getMessage(),
-    //         ]);
-    //     }
-    // }
 
     protected function carService(): CarService
     {

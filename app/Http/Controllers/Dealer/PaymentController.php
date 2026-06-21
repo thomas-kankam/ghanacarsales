@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
@@ -84,120 +85,12 @@ class PaymentController extends Controller
             );
         }
 
-        // if ($data['plan_slug'] === 'friend_code') {
-        //     if (count($requestedCarSlugs) !== 1) {
-        //         return $this->apiResponse(
-        //             in_error: true,
-        //             message: "Friend code supports one car at a time",
-        //             status_code: self::API_BAD_REQUEST,
-        //             reason: "Use a separate dealer_code per car.",
-        //             data: []
-        //         );
-        //     }
-
-        //     if (empty($data['dealer_code'])) {
-        //         return $this->apiResponse(
-        //             in_error: true,
-        //             message: "Dealer code is required",
-        //             status_code: self::API_BAD_REQUEST,
-        //             reason: "dealer_code is required for friend code flow.",
-        //             data: []
-        //         );
-        //     }
-
-        //     if ($reason = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
-        //         return $this->apiResponse(
-        //             in_error: true,
-        //             message: "Invalid dealer code",
-        //             status_code: self::API_BAD_REQUEST,
-        //             reason: $reason,
-        //             data: []
-        //         );
-        //     }
-
-        //     if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
-        //         return $this->apiResponse(
-        //             in_error: true,
-        //             message: "Some selected cars cannot use this plan",
-        //             status_code: self::API_BAD_REQUEST,
-        //             reason: "Friend code can only be applied to draft, expired, or pending-payment cars.",
-        //             data: []
-        //         );
-        //     }
-
-        //     $response = DB::transaction(function () use ($dealer, $data, $plan, $requestedCarSlugs) {
-        //         $data['status']       = 'pending_approval';
-        //         $data['plan_slug']    = 'friend_code';
-        //         $data['plan_price']   = 0;
-        //         $data['plan_details'] = $data['plan_details'] ?? null;
-
-        //         $cars = Car::whereIn('car_slug', $requestedCarSlugs)
-        //             ->where('dealer_slug', $dealer->dealer_slug)
-        //             ->whereIn('status', ['pending_payment', 'expired', 'draft'])
-        //             ->lockForUpdate()
-        //             ->get();
-
-        //         if ($cars->count() !== count($requestedCarSlugs)) {
-        //             return $this->apiResponse(
-        //                 in_error: true,
-        //                 message: "Some selected cars cannot use this plan",
-        //                 status_code: self::API_BAD_REQUEST,
-        //                 reason: "Friend code can only be applied to draft, expired, or pending-payment cars.",
-        //                 data: []
-        //             );
-        //         }
-
-        //         $payment = $this->paymentService->createPaymentForCars(
-        //             $dealer,
-        //             $cars->all(),
-        //             $plan,
-        //             $data['phone_number'] ?? null,
-        //             $data['network'] ?? null,
-        //             'friend_code'
-        //         );
-        //         $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
-
-        //         foreach ($cars as $targetCar) {
-        //             $targetCar->update([
-        //                 'status'       => 'pending_approval',
-        //                 'plan_slug'    => 'friend_code',
-        //                 'plan_price'   => 0,
-        //                 'plan_details' => $data['plan_details'],
-        //             ]);
-
-        //             $this->approvalService->createForCar(
-        //                 $targetCar->car_slug,
-        //                 $dealer,
-        //                 'friend_code',
-        //                 'pending',
-        //                 $data['dealer_code'] ?? null,
-        //                 $payment->payment_slug
-        //             );
-        //         }
-
-        //         return $this->apiResponse(
-        //             in_error: false,
-        //             message: "Car submitted for friend code approval",
-        //             status_code: self::API_CREATED,
-        //             data: [
-        //                 'cars'        => $cars->load('dealer')->map(fn ($item) => CarTransformer::summary($item))->values()->all(),
-        //                 'payment'     => $this->paymentPayloadForFrontend($payment),
-        //             ],
-        //             reason: "Car submitted for friend code approval"
-        //         );
-        //     });
-
-        //     return $response;
-        // }
-
-        // Log::info('PaymentController: selected cars', ['selectedCars' => $selectedCars]);
-
-        if ($selectedCars->contains(fn ($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft'], true))) {
+        if ($selectedCars->contains(fn($selectedCar) => ! in_array($selectedCar->status, ['pending_payment', 'expired', 'draft', 'published'], true))) {
             return $this->apiResponse(
                 in_error: true,
                 message: "Some selected cars cannot be moved to payment",
                 status_code: self::API_BAD_REQUEST,
-                reason: "Paid plans can only be applied to draft, expired, or pending-payment cars.",
+                reason: "Paid plans can only be applied to draft, expired, published, or pending-payment cars.",
                 data: []
             );
         }
@@ -205,7 +98,7 @@ class PaymentController extends Controller
         $payment = DB::transaction(function () use ($dealer, $data, $plan, $requestedCarSlugs) {
             $cars = Car::whereIn('car_slug', $requestedCarSlugs)
                 ->where('dealer_slug', $dealer->dealer_slug)
-                ->whereIn('status', ['pending_payment', 'expired', 'draft'])
+                ->whereIn('status', ['pending_payment', 'expired', 'draft', 'published'])
                 ->lockForUpdate()
                 ->get();
 
@@ -240,7 +133,7 @@ class PaymentController extends Controller
         $this->approvalService->notifyPendingPaymentForPayment($payment);
 
         $paymentUrl = null;
-            // $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
+        // $callbackUrl = $data['callback_url'] ?? rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/api/payment/callback';
         if (config('services.paystack.secret_key')) {
             $result = $this->paystackService->initializeTransaction($payment, $dealer->email);
             if (! empty($result['authorization_url'])) {
@@ -263,7 +156,7 @@ class PaymentController extends Controller
             message: "Payment created successfully",
             status_code: self::API_CREATED,
             data: [
-                'cars'        => $cars->map(fn ($item) => CarTransformer::summary($item))->all(),
+                'cars'        => $cars->map(fn($item) => CarTransformer::summary($item))->all(),
                 'payment'     => $this->paymentPayloadForFrontend($payment),
                 'payment_url' => $paymentUrl,
                 'reference'   => $payment->reference_id,
@@ -292,15 +185,15 @@ class PaymentController extends Controller
 
             foreach ($admins as $admin) {
                 // if (!empty($admin->email)) {
-                    self::sendEmail(
-                        $admin->email,
-                        email_class: "App\Mail\AdminPendingApproval",
-                        parameters: [$admin->email, $body]
-                    );
+                self::sendEmail(
+                    $admin->email,
+                    email_class: "App\Mail\AdminPendingApproval",
+                    parameters: [$admin->email, $body]
+                );
                 // }
 
                 // if (!empty($admin->phone_number)) {
-                    self::sendSms($admin->phone_number, $body);
+                self::sendSms($admin->phone_number, $body);
                 // }
             }
         } catch (\Throwable $e) {
@@ -327,6 +220,18 @@ class PaymentController extends Controller
         ];
     }
 
+    protected function carsPayloadForPayment(Payment $payment): array
+    {
+        return $payment->paymentItems()
+            ->with('car.dealer')
+            ->get()
+            ->pluck('car')
+            ->filter()
+            ->map(fn(Car $car) => CarTransformer::summary($car))
+            ->values()
+            ->all();
+    }
+
     /**
      * Payment callback (browser redirect from Paystack). Backend resolves payment status (from DB or
      * by verifying with Paystack if webhook not yet received), then redirects to frontend success or failure.
@@ -350,6 +255,8 @@ class PaymentController extends Controller
             // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
         }
         if ($payment->status === 'failed') {
+            $this->paymentService->processPaymentFailure($payment);
+
             return redirect()->away("{$frontend}/app/payment/cancel");
             // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
         }
@@ -363,7 +270,7 @@ class PaymentController extends Controller
                 // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
             }
             if ($verified && ($verified['status'] ?? '') === 'failed') {
-                $payment->update(['status' => 'failed']);
+                $this->paymentService->processPaymentFailure($payment);
                 return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reference' => $reference]));
                 // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
             }
@@ -437,7 +344,7 @@ class PaymentController extends Controller
         }
 
         if (in_array($status, ['failed', 'abandoned'], true)) {
-            $payment->update(['status' => 'failed']);
+            $this->paymentService->processPaymentFailure($payment);
             return response()->json(['status' => 'ok', 'message' => 'Payment failed recorded'], 200);
         }
 
@@ -486,11 +393,17 @@ class PaymentController extends Controller
         }
 
         if ($payment->status === 'failed') {
+            $this->paymentService->processPaymentFailure($payment);
+
             return $this->apiResponse(
                 in_error: true,
                 message: "Payment failed",
                 status_code: self::API_SUCCESS,
-                data: $this->paymentPayloadForFrontend($payment->fresh())
+                data: array_merge(
+                    $this->paymentPayloadForFrontend($payment->fresh()),
+                    ['cars' => $this->carsPayloadForPayment($payment)]
+                ),
+                reason: "Payment failed. Your listing has been saved as a draft so you can try again."
             );
         }
 
@@ -506,12 +419,17 @@ class PaymentController extends Controller
                 );
             }
             if ($verified && ($verified['status'] ?? '') === 'failed') {
-                $payment->update(['status' => 'failed']);
+                $this->paymentService->processPaymentFailure($payment);
+
                 return $this->apiResponse(
                     in_error: true,
                     message: "Payment failed",
                     status_code: self::API_SUCCESS,
-                    data: $this->paymentPayloadForFrontend($payment->fresh())
+                    data: array_merge(
+                        $this->paymentPayloadForFrontend($payment->fresh()),
+                        ['cars' => $this->carsPayloadForPayment($payment)]
+                    ),
+                    reason: "Payment failed. Your listing has been saved as a draft so you can try again."
                 );
             }
         }

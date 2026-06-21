@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
@@ -39,12 +40,6 @@ class DealerCarController extends Controller
 
             $plan = Plan::where("plan_slug", $planSlug)->first();
 
-            /*
-        |--------------------------------------------------------------------------
-        | Draft
-        |--------------------------------------------------------------------------
-        */
-
             if ($isDraft) {
 
                 $data['status'] = 'draft';
@@ -61,77 +56,6 @@ class DealerCarController extends Controller
                     ]
                 );
             }
-
-            /*
-        |--------------------------------------------------------------------------
-        | Friend code: car (pending_approval) + payment (0) + payment_items + approval
-        |--------------------------------------------------------------------------
-        */
-
-            // if ($planSlug === 'friend_code') {
-            //     if (empty($data['dealer_code'])) {
-            //         return $this->apiResponse(
-            //             in_error: true,
-            //             message: "Dealer code is required",
-            //             status_code: self::API_BAD_REQUEST,
-            //             reason: "dealer_code is required for friend code flow.",
-            //             data: []
-            //         );
-            //     }
-
-            //     if ($reason = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
-            //         return $this->apiResponse(
-            //             in_error: true,
-            //             message: 'Invalid dealer code',
-            //             status_code: self::API_BAD_REQUEST,
-            //             reason: $reason,
-            //             data: []
-            //         );
-            //     }
-
-            //     $data['status']       = 'pending_approval';
-            //     $data['plan_slug']    = 'friend_code';
-            //     $data['plan_price']   = 0;
-            //     $data['plan_details'] = $data['plan_details'] ?? null;
-            //     $car                  = $this->carService->createCar($dealer, $data);
-            //     $this->approvalService->notifyAdminsCarUploaded($dealer, $car);
-
-            //     $payment = $this->paymentService->createPaymentForCars(
-            //         $dealer,
-            //         [$car],
-            //         $plan,
-            //         $data['phone_number'] ?? null,
-            //         $data['network'] ?? null,
-            //         'friend_code'
-            //     );
-            //     $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
-
-            //     $this->approvalService->createForCar(
-            //         $car->car_slug,
-            //         $dealer,
-            //         'friend_code',
-            //         'pending',
-            //         $data['dealer_code'] ?? null,
-            //         $payment->payment_slug
-            //     );
-
-            //     return $this->apiResponse(
-            //         in_error: false,
-            //         message: "Car submitted for friend code approval",
-            //         status_code: self::API_CREATED,
-            //         data: [
-            //             'car'         => CarTransformer::summary($car->load('dealer')),
-            //             'payment'     => $this->paymentPayloadForFrontend($payment),
-            //         ],
-            //         reason: "Car submitted for friend code approval"
-            //     );
-            // }
-
-            /*
-        |--------------------------------------------------------------------------
-        | Paid plan: car (pending_payment) + payment + payment_items
-        |--------------------------------------------------------------------------
-        */
 
             $data['status']       = 'pending_payment';
             $data['plan_slug']    = $plan->plan_slug;
@@ -157,10 +81,6 @@ class DealerCarController extends Controller
                     Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
                 }
             }
-            // if (! $paymentUrl) {
-            //     $paymentUrl = config('app.frontend_url', 'https://dealer.omnicarsgh.com') . '/app/payment/check?reference=' . $payment->reference_id;
-            //     // Log::channel('paystack')->info('DealerCarController: payment URL', ['payment_url' => $paymentUrl]);
-            // }
 
             $car->load('dealer');
             return $this->apiResponse(
@@ -428,69 +348,7 @@ class DealerCarController extends Controller
         if (!$plan) {
             return $this->apiResponse(in_error: true, message: "Invalid plan", status_code: self::API_BAD_REQUEST, data: []);
         }
-
-        // if ($data['plan_slug'] === 'friend_code') {
-        //     if (empty($data['dealer_code'])) {
-        //         return $this->apiResponse(
-        //             in_error: true,
-        //             message: "Dealer code is required",
-        //             status_code: self::API_BAD_REQUEST,
-        //             reason: "dealer_code is required for friend code flow.",
-        //             data: []
-        //         );
-        //     }
-
-        //     if ($err = $this->approvalService->friendCodeDealerCodeError($dealer, $data['dealer_code'])) {
-        //         return $this->apiResponse(
-        //             in_error: true,
-        //             message: 'Invalid dealer code',
-        //             status_code: self::API_BAD_REQUEST,
-        //             reason: $err,
-        //             data: []
-        //         );
-        //     }
-        // }
-
         return DB::transaction(function () use ($dealer, $car, $plan, $data) {
-            // if ($data['plan_slug'] === 'friend_code') {
-
-            //     $car->update([
-            //         'status'       => 'pending_approval',
-            //         'plan_slug'    => 'friend_code',
-            //         'plan_price'   => 0,
-            //         'plan_details' => $car->plan_details ?? null,
-            //         'region'       => $data['region'],
-            //         'location'     => $data['location'],
-            //     ]);
-            //     $payment = $this->paymentService->createPaymentForCars(
-            //         $dealer,
-            //         [$car],
-            //         $plan,
-            //         $data['phone_number'] ?? null,
-            //         $data['network'] ?? null,
-            //         'friend_code'
-            //     );
-            //     $payment->update(['amount' => 0, 'plan_price' => 0, 'status' => 'paid']);
-            //     $this->approvalService->createForCar(
-            //         $car->car_slug,
-            //         $dealer,
-            //         'friend_code',
-            //         'pending',
-            //         $data['dealer_code'] ?? null,
-            //         $payment->payment_slug
-            //     );
-            //     return $this->apiResponse(
-            //         in_error: false,
-            //         message: "Car submitted for approval",
-            //         status_code: self::API_SUCCESS,
-            //         data: [
-            //             'car'         => CarTransformer::summary($car->load('dealer')),
-            //             'payment'     => $this->paymentPayloadForFrontend($payment),
-            //         ],
-            //         reason: "Car submitted for friend code approval"
-            //     );
-            // }
-
             $car->update([
                 'status'       => 'pending_payment',
                 'plan_slug'    => $plan->plan_slug,
@@ -533,15 +391,40 @@ class DealerCarController extends Controller
     }
 
     /**
-     * Update car. Allowed only when status is draft or pending_approval.
+     * Update car details, change price on live listings, or start a subscription upgrade when plan_slug is sent.
      */
     public function updateCar(CarUploadRequest $request, Car $car): JsonResponse
     {
         $dealer = $request->user();
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
-        abort_if(!in_array($car->status, ['draft', 'pending_approval'], true), 403, 'You can only edit draft or pending-approval cars.');
 
         $data = $request->validated();
+
+        if (! empty($data['plan_slug'])) {
+            return $this->upgradeCarSubscription($request, $car, $data);
+        }
+
+        if (in_array($car->status, ['published', 'expired'], true)) {
+            $request->validate([
+                'price' => ['required', 'numeric', 'min:0'],
+            ]);
+
+            $car->update(['price' => $data['price']]);
+
+            return $this->apiResponse(
+                in_error: false,
+                message: "Car price updated successfully",
+                status_code: self::API_SUCCESS,
+                data: CarTransformer::summary($car->fresh('dealer'))
+            );
+        }
+
+        abort_if(
+            ! in_array($car->status, ['draft', 'pending_approval', 'pending_payment'], true),
+            403,
+            'You can only edit draft, pending-payment, or pending-approval cars.'
+        );
+
         unset($data['status'], $data['plan_slug'], $data['plan_price'], $data['plan_details']);
         $this->carService->updateCar($car, $data);
 
@@ -551,5 +434,70 @@ class DealerCarController extends Controller
             status_code: self::API_SUCCESS,
             data: CarTransformer::summary($car->fresh('dealer'))
         );
+    }
+
+    /**
+     * Upgrade or renew listing subscription (paid plan) for an existing car.
+     */
+    protected function upgradeCarSubscription(Request $request, Car $car, array $data): JsonResponse
+    {
+        $dealer = $request->user();
+
+        abort_if(
+            ! in_array($car->status, ['draft', 'pending_payment', 'expired', 'published'], true),
+            403,
+            'This listing cannot be upgraded in its current state.'
+        );
+
+        $plan = Plan::where('plan_slug', $data['plan_slug'])->first();
+        if (! $plan) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "Invalid plan",
+                status_code: self::API_BAD_REQUEST,
+                data: []
+            );
+        }
+
+        return DB::transaction(function () use ($dealer, $car, $plan, $data) {
+            $car->update([
+                'status'       => 'pending_payment',
+                'plan_slug'    => $plan->plan_slug,
+                'plan_price'   => $plan->price,
+                'plan_details' => $data['plan_details'] ?? $car->plan_details,
+            ]);
+
+            $payment = $this->paymentService->createPaymentForCars(
+                $dealer,
+                [$car->fresh()],
+                $plan,
+                $data['phone_number'] ?? null,
+                $data['network'] ?? null,
+                $data['payment_method'] ?? 'momo'
+            );
+
+            $this->approvalService->notifyPendingPayment($dealer, $car->fresh(), $payment);
+
+            $paymentUrl = null;
+            if (config('services.paystack.secret_key')) {
+                $result = $this->paystackService->initializeTransaction($payment, $dealer->email);
+                if (! empty($result['authorization_url'])) {
+                    $paymentUrl = $result['authorization_url'];
+                }
+            }
+
+            return $this->apiResponse(
+                in_error: false,
+                message: "Subscription upgrade initiated",
+                status_code: self::API_SUCCESS,
+                data: [
+                    'car'         => CarTransformer::summary($car->fresh('dealer')),
+                    'payment'     => $this->paymentPayloadForFrontend($payment),
+                    'payment_url' => $paymentUrl,
+                    'reference'   => $payment->reference_id,
+                ],
+                reason: "Complete payment to apply the new subscription plan."
+            );
+        });
     }
 }

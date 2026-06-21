@@ -28,13 +28,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Common routes (no authentication required)
-// Route::prefix('v1')->group(function () {
-//     Route::get('/brands', [\App\Http\Controllers\Api\V1\Common\BrandController::class, 'index']);
-// });
-
-// Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
-// Admin routes (admin.car.com)
 Route::prefix('admin')->group(function () {
     Route::post('/register', [AdminAuthController::class, 'register']);
     Route::post('/login', [AdminAuthController::class, 'login']);
@@ -142,11 +135,6 @@ Route::prefix('dealer')->group(function () {
         // publish all drafts
         Route::get('/publish_all_drafts', [DealerCarController::class, 'publishAllDrafts']);
 
-        // Sponsor approvals
-        // Route::get('/approvals', [DealerCarController::class, 'approvals']);
-        // Route::post('/approvals/{id}/approve', [DealerCarController::class, 'approveCar']);
-        // Route::post('/approvals/{id}/reject', [DealerCarController::class, 'rejectCar']);
-
         Route::get('/payment/summary', [PaymentController::class, 'getSummary']);
         Route::post('/create_payment/{car}', [PaymentController::class, 'createPayment']);
         Route::post('/check_payment', [PaymentController::class, 'checkPayment']);
@@ -156,19 +144,6 @@ Route::prefix('dealer')->group(function () {
         Route::get('/payment_history', [SubscriptionController::class, 'payments']);
     });
 });
-
-// Buyer routes (car.com)
-// Route::prefix('v1/buyer')->group(function () {
-//     // Public routes
-//     Route::get('/cars/search', [\App\Http\Controllers\Api\V1\Buyer\CarController::class, 'search'])
-//         ->middleware('throttle:search');
-//     Route::get('/cars/{id}', [\App\Http\Controllers\Api\V1\Buyer\CarController::class, 'show']);
-//     Route::get('/sellers/{sellerId}/cars', [\App\Http\Controllers\Api\V1\Buyer\CarController::class, 'getDealerCars']);
-
-//     // Alert routes
-//     Route::post('/alerts', [\App\Http\Controllers\Api\V1\Buyer\AlertController::class, 'create']);
-//     Route::post('/alerts/deactivate', [\App\Http\Controllers\Api\V1\Buyer\AlertController::class, 'deactivate']);
-// });
 
 // Public buyer catalog
 Route::get('/brands', [BrandController::class, 'index']);
