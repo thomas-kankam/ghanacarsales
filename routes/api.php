@@ -55,13 +55,14 @@ Route::prefix('admin')->group(function () {
 
         // Cars
         Route::get('/cars', [AdminCarController::class, 'index']);
+        Route::get('/cars/trashed/list', [AdminCarController::class, 'trashed']);
         Route::get('/cars/{id}', [AdminCarController::class, 'show']);
+        Route::put('/cars/{id}', [AdminCarController::class, 'update']);
         Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
         Route::post('/cars/{id}/reject', [AdminCarController::class, 'reject']);
         Route::post('/cars/{id}/revert-approval', [AdminCarController::class, 'revertApproval']);
         Route::post('/cars/{id}/force-expire', [AdminCarController::class, 'forceExpire']);
         Route::delete('/cars/{id}', [AdminCarController::class, 'destroy']);
-        Route::get('/cars/trashed/list', [AdminCarController::class, 'trashed']);
         Route::post('/cars/{id}/restore', [AdminCarController::class, 'restore']);
         Route::delete('/cars/{id}/force', [AdminCarController::class, 'forceDelete']);
 

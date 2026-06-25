@@ -117,7 +117,8 @@ class PaymentService
     }
 
     /**
-     * Mark payment failed and restore linked cars so the dealer can retry without re-entering data.
+     * Mark payment failed (including pending/abandoned attempts) and restore linked cars
+     * so the dealer can retry payment from draft.
      */
     public function processPaymentFailure(Payment $payment): bool
     {
@@ -149,16 +150,13 @@ class PaymentService
 
     protected function carStatusAfterPaymentFailure(Car $car): string
     {
-        if ($car->start_date !== null) {
-            return (
-                $car->expiry_date &&
-                strtotime($car->expiry_date) < time()
-            )
-                ? 'expired'
-                : 'published';
+        if ($car->start_date === null) {
+            return 'draft';
         }
 
-        return 'draft';
+        return ($car->expiry_date && $car->expiry_date->isPast())
+            ? 'expired'
+            : 'published';
     }
 
     public function processPayment(Payment $payment, ?string $reference_id): bool

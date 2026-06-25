@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminUpdateCarRequest;
 use App\Models\Approval;
 use App\Models\Car;
 use App\Models\Payment;
@@ -56,7 +57,7 @@ class AdminCarController extends Controller
         );
     }
 
-    public function show($id): JsonResponse
+    public function show(int $id): JsonResponse
     {
         $car = Car::with(['paymentItems.payment', 'dealer', 'latestApproval'])->findOrFail($id);
 
@@ -68,7 +69,36 @@ class AdminCarController extends Controller
         );
     }
 
-    public function approve(Request $request, $id): JsonResponse
+    /**
+     * Update listing details after payment/approval (published, expired, etc.).
+     */
+    public function update(AdminUpdateCarRequest $request, int $id): JsonResponse
+    {
+        $car = Car::findOrFail($id);
+
+        $editableStatuses = ['published', 'expired', 'pending_approval', 'rejected'];
+        if (! in_array($car->status, $editableStatuses, true)) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "Car cannot be updated in its current state",
+                status_code: self::API_BAD_REQUEST,
+                reason: "Only approved, listed, expired, pending-approval, or rejected cars can be updated by admin.",
+                data: ['status' => $car->status]
+            );
+        }
+
+        $data = $request->validated();
+        $this->carService->updateCar($car, $data);
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Car updated successfully",
+            status_code: self::API_SUCCESS,
+            data: CarTransformer::summary($car->fresh()->load(['paymentItems.payment', 'dealer', 'latestApproval']))
+        );
+    }
+
+    public function approve(Request $request, int $id): JsonResponse
     {
         $car = Car::findOrFail($id);
         $approval = Approval::where('car_slug', $car->car_slug)->whereIn('status', ['pending'])->latest()->first();
@@ -97,7 +127,7 @@ class AdminCarController extends Controller
         );
     }
 
-    public function reject(Request $request, $id): JsonResponse
+    public function reject(Request $request, int $id): JsonResponse
     {
         $car = Car::findOrFail($id);
         $approval = Approval::where('car_slug', $car->car_slug)->whereIn('status', ['pending'])->latest()->first();
@@ -119,7 +149,7 @@ class AdminCarController extends Controller
         );
     }
 
-    public function forceExpire($id): JsonResponse
+    public function forceExpire(int $id): JsonResponse
     {
         $car = Car::findOrFail($id);
 
@@ -142,7 +172,7 @@ class AdminCarController extends Controller
      * Revert car from published/rejected/expired back to pending_approval.
      * Resets the latest approval for this car to pending and sets car status to pending_approval.
      */
-    public function revertApproval(Request $request, $id): JsonResponse
+    public function revertApproval(Request $request, int $id): JsonResponse
     {
         $car = Car::findOrFail($id);
         $approval = Approval::where('car_slug', $car->car_slug)->latest()->first();
@@ -166,7 +196,7 @@ class AdminCarController extends Controller
         );
     }
 
-    public function destroy($id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         $car = Car::findOrFail($id);
         $car->delete();
@@ -204,7 +234,7 @@ class AdminCarController extends Controller
         );
     }
 
-    public function restore($id): JsonResponse
+    public function restore(int $id): JsonResponse
     {
         $car = Car::onlyTrashed()->findOrFail($id);
         $car->restore();
@@ -217,7 +247,7 @@ class AdminCarController extends Controller
         );
     }
 
-    public function forceDelete($id): JsonResponse
+    public function forceDelete(int $id): JsonResponse
     {
         $car = Car::onlyTrashed()->findOrFail($id);
         $car->forceDelete();

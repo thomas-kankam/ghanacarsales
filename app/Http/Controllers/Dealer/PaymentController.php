@@ -269,7 +269,7 @@ class PaymentController extends Controller
                 return redirect()->away("{$frontend}/app/payment/success");
                 // return redirect()->away("{$frontend}/payment/success?" . http_build_query(['reference' => $reference]));
             }
-            if ($verified && ($verified['status'] ?? '') === 'failed') {
+            if ($verified && $this->isTerminalPaymentFailure($verified['status'] ?? '')) {
                 $this->paymentService->processPaymentFailure($payment);
                 return redirect()->away("{$frontend}/app/payment/cancel?" . http_build_query(['reference' => $reference]));
                 // return redirect()->away("{$frontend}/payment/failure?" . http_build_query(['reference' => $reference]));
@@ -418,7 +418,7 @@ class PaymentController extends Controller
                     data: $this->paymentPayloadForFrontend($payment->fresh())
                 );
             }
-            if ($verified && ($verified['status'] ?? '') === 'failed') {
+            if ($verified && $this->isTerminalPaymentFailure($verified['status'] ?? '')) {
                 $this->paymentService->processPaymentFailure($payment);
 
                 return $this->apiResponse(
@@ -440,5 +440,10 @@ class PaymentController extends Controller
             status_code: self::API_SUCCESS,
             data: $this->paymentPayloadForFrontend($payment->fresh())
         );
+    }
+
+    protected function isTerminalPaymentFailure(string $status): bool
+    {
+        return in_array($status, ['failed', 'abandoned'], true);
     }
 }
