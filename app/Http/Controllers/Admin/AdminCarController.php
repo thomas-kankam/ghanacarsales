@@ -76,16 +76,16 @@ class AdminCarController extends Controller
     {
         $car = Car::findOrFail($id);
 
-        $editableStatuses = ['published', 'expired', 'pending_approval', 'rejected'];
-        if (! in_array($car->status, $editableStatuses, true)) {
-            return $this->apiResponse(
-                in_error: true,
-                message: "Car cannot be updated in its current state",
-                status_code: self::API_BAD_REQUEST,
-                reason: "Only approved, listed, expired, pending-approval, or rejected cars can be updated by admin.",
-                data: ['status' => $car->status]
-            );
-        }
+        // $editableStatuses = ['published', 'expired', 'pending_approval', 'rejected'];
+        // if (! in_array($car->status, $editableStatuses, true)) {
+        //     return $this->apiResponse(
+        //         in_error: true,
+        //         message: "Car cannot be updated in its current state",
+        //         status_code: self::API_BAD_REQUEST,
+        //         reason: "Only approved, listed, expired, pending-approval, or rejected cars can be updated by admin.",
+        //         data: ['status' => $car->status]
+        //     );
+        // }
 
         $data = $request->validated();
         $this->carService->updateCar($car, $data);
