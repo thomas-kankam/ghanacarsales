@@ -26,6 +26,27 @@ class CarSearchService
 
     protected function applyFilters(Builder $query, array $filters): void
     {
+        if (!empty($filters['search'])) {
+            $terms = preg_split('/\s+/', trim($filters['search']), -1, PREG_SPLIT_NO_EMPTY);
+
+            foreach ($terms as $term) {
+                $like = '%' . $term . '%';
+                $query->where(function (Builder $q) use ($like) {
+                    $q->where('brand', 'like', $like)
+                        ->orWhere('model', 'like', $like)
+                        ->orWhere('description', 'like', $like)
+                        ->orWhere('location', 'like', $like)
+                        ->orWhere('region', 'like', $like)
+                        ->orWhere('colour', 'like', $like)
+                        ->orWhere('car_slug', 'like', $like)
+                        ->orWhereRaw(
+                            "CONCAT(COALESCE(brand, ''), ' ', COALESCE(model, '')) LIKE ?",
+                            [$like]
+                        );
+                });
+            }
+        }
+
         if (isset($filters['brand'])) {
             $query->where('brand', $filters['brand']);
         }

@@ -13,6 +13,7 @@ class BuyerSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'search'       => ['nullable', 'string', 'max:255'],
             'brand'        => ['nullable', 'string', 'max:100'],
             'model'        => ['nullable', 'string', 'max:100'],
             'min_year'     => ['nullable', 'integer', 'min:1900'],
