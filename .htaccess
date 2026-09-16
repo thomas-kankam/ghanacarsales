@@ -1,0 +1,42 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Allow large base64 car-image JSON bodies (64 MiB). Apache default is unlimited,
+# but some hosts set a smaller LimitRequestBody which returns HTTP 413.
+LimitRequestBody 67108864
+
+# Raise PHP limits for base64 car image uploads (Apache + mod_php only).
+# With PHP-FPM these php_value lines are ignored — use .user.ini / php.ini instead.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 64M
+    php_value post_max_size 64M
+    php_value memory_limit 256M
+    php_value max_execution_time 120
+    php_value max_input_time 120
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 64M
+    php_value post_max_size 64M
+    php_value memory_limit 256M
+    php_value max_execution_time 120
+    php_value max_input_time 120
+</IfModule>

@@ -245,6 +245,34 @@ chmod -R 775 storage
 chmod -R 775 bootstrap/cache
 ```
 
+### 413 Content Too Large on car upload (JPG / base64)
+
+Car uploads send images as base64 inside JSON. A few phone JPGs often exceed PHP’s default **`post_max_size`** (commonly 2M–8M). Laravel then returns **413 Content Too Large**.
+
+On **Apache**, fix PHP (and optionally Apache body) limits:
+
+1. **PHP** (required) — in `php.ini`, cPanel MultiPHP INI Editor, FPM pool, or the app-root `.user.ini`:
+
+```ini
+upload_max_filesize = 64M
+post_max_size = 64M
+memory_limit = 256M
+```
+
+Then restart Apache / PHP-FPM.
+
+2. **Apache** — ensure `AllowOverride All` for the site so `.htaccess` applies. The repo `.htaccess` already sets `LimitRequestBody 67108864` (64 MiB) and `php_value` limits for mod_php.
+
+See `deploy/apache-upload-limits.conf` for a VirtualHost example.
+
+Confirm live values:
+
+```bash
+php -i | grep -E 'post_max_size|upload_max_filesize'
+```
+
+(or a temporary `phpinfo()` page on the same vhost).
+
 ## Next Steps
 
 1. Configure SMS provider

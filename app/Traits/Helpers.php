@@ -41,17 +41,78 @@ trait Helpers
         }
 
         if (preg_match('/^data:image\/(\w+);base64,/', $base64_image, $matches)) {
-            $image_extension = $matches[1];
-            $image_data      = substr($base64_image, strpos($base64_image, ',') + 1);
+            $image_extension = strtolower($matches[1]);
+            if ($image_extension === 'jpeg') {
+                $image_extension = 'jpg';
+            }
+
+            $image_data = base64_decode(substr($base64_image, strpos($base64_image, ',') + 1), true);
+            if ($image_data === false || $image_data === '') {
+                return null;
+            }
+
+            $image_data = static::compressImageBinary($image_data, $image_extension);
 
             $fileName  = Str::random(15) . '.' . $image_extension;
             $file_path = "uploads/cars/" . $fileName;
 
-            Storage::disk("public")->put($file_path, base64_decode($image_data));
-            return config("custom.urls.backend_url")  . "/storage/" . $file_path;
+            Storage::disk("public")->put($file_path, $image_data);
+            return rtrim((string) config("custom.urls.backend_url"), '/') . "/storage/" . $file_path;
         }
 
         return null;
+    }
+
+    /**
+     * Resize large photos and re-encode JPGs so stored files stay reasonable.
+     * Does not shrink the incoming HTTP body — raise nginx/PHP body limits for that.
+     */
+    protected static function compressImageBinary(string $binary, string &$extension): string
+    {
+        if (! function_exists('imagecreatefromstring')) {
+            return $binary;
+        }
+
+        $image = @imagecreatefromstring($binary);
+        if ($image === false) {
+            return $binary;
+        }
+
+        $width  = imagesx($image);
+        $height = imagesy($image);
+        $maxDim = 1920;
+
+        if ($width > $maxDim || $height > $maxDim) {
+            $scale = min($maxDim / $width, $maxDim / $height);
+            $newW  = max(1, (int) round($width * $scale));
+            $newH  = max(1, (int) round($height * $scale));
+            $resized = imagecreatetruecolor($newW, $newH);
+
+            if (in_array($extension, ['png', 'webp'], true)) {
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+            }
+
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $width, $height);
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        ob_start();
+        if ($extension === 'png') {
+            imagepng($image, null, 6);
+        } elseif ($extension === 'webp' && function_exists('imagewebp')) {
+            imagewebp($image, null, 80);
+        } else {
+            // Normalize camera photos (jpg/jpeg and unknowns) to jpg
+            $extension = 'jpg';
+            imagejpeg($image, null, 82);
+        }
+        imagedestroy($image);
+
+        $compressed = ob_get_clean();
+
+        return $compressed !== false && $compressed !== '' ? $compressed : $binary;
     }
 
     protected static function deleteImage(?string $image_path): bool
