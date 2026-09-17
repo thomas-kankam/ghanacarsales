@@ -106,7 +106,7 @@ class DealerCarController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'file', 'image', 'max:20480'], // 20MB
+            'image' => ['required', 'file', 'image'], // 20MB
         ]);
 
         $url = $this->carService->storeImage($request->file('image'));
