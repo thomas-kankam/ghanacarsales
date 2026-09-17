@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Services\CatalogCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,9 @@ use Illuminate\Validation\ValidationException;
 
 class AdminPlanController extends Controller
 {
+    public function __construct(private CatalogCacheService $catalogCache)
+    {
+    }
     public function index(Request $request): JsonResponse
     {
         $plans = Plan::query()
@@ -49,6 +53,8 @@ class AdminPlanController extends Controller
             return $plan->fresh();
         });
 
+        $this->catalogCache->forgetPlans();
+
         return $this->apiResponse(
             in_error: false,
             message: "Plan created successfully",
@@ -82,6 +88,8 @@ class AdminPlanController extends Controller
             }
         });
 
+        $this->catalogCache->forgetPlans();
+
         return $this->apiResponse(
             in_error: false,
             message: "Plan updated successfully",
@@ -94,6 +102,8 @@ class AdminPlanController extends Controller
     {
         $plan = Plan::findOrFail($id);
         $plan->delete();
+
+        $this->catalogCache->forgetPlans();
 
         return $this->apiResponse(
             in_error: false,

@@ -24,10 +24,10 @@ class AdminCarController extends Controller
     public function index(Request $request): JsonResponse
     {
         // also attach the approval fields if it exists in Approval else display null
-        $query = Car::with(['dealer', 'latestApproval'])
-        ->where('status', '!=', 'draft')
-        ->whereNull('deleted_at')
-        ->orderByDesc('created_at');
+        $query = Car::with(['dealer', 'latestApproval', 'paymentItems.payment'])
+            ->where('status', '!=', 'draft')
+            ->whereNull('deleted_at')
+            ->orderByDesc('created_at');
 
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
@@ -36,7 +36,7 @@ class AdminCarController extends Controller
         $cars = $query->paginate((int) $request->get('per_page', 20));
 
         $items = collect($cars->items())
-            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer', 'latestApproval'])))
+            ->map(fn ($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [
@@ -205,6 +205,7 @@ class AdminCarController extends Controller
     {
         $car = Car::findOrFail($id);
         $car->delete();
+        app(\App\Services\CatalogCacheService::class)->forgetHotListings();
 
         return $this->apiResponse(
             in_error: false,
@@ -215,10 +216,12 @@ class AdminCarController extends Controller
 
     public function trashed(Request $request): JsonResponse
     {
-        $cars = Car::onlyTrashed()->paginate((int) $request->get('per_page', 20));
+        $cars = Car::onlyTrashed()
+            ->with(['dealer', 'latestApproval', 'paymentItems.payment'])
+            ->paginate((int) $request->get('per_page', 20));
 
         $items = collect($cars->items())
-            ->map(fn($car) => CarTransformer::summary($car->load(['paymentItems.payment', 'dealer', 'latestApproval'])))
+            ->map(fn ($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [

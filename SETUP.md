@@ -280,11 +280,13 @@ See `deploy/directadmin-modsecurity-custom-httpd.conf`.
 `POST /api/dealer/upload_car_image` with multipart field `image` returns `{ url }`.
 Then call `upload_car` with `"images": ["https://..."]` only (no base64).
 
-## Next Steps
+### Performance (shared hosting)
 
-1. Configure SMS provider
-2. Integrate MoMo payment gateway
-3. Set up email service
-4. Configure production environment
-5. Set up monitoring and logging
-6. Write tests
+This app defaults to **file cache** (`CACHE_DRIVER=file`) — no Redis required.
+
+- Brands + plans are cached ~1 hour and cleared when admin updates them
+- Default buyer browse page + `GET /api/hot_cars` are cached ~2 minutes
+- Optional `CDN_URL=` in `.env` prefixes new image URLs (e.g. Cloudflare)
+- After deploy run: `php artisan migrate` (adds search/filter indexes)
+
+Ensure `storage/framework/cache` is writable by the web user.

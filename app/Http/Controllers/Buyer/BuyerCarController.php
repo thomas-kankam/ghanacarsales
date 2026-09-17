@@ -6,26 +6,28 @@ use App\Http\Requests\Buyer\BuyerSearchRequest;
 use App\Models\Car;
 use App\Models\View;
 use App\Services\CarSearchService;
+use App\Services\CatalogCacheService;
 use App\Transformers\CarTransformer;
 use Illuminate\Http\JsonResponse;
 
 class BuyerCarController extends Controller
 {
-    public function __construct(private CarSearchService $searchService)
-    {
-
+    public function __construct(
+        private CarSearchService $searchService,
+        private CatalogCacheService $catalogCache
+    ) {
     }
 
     public function search(BuyerSearchRequest $request): JsonResponse
     {
         $filters = $request->validated();
-        $perPage = $request->get('per_page', 15);
+        $perPage = (int) $request->get('per_page', 15);
 
         $results = $this->searchService->search($filters, $perPage);
 
+        // dealer already eager-loaded in CarSearchService
         $items = $results->getCollection()
-            ->load(['dealer'])
-            ->map(fn($car) => CarTransformer::summary($car))
+            ->map(fn ($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [
@@ -44,6 +46,22 @@ class BuyerCarController extends Controller
             reason: "Action successful",
             status_code: self::API_SUCCESS,
             data: $payload
+        );
+    }
+
+    /**
+     * Cached hot/recent published cars for homepage (file cache, shared-host friendly).
+     */
+    public function hot(): JsonResponse
+    {
+        $limit = min(30, max(1, (int) request()->get('limit', 12)));
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Hot listings retrieved successfully",
+            reason: "Action successful",
+            status_code: self::API_SUCCESS,
+            data: $this->catalogCache->hotListings($limit)
         );
     }
 
@@ -73,7 +91,7 @@ class BuyerCarController extends Controller
             ->paginate(15);
 
         $items = $cars->getCollection()
-            ->map(fn($car) => CarTransformer::summary($car))
+            ->map(fn ($car) => CarTransformer::summary($car))
             ->all();
 
         $payload = [

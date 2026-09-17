@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\CarModel;
+use App\Services\CatalogCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,9 @@ use Illuminate\Support\Str;
 
 class AdminBrandController extends Controller
 {
+    public function __construct(private CatalogCacheService $catalogCache)
+    {
+    }
     public function index(Request $request): JsonResponse
     {
         $brands = Brand::with('models')
@@ -123,6 +127,8 @@ class AdminBrandController extends Controller
             return $brand->fresh('models');
         });
 
+        $this->catalogCache->forgetBrands();
+
         return $this->apiResponse(
             in_error: false,
             message: "Brand created successfully",
@@ -187,6 +193,8 @@ class AdminBrandController extends Controller
             return $brand->fresh('models');
         });
 
+        $this->catalogCache->forgetBrands();
+
         return $this->apiResponse(
             in_error: false,
             message: "Brand updated successfully",
@@ -203,6 +211,8 @@ class AdminBrandController extends Controller
             self::deleteImage($brand->image);
             $brand->delete();
         });
+
+        $this->catalogCache->forgetBrands();
 
         return $this->apiResponse(
             in_error: false,

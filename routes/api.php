@@ -154,6 +154,7 @@ Route::get('/brands/{id}', [BrandController::class, 'show']);
 Route::get('/brands/{id}/models', [BrandController::class, 'models']);
 
 Route::get('/all_cars', [BuyerCarController::class, 'search']);
+Route::get('/hot_cars', [BuyerCarController::class, 'hot']);
 Route::get('/cars/{car}', [BuyerCarController::class, 'show']);
 Route::get('/dealers/{dealer_slug}/cars', [BuyerCarController::class, 'getDealerCars']);
 

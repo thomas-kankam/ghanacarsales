@@ -87,9 +87,11 @@ trait Helpers
         $fileName  = Str::random(15) . '.' . $extension;
         $file_path = "uploads/cars/" . $fileName;
 
-        Storage::disk("public")->put($file_path, $binary);
+            Storage::disk("public")->put($file_path, $binary);
 
-        return rtrim((string) config("custom.urls.backend_url"), '/') . "/storage/" . $file_path;
+        $cdn = rtrim((string) (config("custom.urls.cdn_url") ?: config("custom.urls.backend_url")), '/');
+
+        return $cdn . "/storage/" . $file_path;
     }
 
     /**

@@ -5,19 +5,22 @@ namespace App\Http\Controllers\General;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\CarModel;
+use App\Services\CatalogCacheService;
 use Illuminate\Http\JsonResponse;
 
 class BrandController extends Controller
 {
+    public function __construct(private CatalogCacheService $catalogCache)
+    {
+    }
+
     public function index(): JsonResponse
     {
-        $brands = Brand::with('models')->orderBy('name')->get();
-
         return $this->apiResponse(
             in_error: false,
             message: "Brands retrieved successfully",
             status_code: self::API_SUCCESS,
-            data: $brands->map(fn (Brand $brand) => $this->transformBrand($brand))->values()->all()
+            data: $this->catalogCache->brands()
         );
     }
 
@@ -70,4 +73,3 @@ class BrandController extends Controller
         ];
     }
 }
-

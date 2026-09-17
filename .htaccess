@@ -23,3 +23,10 @@
 # Safe on most Apache hosts. Do NOT put SecRequestBody* or php_value here —
 # DirectAdmin/PHP-FPM often rejects them and returns 500 for every request.
 LimitRequestBody 67108864
+
+# Browser-cache public uploaded images when served from /storage (shared hosting).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(?i:jpe?g|png|gif|webp|svg)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+</IfModule>

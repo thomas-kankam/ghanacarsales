@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Traits\Helpers;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +29,7 @@ class CarService
             }
 
             $car = Car::create($data);
+            $this->forgetCatalogCaches();
 
             return $car;
         });
@@ -36,7 +38,6 @@ class CarService
     public function updateCar(Car $car, array $data): Car
     {
         return DB::transaction(function () use ($car, $data) {
-            // dealer_id & slug are immutable here
             unset($data['dealer_slug'], $data['car_slug']);
 
             if (isset($data['images']) && is_array($data['images'])) {
@@ -47,22 +48,17 @@ class CarService
             }
 
             $car->update($data);
+            $this->forgetCatalogCaches();
 
             return $car;
         });
     }
 
-    /**
-     * Store a single multipart image and return its public URL.
-     */
     public function storeImage(\Illuminate\Http\UploadedFile $file): ?string
     {
         return static::storeUploadedImage($file);
     }
 
-    /**
-     * Activate/publish a car with start and expiry dates.
-     */
     public function activateCar(Car $car, int $durationDays): Car
     {
         $startDate = now();
@@ -72,12 +68,10 @@ class CarService
             'start_date'  => $startDate,
             'expiry_date' => $expiryDate,
         ]);
+        $this->forgetCatalogCaches();
         return $car;
     }
 
-    /**
-     * Delete cars that have been expired for more than 5 days.
-     */
     public function deleteExpiredCars(): int
     {
         $expiredCars = Car::where('status', 'expired')
@@ -103,12 +97,12 @@ class CarService
             $dealerName = $car->dealer?->full_name ?? $car->dealer?->business_name ?? 'Unknown dealer';
             Log::info("Deleted car: {$car->car_slug} - {$dealerName}");
         }
+        if ($count > 0) {
+            $this->forgetCatalogCaches();
+        }
         return $count;
     }
 
-    /**
-     * Mark published cars past expiry_date as expired.
-     */
     public function markExpiredCars(): int
     {
         $cars = Car::where('status', 'published')
@@ -126,6 +120,17 @@ class CarService
             $dealerName = $car->dealer?->full_name ?? $car->dealer?->business_name ?? 'Unknown dealer';
             Log::info("Expired car: {$car->car_slug} - {$dealerName}");
         }
+        if ($count > 0) {
+            $this->forgetCatalogCaches();
+        }
         return $count;
+    }
+
+    protected function forgetCatalogCaches(): void
+    {
+        app(CatalogCacheService::class)->forgetHotListings();
+        Cache::forget('catalog.cars.browse.15.1');
+        Cache::forget('catalog.cars.browse.100.1');
+        Cache::forget('catalog.cars.browse.12.1');
     }
 }
