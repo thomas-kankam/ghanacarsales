@@ -88,8 +88,10 @@ class AdminCarController extends Controller
         // }
 
         $data = $request->validated();
-        if ($request->hasFile('images') || $request->filled('images')) {
+        if ($request->hasImageInputs()) {
             $data['images'] = $request->imageInputs();
+        } else {
+            unset($data['images']);
         }
         $this->carService->updateCar($car, $data);
 

@@ -53,11 +53,11 @@ Route::prefix('admin')->group(function () {
         Route::delete('/dealers/{id}/force', [AdminDealerController::class, 'forceDelete']);
         Route::get('/dealer-codes', [AdminDealerController::class, 'dealerCodes']);
 
-        // Cars
+        // Cars — use POST for multipart image updates (PHP does not parse files on PUT)
         Route::get('/cars', [AdminCarController::class, 'index']);
         Route::get('/cars/trashed/list', [AdminCarController::class, 'trashed']);
         Route::get('/cars/{id}', [AdminCarController::class, 'show']);
-        Route::put('/cars/{id}', [AdminCarController::class, 'update']);
+        Route::match(['put', 'post'], '/cars/{id}', [AdminCarController::class, 'update']);
         Route::post('/cars/{id}/approve', [AdminCarController::class, 'approve']);
         Route::post('/cars/{id}/reject', [AdminCarController::class, 'reject']);
         Route::post('/cars/{id}/revert-approval', [AdminCarController::class, 'revertApproval']);
@@ -72,11 +72,11 @@ Route::prefix('admin')->group(function () {
         Route::put('/plans/{id}', [AdminPlanController::class, 'update']);
         Route::delete('/plans/{id}', [AdminPlanController::class, 'destroy']);
 
-        // Brands and models
+        // Brands and models — POST update for multipart brand image
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
         Route::get('/brands/{id}', [AdminBrandController::class, 'show']);
-        Route::put('/brands/{id}', [AdminBrandController::class, 'update']);
+        Route::match(['put', 'post'], '/brands/{id}', [AdminBrandController::class, 'update']);
         Route::delete('/brands/{id}', [AdminBrandController::class, 'destroy']);
 
         // Billing
@@ -117,9 +117,10 @@ Route::prefix('dealer')->group(function () {
 
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
-        Route::post('/upload_car', [DealerCarController::class, 'uploadCar']); // multipart/form-data; images[] files max 5MB
+        Route::post('/upload_car', [DealerCarController::class, 'uploadCar']); // multipart/form-data; images[] max 5MB
         Route::post('/upload_car_image', [DealerCarController::class, 'uploadImage']); // multipart field: image, max 5MB
-        Route::put('/cars/{car}', [DealerCarController::class, 'updateCar']); // multipart/form-data for image updates
+        // POST required for multipart image edits (PHP does not parse files on PUT)
+        Route::match(['put', 'post'], '/cars/{car}', [DealerCarController::class, 'updateCar']);
         Route::post('/drafts/{car}/publish', [DealerCarController::class, 'publishDraft']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
@@ -132,7 +133,7 @@ Route::prefix('dealer')->group(function () {
         // Draft workflow
         Route::get('/drafts', [DealerCarController::class, 'listDrafts']);
         Route::get('/drafts/{car}', [DealerCarController::class, 'getDraft']);
-        Route::post('/drafts', [DealerCarController::class, 'saveDraft']); // multipart/form-data; images[] files max 5MB
+        Route::post('/drafts', [DealerCarController::class, 'saveDraft']); // multipart/form-data; images[] max 5MB
 
         // publish all drafts
         Route::get('/publish_all_drafts', [DealerCarController::class, 'publishAllDrafts']);

@@ -1,13 +1,14 @@
 <?php
 namespace App\Http\Requests\Dealer;
 
+use App\Http\Requests\Concerns\ValidatesMultipartImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Validator;
 
 class UploadCarImageRequest extends FormRequest
 {
-    public const MAX_IMAGE_KB = 5120; // 5MB
+    use ValidatesMultipartImages;
 
     public function authorize(): bool
     {
@@ -28,12 +29,7 @@ class UploadCarImageRequest extends FormRequest
 
     public function messages(): array
     {
-        return [
-            'image.required' => 'An image file is required (multipart field name: image).',
-            'image.file'     => 'Image must be uploaded as multipart/form-data.',
-            'image.image'    => 'The file must be a valid image.',
-            'image.max'      => 'Image must not exceed 5MB.',
-        ];
+        return $this->multipartImageMessages();
     }
 
     public function withValidator(Validator $validator): void

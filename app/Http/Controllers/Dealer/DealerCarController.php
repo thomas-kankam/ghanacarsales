@@ -34,7 +34,11 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
         $data   = $request->validated();
-        $data['images'] = $request->imageInputs();
+        if ($request->hasImageInputs()) {
+            $data['images'] = $request->imageInputs();
+        } else {
+            unset($data['images']);
+        }
         return DB::transaction(function () use ($dealer, $data) {
 
             $isDraft  = ($data['status'] ?? '') === 'draft';
@@ -141,7 +145,11 @@ class DealerCarController extends Controller
     {
         $dealer         = $request->user();
         $data           = $request->validated();
-        $data['images'] = $request->imageInputs();
+        if ($request->hasImageInputs()) {
+            $data['images'] = $request->imageInputs();
+        } else {
+            unset($data['images']);
+        }
         $data['status'] = 'draft';
         $car            = $this->carService->createCar($dealer, $data);
         $car->load('dealer');
@@ -427,7 +435,11 @@ class DealerCarController extends Controller
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
 
         $data = $request->validated();
-        $data['images'] = $request->imageInputs();
+        if ($request->hasImageInputs()) {
+            $data['images'] = $request->imageInputs();
+        } else {
+            unset($data['images']);
+        }
 
         if (! empty($data['plan_slug'])) {
             return $this->upgradeCarSubscription($request, $car, $data);

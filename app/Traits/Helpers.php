@@ -93,7 +93,8 @@ trait Helpers
     }
 
     /**
-     * Normalize any image input (URL, base64 data-URI, or uploaded file) to a public URL.
+     * Normalize multipart file or existing public URL to a stored public URL.
+     * Base64 data-URIs are not accepted.
      */
     protected static function normalizeCarImage(mixed $img): ?string
     {
@@ -101,13 +102,21 @@ trait Helpers
             return static::storeUploadedImage($img);
         }
 
-        if (! is_string($img)) {
+        if (! is_string($img) || trim($img) === '') {
             return null;
         }
 
-        return str_starts_with($img, 'data:')
-            ? static::base64ImageDecode($img)
-            : $img;
+        $img = trim($img);
+
+        if (str_starts_with($img, 'data:')) {
+            return null;
+        }
+
+        if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+            return $img;
+        }
+
+        return null;
     }
 
     /**
