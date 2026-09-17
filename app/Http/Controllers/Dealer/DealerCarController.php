@@ -100,13 +100,16 @@ class DealerCarController extends Controller
     }
 
     /**
-     * Upload one car image as multipart/form-data (field: image).
-     * Prefer this over base64 in upload_car — avoids ModSecurity 413 on JSON bodies.
+     * Upload one car image as multipart/form-data (field name: image).
+     * Do NOT send base64 JSON here — that still triggers ModSecurity 413.
+     *
+     * Frontend: FormData with append('image', fileBlob) and Content-Type multipart
+     * (do not set Content-Type manually; the browser sets the boundary).
      */
     public function uploadImage(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'file', 'image'], // 20MB
+            'image' => ['required', 'file', 'image', 'max:20480'], // 20MB
         ]);
 
         $url = $this->carService->storeImage($request->file('image'));
