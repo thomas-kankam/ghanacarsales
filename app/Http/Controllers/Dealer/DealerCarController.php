@@ -33,6 +33,7 @@ class DealerCarController extends Controller
     {
         $dealer = $request->user();
         $data   = $request->validated();
+        $data['images'] = $request->imageInputs();
         return DB::transaction(function () use ($dealer, $data) {
 
             $isDraft  = ($data['status'] ?? '') === 'draft';
@@ -98,6 +99,36 @@ class DealerCarController extends Controller
         });
     }
 
+    /**
+     * Upload one car image as multipart/form-data (field: image).
+     * Prefer this over base64 in upload_car — avoids ModSecurity 413 on JSON bodies.
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'file', 'image', 'max:20480'], // 20MB
+        ]);
+
+        $url = $this->carService->storeImage($request->file('image'));
+
+        if (! $url) {
+            return $this->apiResponse(
+                in_error: true,
+                message: "Image upload failed",
+                reason: "Could not store image",
+                status_code: self::API_FAIL
+            );
+        }
+
+        return $this->apiResponse(
+            in_error: false,
+            message: "Image uploaded successfully",
+            reason: "Action successful",
+            status_code: self::API_CREATED,
+            data: ['url' => $url]
+        );
+    }
+
     protected function paymentPayloadForFrontend(Payment $payment): array
     {
         return [
@@ -114,6 +145,7 @@ class DealerCarController extends Controller
     {
         $dealer         = $request->user();
         $data           = $request->validated();
+        $data['images'] = $request->imageInputs();
         $data['status'] = 'draft';
         $car            = $this->carService->createCar($dealer, $data);
         $car->load('dealer');
@@ -399,6 +431,7 @@ class DealerCarController extends Controller
         abort_if($car->dealer_slug !== $dealer->dealer_slug, 403);
 
         $data = $request->validated();
+        $data['images'] = $request->imageInputs();
 
         if (! empty($data['plan_slug'])) {
             return $this->upgradeCarSubscription($request, $car, $data);

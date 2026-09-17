@@ -2,6 +2,8 @@
 namespace App\Http\Requests\Dealer;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\Validator;
 
 class CarUploadRequest extends FormRequest
 {
@@ -28,10 +30,10 @@ class CarUploadRequest extends FormRequest
             'registration_year'   => ['required_if:registered,true', 'nullable', 'integer', 'min:1900', 'max:' . date('Y')],
             'fuel_type'           => ['nullable', 'string'],
             'transmission'        => ['nullable', 'string'],
-            "images"              => ["nullable", "array"],
-            "images.*"            => ["string", "starts_with:data:,http://,https://"],
+            'images'              => ['nullable', 'array'],
+            'images.*'            => ['nullable'],
             'description'         => ['nullable', 'string'],
-            "status"              => ['nullable', 'string', 'in:draft,pending_payment,pending_approval'],
+            'status'              => ['nullable', 'string', 'in:draft,pending_payment,pending_approval'],
             'dealer_code'         => ['nullable', 'string', 'exists:dealers,dealer_code'],
             'phone_number'        => ['nullable', 'string'],
             'network'             => ['nullable', 'string'],
@@ -42,5 +44,48 @@ class CarUploadRequest extends FormRequest
             'payment_method'      => ['nullable', 'string'],
             'callback_url'        => ['nullable', 'url'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            foreach ($this->imageInputs() as $index => $image) {
+                if ($image instanceof UploadedFile) {
+                    if (! $image->isValid() || ! str_starts_with((string) $image->getMimeType(), 'image/')) {
+                        $validator->errors()->add("images.$index", 'Each image must be a valid image file.');
+                    }
+                    continue;
+                }
+
+                if (! is_string($image) || $image === '') {
+                    $validator->errors()->add("images.$index", 'Each image must be a file, URL, or base64 data URI.');
+                    continue;
+                }
+
+                if (
+                    ! str_starts_with($image, 'data:')
+                    && ! str_starts_with($image, 'http://')
+                    && ! str_starts_with($image, 'https://')
+                ) {
+                    $validator->errors()->add("images.$index", 'Each image must start with data:, http://, or https://.');
+                }
+            }
+        });
+    }
+
+    /**
+     * Images from JSON (base64/URLs) and/or multipart files.
+     *
+     * @return array<int, mixed>
+     */
+    public function imageInputs(): array
+    {
+        if ($this->hasFile('images')) {
+            $files = $this->file('images');
+            return is_array($files) ? array_values($files) : [$files];
+        }
+
+        $images = $this->input('images', []);
+        return is_array($images) ? array_values($images) : [];
     }
 }

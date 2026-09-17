@@ -118,6 +118,7 @@ Route::prefix('dealer')->group(function () {
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
         Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
+        Route::post('/upload_car_image', [DealerCarController::class, 'uploadImage']);
         Route::put('/cars/{car}', [DealerCarController::class, 'updateCar']);
         Route::post('/drafts/{car}/publish', [DealerCarController::class, 'publishDraft']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);

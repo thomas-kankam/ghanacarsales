@@ -51,21 +51,67 @@ trait Helpers
                 return null;
             }
 
-            $image_data = static::compressImageBinary($image_data, $image_extension);
-
-            $fileName  = Str::random(15) . '.' . $image_extension;
-            $file_path = "uploads/cars/" . $fileName;
-
-            Storage::disk("public")->put($file_path, $image_data);
-            return rtrim((string) config("custom.urls.backend_url"), '/') . "/storage/" . $file_path;
+            return static::storeImageBinary($image_data, $image_extension);
         }
 
         return null;
     }
 
     /**
+     * Store an uploaded multipart image file and return its public URL.
+     * Prefer this over base64 JSON — ModSecurity treats file parts differently.
+     */
+    protected static function storeUploadedImage(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        if (! $file->isValid()) {
+            return null;
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
+        if ($extension === 'jpeg') {
+            $extension = 'jpg';
+        }
+
+        $binary = file_get_contents($file->getRealPath());
+        if ($binary === false || $binary === '') {
+            return null;
+        }
+
+        return static::storeImageBinary($binary, $extension);
+    }
+
+    protected static function storeImageBinary(string $binary, string $extension): string
+    {
+        $binary = static::compressImageBinary($binary, $extension);
+
+        $fileName  = Str::random(15) . '.' . $extension;
+        $file_path = "uploads/cars/" . $fileName;
+
+        Storage::disk("public")->put($file_path, $binary);
+
+        return rtrim((string) config("custom.urls.backend_url"), '/') . "/storage/" . $file_path;
+    }
+
+    /**
+     * Normalize any image input (URL, base64 data-URI, or uploaded file) to a public URL.
+     */
+    protected static function normalizeCarImage(mixed $img): ?string
+    {
+        if ($img instanceof \Illuminate\Http\UploadedFile) {
+            return static::storeUploadedImage($img);
+        }
+
+        if (! is_string($img)) {
+            return null;
+        }
+
+        return str_starts_with($img, 'data:')
+            ? static::base64ImageDecode($img)
+            : $img;
+    }
+
+    /**
      * Resize large photos and re-encode JPGs so stored files stay reasonable.
-     * Does not shrink the incoming HTTP body — raise nginx/PHP body limits for that.
      */
     protected static function compressImageBinary(string $binary, string &$extension): string
     {
