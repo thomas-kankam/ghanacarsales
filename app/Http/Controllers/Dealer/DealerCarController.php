@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dealer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dealer\CarUploadRequest;
+use App\Http\Requests\Dealer\UploadCarImageRequest;
 use App\Models\Car;
 use App\Models\Dealer;
 use App\Models\Payment;
@@ -100,18 +101,10 @@ class DealerCarController extends Controller
     }
 
     /**
-     * Upload one car image as multipart/form-data (field name: image).
-     * Do NOT send base64 JSON here — that still triggers ModSecurity 413.
-     *
-     * Frontend: FormData with append('image', fileBlob) and Content-Type multipart
-     * (do not set Content-Type manually; the browser sets the boundary).
+     * Upload one car image as multipart/form-data (field name: image, max 5MB).
      */
-    public function uploadImage(Request $request): JsonResponse
+    public function uploadImage(UploadCarImageRequest $request): JsonResponse
     {
-        $request->validate([
-            'image' => ['required', 'file', 'image', 'max:20480'], // 20MB
-        ]);
-
         $url = $this->carService->storeImage($request->file('image'));
 
         if (! $url) {

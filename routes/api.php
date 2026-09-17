@@ -117,9 +117,9 @@ Route::prefix('dealer')->group(function () {
 
         Route::post('/register_dealer', [DealerAuthController::class, 'registerDealer']);
 
-        Route::post('/upload_car', [DealerCarController::class, 'uploadCar']);
-        Route::post('/upload_car_image', [DealerCarController::class, 'uploadImage']);
-        Route::put('/cars/{car}', [DealerCarController::class, 'updateCar']);
+        Route::post('/upload_car', [DealerCarController::class, 'uploadCar']); // multipart/form-data; images[] files max 5MB
+        Route::post('/upload_car_image', [DealerCarController::class, 'uploadImage']); // multipart field: image, max 5MB
+        Route::put('/cars/{car}', [DealerCarController::class, 'updateCar']); // multipart/form-data for image updates
         Route::post('/drafts/{car}/publish', [DealerCarController::class, 'publishDraft']);
         Route::get('/get_cars', [DealerCarController::class, 'listCars']);
         Route::get('/single_car/{car}', [DealerCarController::class, 'singleCar']);
@@ -132,7 +132,7 @@ Route::prefix('dealer')->group(function () {
         // Draft workflow
         Route::get('/drafts', [DealerCarController::class, 'listDrafts']);
         Route::get('/drafts/{car}', [DealerCarController::class, 'getDraft']);
-        Route::post('/drafts', [DealerCarController::class, 'saveDraft']);
+        Route::post('/drafts', [DealerCarController::class, 'saveDraft']); // multipart/form-data; images[] files max 5MB
 
         // publish all drafts
         Route::get('/publish_all_drafts', [DealerCarController::class, 'publishAllDrafts']);

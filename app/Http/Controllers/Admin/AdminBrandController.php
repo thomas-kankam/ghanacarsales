@@ -77,14 +77,45 @@ class AdminBrandController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:brands,name'],
             'models' => ['nullable', 'array'],
             'models.*' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'string', 'starts_with:data:,http://,https://'],
+            'image' => ['nullable'],
+        ], [
+            'image.max' => 'Image must not exceed 5MB.',
         ]);
 
-        $brand = DB::transaction(function () use ($data) {
+        if ($request->hasFile('image')) {
+            $request->validate([
+                'image' => ['file', 'image', 'max:5120'],
+            ], [
+                'image.max' => 'Image must not exceed 5MB.',
+                'image.image' => 'The file must be a valid image.',
+            ]);
+        } elseif ($request->filled('image') && is_string($request->input('image'))) {
+            if (str_starts_with($request->input('image'), 'data:')) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Validation Error",
+                    reason: "Base64 images are not accepted. Upload image as multipart/form-data (max 5MB).",
+                    status_code: self::API_VALIDATION_ERROR,
+                    data: ['errors' => ['image' => ['Base64 images are not accepted. Upload image as multipart/form-data (max 5MB).']]]
+                );
+            }
+            $request->validate([
+                'image' => ['string', 'starts_with:http://,https://'],
+            ]);
+        }
+
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $imageUrl = self::storeUploadedImage($request->file('image'));
+        } elseif (! empty($data['image']) && is_string($data['image'])) {
+            $imageUrl = $data['image'];
+        }
+
+        $brand = DB::transaction(function () use ($data, $imageUrl) {
             $brand = Brand::create([
                 'name' => $data['name'],
                 'slug' => Str::slug($data['name']),
-                'image' => self::base64ImageDecode($data['image'] ?? null),
+                'image' => $imageUrl,
             ]);
 
             $this->syncModels($brand, $data['models'] ?? []);
@@ -108,18 +139,43 @@ class AdminBrandController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:255', 'unique:brands,name,' . $brand->id],
             'models' => ['sometimes', 'array'],
             'models.*' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'string', 'starts_with:data:,http://,https://'],
+            'image' => ['nullable'],
         ]);
 
-        $brand = DB::transaction(function () use ($brand, $data) {
+        if ($request->hasFile('image')) {
+            $request->validate([
+                'image' => ['file', 'image', 'max:5120'],
+            ], [
+                'image.max' => 'Image must not exceed 5MB.',
+                'image.image' => 'The file must be a valid image.',
+            ]);
+        } elseif ($request->filled('image') && is_string($request->input('image'))) {
+            if (str_starts_with($request->input('image'), 'data:')) {
+                return $this->apiResponse(
+                    in_error: true,
+                    message: "Validation Error",
+                    reason: "Base64 images are not accepted. Upload image as multipart/form-data (max 5MB).",
+                    status_code: self::API_VALIDATION_ERROR,
+                    data: ['errors' => ['image' => ['Base64 images are not accepted. Upload image as multipart/form-data (max 5MB).']]]
+                );
+            }
+            $request->validate([
+                'image' => ['string', 'starts_with:http://,https://'],
+            ]);
+        }
+
+        $brand = DB::transaction(function () use ($brand, $data, $request) {
             if (array_key_exists('name', $data)) {
                 $brand->name = $data['name'];
                 $brand->slug = Str::slug($data['name']);
             }
 
-            if (array_key_exists('image', $data) && $data['image']) {
+            if ($request->hasFile('image')) {
                 self::deleteImage($brand->image);
-                $brand->image = self::base64ImageDecode($data['image']);
+                $brand->image = self::storeUploadedImage($request->file('image'));
+            } elseif (array_key_exists('image', $data) && is_string($data['image']) && $data['image'] !== '') {
+                self::deleteImage($brand->image);
+                $brand->image = $data['image'];
             }
 
             $brand->save();

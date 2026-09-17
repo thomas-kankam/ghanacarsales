@@ -98,12 +98,14 @@ class Handler extends ExceptionHandler
         // validation error
         $this->renderable(function (ValidationException $e, Request $request) {
             Log::warning($e->getMessage());
+            $firstError = collect($e->errors())->flatten()->first();
+
             return response()->json([
                 "data" => [
                     "status_code"   => "422",
                     "message"       => "Validation Error",
                     "in_error"      => true,
-                    "reason"        => "The given data was invalid",
+                    "reason"        => $firstError ?: "The given data was invalid",
                     "errors"        => $e->errors(),
                     "point_in_time" => now(),
                 ],
