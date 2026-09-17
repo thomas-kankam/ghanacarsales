@@ -21,12 +21,10 @@ class CarService
             $data['car_slug']    = Str::uuid();
 
             if (isset($data['images']) && is_array($data['images'])) {
-                $data['images'] = array_values(array_filter(array_map(function ($img) {
-                    if (! is_string($img)) {
-                        return null;
-                    }
-                    return str_starts_with($img, 'data:') ? static::base64ImageDecode($img) : $img;
-                }, $data['images'])));
+                $data['images'] = array_values(array_filter(array_map(
+                    fn ($img) => static::normalizeCarImage($img),
+                    $data['images']
+                )));
             }
 
             $car = Car::create($data);
@@ -42,20 +40,24 @@ class CarService
             unset($data['dealer_slug'], $data['car_slug']);
 
             if (isset($data['images']) && is_array($data['images'])) {
-                $data['images'] = array_values(array_filter(array_map(function ($img) {
-                    if (! is_string($img)) {
-                        return null;
-                    }
-                    return str_starts_with($img, 'data:')
-                        ? static::base64ImageDecode($img)
-                        : $img;
-                }, $data['images'])));
+                $data['images'] = array_values(array_filter(array_map(
+                    fn ($img) => static::normalizeCarImage($img),
+                    $data['images']
+                )));
             }
 
             $car->update($data);
 
             return $car;
         });
+    }
+
+    /**
+     * Store a single multipart image and return its public URL.
+     */
+    public function storeImage(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        return static::storeUploadedImage($file);
     }
 
     /**

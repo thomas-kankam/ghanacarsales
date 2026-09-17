@@ -20,9 +20,21 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# Allow large base64 car-image JSON bodies (64 MiB). Apache default is unlimited,
-# but some hosts set a smaller LimitRequestBody which returns HTTP 413.
+# Allow large car-image request bodies (64 MiB).
 LimitRequestBody 67108864
+
+# DirectAdmin ModSecurity often returns 413 for base64 JSON (default NoFilesLimit ~128KB).
+# If these are ignored in .htaccess, set them via DirectAdmin → Custom HTTPD Config (see deploy/).
+<IfModule mod_security2.c>
+    SecRequestBodyLimit 67108864
+    SecRequestBodyNoFilesLimit 67108864
+    SecRequestBodyInMemoryLimit 67108864
+</IfModule>
+<IfModule mod_security.c>
+    SecRequestBodyLimit 67108864
+    SecRequestBodyNoFilesLimit 67108864
+    SecRequestBodyInMemoryLimit 67108864
+</IfModule>
 
 # Raise PHP limits for base64 car image uploads (Apache + mod_php only).
 # With PHP-FPM these php_value lines are ignored — use .user.ini / php.ini instead.

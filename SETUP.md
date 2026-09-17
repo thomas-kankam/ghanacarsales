@@ -247,31 +247,38 @@ chmod -R 775 bootstrap/cache
 
 ### 413 Content Too Large on car upload (JPG / base64)
 
-Car uploads send images as base64 inside JSON. A few phone JPGs often exceed PHP’s default **`post_max_size`** (commonly 2M–8M). Laravel then returns **413 Content Too Large**.
+Your DirectAdmin **PHP Options** (`post_max_size` / `upload_max_filesize` = 256M) are fine.
+The block is almost always **ModSecurity**, not PHP.
 
-On **Apache**, fix PHP (and optionally Apache body) limits:
+Base64 images in JSON are treated as “request body with **no files**”. DirectAdmin default:
 
-1. **PHP** (required) — in `php.ini`, cPanel MultiPHP INI Editor, FPM pool, or the app-root `.user.ini`:
+`SecRequestBodyNoFilesLimit 131072` (128 KB) → **Deny with code 413**
 
-```ini
-upload_max_filesize = 64M
-post_max_size = 64M
-memory_limit = 256M
+#### Fix in DirectAdmin (do this now)
+
+1. Open **Custom HTTPD Configurations** for `backend.omnicarsgh.com`
+2. Paste into the customization / `|CUSTOM|` section:
+
+```apache
+<IfModule mod_security2.c>
+    SecRequestBodyLimit 268435456
+    SecRequestBodyNoFilesLimit 268435456
+    SecRequestBodyInMemoryLimit 268435456
+</IfModule>
 ```
 
-Then restart Apache / PHP-FPM.
+3. Save (Apache rewrites), then retry the upload.
 
-2. **Apache** — ensure `AllowOverride All` for the site so `.htaccess` applies. The repo `.htaccess` already sets `LimitRequestBody 67108864` (64 MiB) and `php_value` limits for mod_php.
+Confirm in the domain Apache error log:
 
-See `deploy/apache-upload-limits.conf` for a VirtualHost example.
+`ModSecurity: Request body no files data length is larger than the configured limit`
 
-Confirm live values:
+See `deploy/directadmin-modsecurity-custom-httpd.conf`.
 
-```bash
-php -i | grep -E 'post_max_size|upload_max_filesize'
-```
+#### App workaround (after deploy)
 
-(or a temporary `phpinfo()` page on the same vhost).
+`POST /api/dealer/upload_car_image` with multipart field `image` returns `{ url }`.
+Then call `upload_car` with `"images": ["https://..."]` only (no base64).
 
 ## Next Steps
 
