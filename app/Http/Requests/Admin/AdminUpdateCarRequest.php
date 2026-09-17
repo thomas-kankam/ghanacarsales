@@ -2,12 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Concerns\NormalizesMultipartCarFields;
 use App\Http\Requests\Concerns\ValidatesMultipartImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
 class AdminUpdateCarRequest extends FormRequest
 {
+    use NormalizesMultipartCarFields;
     use ValidatesMultipartImages;
 
     public function authorize(): bool
@@ -42,6 +44,11 @@ class AdminUpdateCarRequest extends FormRequest
     public function messages(): array
     {
         return $this->multipartImageMessages();
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeMultipartCarFields();
     }
 
     public function withValidator(Validator $validator): void

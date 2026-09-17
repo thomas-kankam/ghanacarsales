@@ -1,12 +1,14 @@
 <?php
 namespace App\Http\Requests\Dealer;
 
+use App\Http\Requests\Concerns\NormalizesMultipartCarFields;
 use App\Http\Requests\Concerns\ValidatesMultipartImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
 class CarUploadRequest extends FormRequest
 {
+    use NormalizesMultipartCarFields;
     use ValidatesMultipartImages;
 
     public function authorize(): bool
@@ -30,7 +32,7 @@ class CarUploadRequest extends FormRequest
             'aircon'              => ['nullable', 'boolean'],
             'registered'          => ['nullable', 'boolean'],
             'registration_year'   => ['required_if:registered,true', 'nullable', 'integer', 'min:1900', 'max:' . date('Y')],
-            'fuel_type'           => ['nullable', 'string'],
+            'fuel_type'           => ['nullable'],
             'transmission'        => ['nullable', 'string'],
             // Multipart files: images[] (max 5MB each). Existing https URLs also allowed.
             'images'              => ['nullable', 'array'],
@@ -56,12 +58,7 @@ class CarUploadRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->filled('plan_details') && is_string($this->input('plan_details'))) {
-            $decoded = json_decode($this->input('plan_details'), true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                $this->merge(['plan_details' => $decoded]);
-            }
-        }
+        $this->normalizeMultipartCarFields();
     }
 
     public function withValidator(Validator $validator): void

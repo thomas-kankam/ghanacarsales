@@ -1,10 +1,13 @@
 <?php
 namespace App\Http\Requests\Buyer;
 
+use App\Http\Requests\Concerns\NormalizesMultipartCarFields;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BuyerSearchRequest extends FormRequest
 {
+    use NormalizesMultipartCarFields;
+
     public function authorize(): bool
     {
         return true;
@@ -37,5 +40,10 @@ class BuyerSearchRequest extends FormRequest
             'page'         => ['nullable', 'integer', 'min:1'],
             'per_page'     => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeMultipartCarFields();
     }
 }

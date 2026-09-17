@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests\Buyer;
 
+use App\Http\Requests\Concerns\NormalizesMultipartCarFields;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BuyerAlertRequest extends FormRequest
 {
+    use NormalizesMultipartCarFields;
+
     public function authorize(): bool
     {
         return true;
@@ -33,5 +36,10 @@ class BuyerAlertRequest extends FormRequest
             'colour' => ['nullable', 'string', 'max:50'],
             'location' => ['nullable', 'in:Greater Accra,Ashanti,Western,Eastern,Central,Northern,Upper East,Upper West,Volta,Brong Ahafo,Western North,Ahafo,Bono,Bono East,Oti,North East'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeMultipartCarFields();
     }
 }
