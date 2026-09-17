@@ -50,6 +50,10 @@ class CarUploadRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             foreach ($this->imageInputs() as $index => $image) {
+                if ($image === null) {
+                    continue;
+                }
+
                 if ($image instanceof UploadedFile) {
                     if (! $image->isValid() || ! str_starts_with((string) $image->getMimeType(), 'image/')) {
                         $validator->errors()->add("images.$index", 'Each image must be a valid image file.');
@@ -75,6 +79,7 @@ class CarUploadRequest extends FormRequest
 
     /**
      * Images from JSON (base64/URLs) and/or multipart files.
+     * Null entries are dropped so they never reach storage.
      *
      * @return array<int, mixed>
      */
@@ -82,10 +87,12 @@ class CarUploadRequest extends FormRequest
     {
         if ($this->hasFile('images')) {
             $files = $this->file('images');
-            return is_array($files) ? array_values($files) : [$files];
+            $images = is_array($files) ? array_values($files) : [$files];
+        } else {
+            $images = $this->input('images', []);
+            $images = is_array($images) ? array_values($images) : [];
         }
 
-        $images = $this->input('images', []);
-        return is_array($images) ? array_values($images) : [];
+        return array_values(array_filter($images, static fn ($image) => $image !== null));
     }
 }
